@@ -1,0 +1,10 @@
+{
+  "description": "Manage meal prep subscriptions efficiently with a comprehensive admin portal featuring order tracking, customer management, and financial reporting.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
