@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import PDFExport from "./PDFExport";
 import Dashboard from "./sections/Dashboard";
 import Orders from "./sections/Orders";
 import Delivery from "./sections/Delivery";
@@ -678,24 +677,6 @@ export default function App() {
           })}
         </nav>
 
-        {/* Download prototype strip */}
-        <div className="px-3 py-2" style={{ borderTop: "1px solid #1A1A1A" }}>
-          <a
-            href="/performance-meals-admin-prototype.zip"
-            download="performance-meals-admin-prototype.zip"
-            className="flex items-center gap-2 w-full px-3 py-2 transition-colors hover:bg-[#181818]"
-            style={{ textDecoration: "none" }}
-            title="Download full prototype source"
-          >
-            <span style={{ fontSize: 13, color: "#F5B300", flexShrink: 0 }}>⬇</span>
-            {!collapsed && (
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 11.5, color: "#888", letterSpacing: "0.02em" }}>
-                Download Prototype (.zip)
-              </span>
-            )}
-          </a>
-        </div>
-
         {/* User strip */}
         <div className="relative px-3 py-3" style={{ borderTop: "1px solid #1A1A1A" }}>
 
@@ -819,23 +800,6 @@ export default function App() {
 
           {/* Right: stream toggle + pdf + date */}
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            {/* Download button — hidden on small screens */}
-            <a
-              href="/performance-meals-admin-prototype.zip"
-              download="performance-meals-admin-prototype.zip"
-              className="hidden sm:inline-flex"
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 6,
-                background: "#F5B300", color: "#000",
-                fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 9.5,
-                letterSpacing: "0.1em", textTransform: "uppercase",
-                padding: "0 10px", height: 26, textDecoration: "none", flexShrink: 0,
-              }}
-              title="Download prototype source .zip"
-            >
-              ⬇ Download .zip
-            </a>
-
             {/* Stream toggle */}
             <div className="flex items-center overflow-hidden" style={{ height: 26, border: "1px solid #252525", borderRadius: 8 }}>
               <button
@@ -863,12 +827,6 @@ export default function App() {
 
             <div style={{ width: 1, height: 16, background: "#252525" }} />
 
-            <PDFExport
-              setSection={setSection as (s: string) => void}
-              setStream={setStream}
-              setCapturing={setCapturing}
-              mainRef={mainRef}
-            />
 
             <div className="hidden sm:block" style={{ width: 1, height: 16, background: "#252525" }} />
 
