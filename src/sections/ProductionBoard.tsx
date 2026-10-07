@@ -1,5 +1,4 @@
 import { useState } from "react";
-import type { BusinessStream } from "../App";
 import { downloadExcel, printHtml, nowStr, nowTime } from "../utils/flowUtils";
 
 type ProdStatus = "pending" | "in-production" | "produced" | "packed";
@@ -29,7 +28,7 @@ const initialItems: ProductionItem[] = [
 ];
 
 const statusConfig: Record<ProdStatus, { label: string; color: string; bg: string }> = {
-  pending: { label: "Pending", color: "#888", bg: "bg-[#2A2A2A]" },
+  pending: { label: "Pending", color: "var(--pm-text-muted)", bg: "bg-[var(--pm-surface-muted)]" },
   "in-production": { label: "In Production", color: "#F5B300", bg: "bg-yellow-950/40 border border-yellow-800/30" },
   produced: { label: "Produced", color: "#3B82F6", bg: "bg-blue-950/40 border border-blue-800/30" },
   packed: { label: "Packed", color: "#22C55E", bg: "bg-green-950/40 border border-green-800/30" },
@@ -37,12 +36,11 @@ const statusConfig: Record<ProdStatus, { label: string; color: string; bg: strin
 
 const priorityStyle: Record<string, string> = {
   urgent: "text-red-400 bg-red-950/30 border border-red-800/30",
-  normal: "text-[#888] bg-[#1A1A1A] border border-[#2A2A2A]",
-  low: "text-[#555] bg-[#141414] border border-[#1A1A1A]",
+  normal: "text-[var(--pm-text-muted)] bg-[var(--pm-surface-muted)] border border-[var(--pm-border)]",
+  low: "text-[var(--pm-text-muted)] bg-[var(--pm-surface-subtle)] border border-[var(--pm-border-soft)]",
 };
 
-
-export default function ProductionBoard({ stream, demoMode }: { stream: BusinessStream; demoMode?: boolean }) {
+export default function ProductionBoard() {
   const [items, setItems] = useState(initialItems);
   const [statusFilter, setStatusFilter] = useState<ProdStatus | "all">("all");
   const [streamFilter, setStreamFilter] = useState<"RS" | "MP" | "all">("all");
@@ -87,7 +85,7 @@ export default function ProductionBoard({ stream, demoMode }: { stream: Business
               </table>
               <div class="footer">Performance Meals — Kitchen Production Sheet — Generated ${nowStr()} ${nowTime()}</div>
             `);
-          }} className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+          }} className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
             ⎙ Print Sheet
           </button>
           <button onClick={() => downloadExcel("production-board.xlsx", items.map(i => ({
@@ -99,21 +97,21 @@ export default function ProductionBoard({ stream, demoMode }: { stream: Business
             "Stream": i.stream,
             "Goal": i.goal ?? "",
             "Status": statusConfig[i.status].label,
-          })))} className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+          })))} className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
             Excel ↓
           </button>
         </div>
       </div>
 
       {/* Status pipeline */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[#2A2A2A]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[var(--pm-surface-muted)]">
         {(["pending", "in-production", "produced", "packed"] as ProdStatus[]).map(s => {
           const cfg = statusConfig[s];
           return (
-            <div key={s} className="bg-[#181818] p-4 text-center">
-              <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-1">{cfg.label}</div>
+            <div key={s} className="bg-[var(--pm-surface)] p-4 text-center">
+              <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-1">{cfg.label}</div>
               <div className="text-3xl font-extrabold mono" style={{ color: cfg.color }}>{counts[s]}</div>
-              <div className="text-xs mono text-[#555] mt-1">items</div>
+              <div className="text-xs mono text-[var(--pm-text-muted)] mt-1">items</div>
             </div>
           );
         })}
@@ -124,16 +122,16 @@ export default function ProductionBoard({ stream, demoMode }: { stream: Business
         <div className="flex gap-1">
           {(["all", "pending", "in-production", "produced", "packed"] as (ProdStatus | "all")[]).map(s => (
             <button key={s} onClick={() => setStatusFilter(s)}
-              className={`text-xs px-3 py-1.5 mono border transition-colors capitalize ${statusFilter === s ? "border-[#F5B300] text-[#F5B300] bg-[#F5B300]/10" : "border-[#2A2A2A] text-[#888] hover:text-[#E8E8E8]"}`}>
+              className={`text-xs px-3 py-1.5 mono border transition-colors capitalize ${statusFilter === s ? "border-[#F5B300] text-[var(--pm-accent-text)] bg-[#F5B300]/10" : "border-[var(--pm-border)] text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)]"}`}>
               {s === "all" ? "All" : statusConfig[s as ProdStatus].label}
             </button>
           ))}
         </div>
-        <div className="w-px h-5 bg-[#2A2A2A]" />
+        <div className="w-px h-5 bg-[var(--pm-surface-muted)]" />
         <div className="flex gap-1">
           {(["all", "RS", "MP"] as const).map(s => (
             <button key={s} onClick={() => setStreamFilter(s)}
-              className={`text-xs px-3 py-1.5 mono border transition-colors ${streamFilter === s ? "border-[#F5B300] text-[#F5B300]" : "border-[#2A2A2A] text-[#888]"}`}
+              className={`text-xs px-3 py-1.5 mono border transition-colors ${streamFilter === s ? "border-[#F5B300] text-[var(--pm-accent-text)]" : "border-[var(--pm-border)] text-[var(--pm-text-muted)]"}`}
               style={streamFilter === s && s !== "all" ? { borderColor: s === "RS" ? "#E85D04" : "#F5B300", color: s === "RS" ? "#E85D04" : "#F5B300" } : undefined}>
               {s === "all" ? "All Streams" : s === "RS" ? "Ready Series" : "Meal Plans"}
             </button>
@@ -142,12 +140,12 @@ export default function ProductionBoard({ stream, demoMode }: { stream: Business
       </div>
 
       {/* Production table */}
-      <div className="border border-[#2A2A2A] bg-[#181818] overflow-x-auto">
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#2A2A2A]">
+            <tr className="border-b border-[var(--pm-border)]">
               {["#", "Item", "Qty", "Packaging", "Priority", "Stream", "Status", "Action"].map(h => (
-                <th key={h} className="px-4 py-2.5 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
+                <th key={h} className="px-4 py-2.5 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
@@ -156,14 +154,14 @@ export default function ProductionBoard({ stream, demoMode }: { stream: Business
               const cfg = statusConfig[item.status];
               const canAdvance = item.status !== "packed";
               return (
-                <tr key={item.id} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] transition-colors ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
-                  <td className="px-4 py-2.5 mono text-xs text-[#555]">{item.id}</td>
+                <tr key={item.id} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] transition-colors ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
+                  <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{item.id}</td>
                   <td className="px-4 py-2.5 font-medium">
                     {item.item}
-                    {item.goal && <span className="ml-2 text-xs mono text-[#666]">{item.goal}</span>}
+                    {item.goal && <span className="ml-2 text-xs mono text-[var(--pm-text-muted)]">{item.goal}</span>}
                   </td>
-                  <td className="px-4 py-2.5 mono font-bold text-[#E8E8E8]">{item.quantity}</td>
-                  <td className="px-4 py-2.5 text-xs text-[#888]">{item.packaging}</td>
+                  <td className="px-4 py-2.5 mono font-bold text-[var(--pm-text-secondary)]">{item.quantity}</td>
+                  <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{item.packaging}</td>
                   <td className="px-4 py-2.5">
                     <span className={`text-xs mono px-2 py-0.5 font-bold capitalize ${priorityStyle[item.priority]}`}>{item.priority}</span>
                   </td>
@@ -176,7 +174,7 @@ export default function ProductionBoard({ stream, demoMode }: { stream: Business
                   <td className="px-4 py-2.5">
                     {canAdvance && (
                       <button onClick={() => advance(item.id)}
-                        className="text-xs border border-[#2A2A2A] text-[#888] px-2 py-1 hover:border-[#F5B300] hover:text-[#F5B300] mono transition-colors whitespace-nowrap">
+                        className="text-xs border border-[var(--pm-border)] text-[var(--pm-text-muted)] px-2 py-1 hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] mono transition-colors whitespace-nowrap">
                         Mark {statusConfig[["pending", "in-production", "produced"].find((_, idx) => ["pending", "in-production", "produced"].indexOf(item.status) === idx) as ProdStatus ?? item.status]?.label ?? "Next"} →
                       </button>
                     )}

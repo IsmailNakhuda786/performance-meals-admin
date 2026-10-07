@@ -43,7 +43,7 @@ import Settings from "./sections/Settings";
 import LoginPage from "./components/LoginPage";
 import { initialUsers, type UserAccount } from "./accessControl";
 
-export type BusinessStream = "meal-plans" | "ready-series";
+export type BusinessStream = "meal-plans" | "ready-series" | "other-sales";
 export type Theme = "light" | "dark";
 
 /* ── Brand logo components ─────────────────────────────────────────────── */
@@ -102,6 +102,24 @@ function ReadySeriesBadge() {
         </div>
         <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 500, fontSize: 8.5, color: "#F5B300", letterSpacing: "0.14em", marginTop: 2 }}>
           BY PERFORMANCE MEALS
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OtherSalesBadge() {
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full bg-[var(--pm-surface-muted)] text-[10px] font-extrabold text-[var(--pm-text-secondary)]">
+        $
+      </div>
+      <div>
+        <div className="text-[11px] font-extrabold leading-none tracking-[0.04em] text-[var(--pm-text)]">
+          OTHER SALES
+        </div>
+        <div className="mt-0.5 text-[8.5px] font-medium tracking-[0.14em] text-[var(--pm-text-muted)]">
+          WALLET &amp; GIFT CARDS
         </div>
       </div>
     </div>
@@ -271,6 +289,19 @@ const sharedSections: Section[] = [
   "settings",
 ];
 
+const otherSalesSections = new Set<Section>([
+  "dashboard",
+  "wallet",
+  "finance",
+  "refunds",
+  "acl",
+  "audit-logs",
+  "notifications",
+  "settings",
+  "whatsapp",
+  "support",
+]);
+
 function checkNearCutoff(): boolean {
   const d = new Date();
   const isThursday = d.getDay() === 4;
@@ -337,13 +368,17 @@ export default function App() {
   const deleteUser = (userId: string) => setUsers(current => current.filter(user => user.id !== userId));
 
   const isMealPlans = stream === "meal-plans";
-  const streamAccent = isMealPlans ? "#E85D04" : "#F5B300";
+  const isReadySeries = stream === "ready-series";
+  const isOtherSales = stream === "other-sales";
+  const streamAccent = isMealPlans ? "#E85D04" : isReadySeries ? "#F5B300" : "var(--pm-text-secondary)";
   const isShared = sharedSections.includes(section);
 
   const handleStreamSwitch = (newStream: BusinessStream) => {
     setStream(newStream);
     setStreamDropdownOpen(false);
-    if (newStream === "ready-series" && ["menu-review", "menu-planning", "fulfillment", "pause-management", "billing-cycles", "subscriber-profile", "subscriptions"].includes(section)) {
+    if (newStream === "other-sales") {
+      setSection("dashboard");
+    } else if (newStream === "ready-series" && ["menu-review", "menu-planning", "fulfillment", "pause-management", "billing-cycles", "subscriber-profile", "subscriptions"].includes(section)) {
       setSection("subscriptions");
     }
   };
@@ -361,6 +396,7 @@ export default function App() {
     <div
       className="pm-light-shell flex h-screen overflow-hidden"
       data-theme={theme}
+      data-stream={stream}
       style={{ background: "var(--pm-bg)", color: "var(--pm-text)" }}
       onClick={() => { setStreamDropdownOpen(false); setProfileMenuOpen(false); }}
     >
@@ -374,7 +410,7 @@ export default function App() {
 
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
       <aside
-        className={`flex-shrink-0 flex flex-col transition-all duration-200 fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto ${mobileNavOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
+        className={`pm-admin-sidebar flex-shrink-0 flex flex-col transition-all duration-200 fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto ${mobileNavOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
         style={{ width: collapsed ? 52 : 236, background: "var(--pm-surface)", borderRight: "1px solid var(--pm-border)" }}
       >
         {/* Brand logo area */}
@@ -408,7 +444,7 @@ export default function App() {
               className="w-full px-3 pt-1 pb-2.5 flex items-center justify-between group"
             >
               <div className="flex-1 min-w-0">
-                {isMealPlans ? <MealPlanBadge /> : <ReadySeriesBadge />}
+                {isMealPlans ? <MealPlanBadge /> : isReadySeries ? <ReadySeriesBadge /> : <OtherSalesBadge />}
               </div>
               <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="flex-shrink-0 ml-2 opacity-40 group-hover:opacity-80 transition-opacity">
                 <path d="M2 4l3.5 3.5L9 4" stroke="var(--pm-text)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -451,18 +487,36 @@ export default function App() {
               <button
                 onClick={() => handleStreamSwitch("ready-series")}
                 className="w-full px-3 py-3 flex items-center gap-3 text-left transition-colors hover:bg-[var(--pm-surface-subtle)]"
-                style={{ background: !isMealPlans ? "var(--pm-active)" : "transparent", borderTop: "1px solid var(--pm-surface-muted)" }}
+                style={{ background: isReadySeries ? "var(--pm-active)" : "transparent", borderTop: "1px solid var(--pm-surface-muted)" }}
               >
                 <svg width="8" height="8" viewBox="0 0 8 8" fill="none" className="flex-shrink-0 ml-px">
                   <circle cx="4" cy="4" r="4" fill="#F5B300" />
                 </svg>
                 <div className="flex-1 min-w-0">
                   <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 11.5, color: "var(--pm-text)", letterSpacing: "0.06em" }}>READY-SERIES</div>
-                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 9.5, color: "var(--pm-text-muted)", marginTop: 2 }}>Box Subs · Ready-to-Go</div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 9.5, color: "var(--pm-text-muted)", marginTop: 2 }}>Subscriptions · A-la-carte · Bundles</div>
                 </div>
-                {!isMealPlans && (
+                {isReadySeries && (
                   <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
                     <path d="M1.5 5.5l3 3 5-5" stroke="#F5B300" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </button>
+
+              {/* Other Sales */}
+              <button
+                onClick={() => handleStreamSwitch("other-sales")}
+                className="w-full px-3 py-3 flex items-center gap-3 text-left transition-colors hover:bg-[var(--pm-surface-subtle)]"
+                style={{ background: isOtherSales ? "var(--pm-active)" : "transparent", borderTop: "1px solid var(--pm-surface-muted)" }}
+              >
+                <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-[var(--pm-surface-muted)] text-[9px] font-extrabold text-[var(--pm-text-secondary)]">$</div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11.5px] font-extrabold tracking-[0.06em] text-[var(--pm-text)]">OTHER SALES</div>
+                  <div className="mt-0.5 text-[9.5px] text-[var(--pm-text-muted)]">Wallet Top-Ups · Gift Cards</div>
+                </div>
+                {isOtherSales && (
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                    <path d="M1.5 5.5l3 3 5-5" stroke="var(--pm-text-secondary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 )}
               </button>
@@ -474,6 +528,7 @@ export default function App() {
         <nav className="flex-1 overflow-y-auto py-2">
           {navGroups.map(g => {
             const visibleItems = g.items.filter(item => {
+              if (isOtherSales && !otherSalesSections.has(item.id)) return false;
               if (item.streamOnly && item.streamOnly !== stream) return false;
               return grantedSections.has(item.id);
             });
@@ -625,7 +680,7 @@ export default function App() {
 
         {/* Top bar */}
         <header
-          className="flex-shrink-0 px-3 sm:px-5 flex items-center justify-between gap-2 sm:gap-4"
+          className="pm-admin-header flex-shrink-0 px-3 sm:px-5 flex items-center justify-between gap-2 sm:gap-4"
           style={{ minHeight: 56, background: "var(--pm-surface)", borderBottom: "1px solid var(--pm-border)" }}
         >
           {/* Hamburger — mobile only */}
@@ -653,7 +708,7 @@ export default function App() {
               </span>
             ) : (
               <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", color: streamAccent, borderLeft: `2px solid ${streamAccent}`, paddingLeft: 7 }}>
-                {isMealPlans ? "MEAL PLAN" : "READY-SERIES"}
+                {isMealPlans ? "MEAL PLAN" : isReadySeries ? "READY-SERIES" : "OTHER SALES"}
               </span>
             )}
 
@@ -737,12 +792,23 @@ export default function App() {
               <button
                 onClick={() => handleStreamSwitch("ready-series")}
                 className="px-3 h-full flex items-center transition-all rounded-none"
-                style={!isMealPlans
+                style={isReadySeries
                   ? { background: "#F5B300", fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 9.5, letterSpacing: "0.1em", color: "var(--pm-text)" }
                   : { fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 9.5, letterSpacing: "0.1em", color: "var(--pm-text-muted)" }
                 }
               >
                 READY-SERIES
+              </button>
+              <div className="h-full" style={{ width: 1, background: "var(--pm-border)" }} />
+              <button
+                onClick={() => handleStreamSwitch("other-sales")}
+                className="px-3 h-full flex items-center transition-all rounded-none"
+                style={isOtherSales
+                  ? { background: "var(--pm-text)", fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 9.5, letterSpacing: "0.1em", color: "var(--pm-bg)" }
+                  : { fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 9.5, letterSpacing: "0.1em", color: "var(--pm-text-muted)" }
+                }
+              >
+                OTHER SALES
               </button>
             </div>
           </div>
@@ -769,7 +835,7 @@ export default function App() {
         )}
 
         {/* Section content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="pm-admin-main flex-1 overflow-y-auto">
           {section === "dashboard" && <Dashboard stream={stream} swapAlert={isNearCutoff} theme={theme} />}
           {section === "orders" && <Orders stream={stream} />}
           {section === "delivery" && <Delivery stream={stream} />}
@@ -783,7 +849,7 @@ export default function App() {
           {section === "inventory" && <Inventory />}
           {section === "procurement" && <Procurement />}
           {section === "packaging" && <Packaging />}
-          {section === "dispatch" && <Dispatch stream={stream} />}
+          {section === "dispatch" && <Dispatch />}
           {section === "delivery-hub" && <DeliveryHub />}
           {section === "riders" && <Riders />}
           {section === "rider-app" && <RiderApp />}
@@ -811,7 +877,7 @@ export default function App() {
           {section === "whatsapp" && <WhatsApp />}
           {section === "operations-center" && <OperationsCenter />}
           {section === "production-forecast" && <ProductionForecast />}
-          {section === "production-board" && <ProductionBoard stream={stream} />}
+          {section === "production-board" && <ProductionBoard />}
           {section === "export-center" && <ExportCenter stream={stream} />}
           {section === "failed-deliveries" && <FailedDeliveries />}
           {section === "fulfillment" && <Fulfillment />}

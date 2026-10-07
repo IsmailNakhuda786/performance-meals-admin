@@ -29,7 +29,7 @@ export default function PillToggle({ checked, onChange, accent = "yellow", disab
         padding: 0,
         cursor: disabled ? "not-allowed" : "pointer",
         flexShrink: 0,
-        background: checked ? on : "#2A2A2A",
+        background: checked ? on : "var(--pm-border-strong)",
         boxShadow: checked
           ? `0 0 0 1px ${glow}, inset 0 1px 2px rgba(0,0,0,0.2)`
           : "inset 0 1px 3px rgba(0,0,0,0.5)",

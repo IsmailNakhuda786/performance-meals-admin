@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 type Period = "7d" | "14d" | "30d" | "90d";
 
@@ -73,7 +73,7 @@ const mpForecastInfo = [
   { label: "Net Meals Required", "7d": 1428, "14d": 2856, "30d": 12240, "90d": 36720 },
 ];
 
-export default function ProductionForecast({ demoMode }: { demoMode?: boolean } = {}) {
+export default function ProductionForecast() {
   const [period, setPeriod] = useState<Period>("7d");
 
   const data = forecastData[period];
@@ -84,10 +84,10 @@ export default function ProductionForecast({ demoMode }: { demoMode?: boolean } 
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-extrabold">Production Forecasting Engine</h2>
-        <div className="flex gap-1 border border-[#2A2A2A]">
+        <div className="flex gap-1 border border-[var(--pm-border)]">
           {(["7d", "14d", "30d", "90d"] as Period[]).map(p => (
             <button key={p} onClick={() => setPeriod(p)}
-              className={`px-4 py-2 text-xs mono font-bold uppercase transition-colors ${period === p ? "bg-[#F5B300] text-black" : "text-[#888] hover:text-[#E8E8E8] hover:bg-[#181818]"}`}>
+              className={`px-4 py-2 text-xs mono font-bold uppercase transition-colors ${period === p ? "bg-[#F5B300] text-black" : "text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)] hover:bg-[var(--pm-surface)]"}`}>
               {p}
             </button>
           ))}
@@ -96,27 +96,27 @@ export default function ProductionForecast({ demoMode }: { demoMode?: boolean } 
 
       {/* Summary KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="border border-[#E85D04]/30 bg-[#181818] p-4">
-          <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-1">RS Meals ({period})</div>
+        <div className="border border-[#E85D04]/30 bg-[var(--pm-surface)] p-4">
+          <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-1">RS Meals ({period})</div>
           <div className="text-3xl font-extrabold mono" style={{ color: "#E85D04" }}>{totalRS.toLocaleString()}</div>
         </div>
-        <div className="border border-[#F5B300]/30 bg-[#181818] p-4">
-          <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-1">MP Meals ({period})</div>
+        <div className="border border-[#F5B300]/30 bg-[var(--pm-surface)] p-4">
+          <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-1">MP Meals ({period})</div>
           <div className="text-3xl font-extrabold mono" style={{ color: "#F5B300" }}>{totalMP.toLocaleString()}</div>
         </div>
-        <div className="border border-[#2A2A2A] bg-[#181818] p-4">
-          <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-1">Total Production</div>
-          <div className="text-3xl font-extrabold mono text-[#E8E8E8]">{(totalRS + totalMP).toLocaleString()}</div>
+        <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4">
+          <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-1">Total Production</div>
+          <div className="text-3xl font-extrabold mono text-[var(--pm-text-secondary)]">{(totalRS + totalMP).toLocaleString()}</div>
         </div>
-        <div className="border border-[#2A2A2A] bg-[#181818] p-4">
-          <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-1">MP Subs (active)</div>
-          <div className="text-3xl font-extrabold mono text-[#E8E8E8]">{mpForecastInfo[0][period]}</div>
+        <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4">
+          <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-1">MP Subs (active)</div>
+          <div className="text-3xl font-extrabold mono text-[var(--pm-text-secondary)]">{mpForecastInfo[0][period]}</div>
         </div>
       </div>
 
       {/* Production chart — RS and MP separated, never merged */}
-      <div className="border border-[#2A2A2A] bg-[#181818]">
-        <div className="px-4 py-3 border-b border-[#2A2A2A] flex items-center justify-between">
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+        <div className="px-4 py-3 border-b border-[var(--pm-border)] flex items-center justify-between">
           <span className="text-sm font-semibold">Production Load Forecast — {period}</span>
           <div className="flex gap-4 text-xs mono">
             <span style={{ color: "#E85D04" }}>■ Ready Series</span>
@@ -126,12 +126,12 @@ export default function ProductionForecast({ demoMode }: { demoMode?: boolean } 
         <div className="p-4" style={{ height: 260 }}>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={data} barGap={2} barCategoryGap="30%">
-              <XAxis dataKey="day" tick={{ fill: "#555", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#555", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="day" tick={{ fill: "var(--pm-text-muted)", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "var(--pm-text-muted)", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }} axisLine={false} tickLine={false} />
               <Tooltip
-                contentStyle={{ background: "#181818", border: "1px solid #2A2A2A", borderRadius: 0 }}
-                labelStyle={{ color: "#888", fontSize: 11 }}
-                itemStyle={{ color: "#E8E8E8", fontSize: 11 }}
+                contentStyle={{ background: "var(--pm-surface)", border: "1px solid var(--pm-border)", borderRadius: 0 }}
+                labelStyle={{ color: "var(--pm-text-muted)", fontSize: 11 }}
+                itemStyle={{ color: "var(--pm-text-secondary)", fontSize: 11 }}
               />
               <Bar dataKey="rs" name="Ready Series" fill="#E85D04" radius={0} />
               <Bar dataKey="mp" name="Meal Plans" fill="#F5B300" radius={0} />
@@ -143,16 +143,16 @@ export default function ProductionForecast({ demoMode }: { demoMode?: boolean } 
       {/* Two-column ingredient + packaging tables */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Ready Series Ingredients */}
-        <div className="border border-[#E85D04]/20 bg-[#181818]">
+        <div className="border border-[#E85D04]/20 bg-[var(--pm-surface)]">
           <div className="px-4 py-3 border-b border-[#E85D04]/20 flex items-center gap-2">
             <div className="w-2 h-2 bg-[#E85D04]" />
             <span className="text-sm font-semibold" style={{ color: "#E85D04" }}>RS — Ingredient Requirements</span>
           </div>
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-[#2A2A2A]">
+              <tr className="border-b border-[var(--pm-border)]">
                 {["Ingredient", "In Stock", "Need (7d)", "Status"].map(h => (
-                  <th key={h} className="px-3 py-2 text-left text-[#AAAAAA] uppercase tracking-wider font-medium">{h}</th>
+                  <th key={h} className="px-3 py-2 text-left text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -161,7 +161,7 @@ export default function ProductionForecast({ demoMode }: { demoMode?: boolean } 
                 const deficit = i.forecast7d - i.inStock;
                 const ok = deficit <= 0;
                 return (
-                  <tr key={i.name} className="border-b border-[#1A1A1A] hover:bg-[#1F1F1F]">
+                  <tr key={i.name} className="border-b border-[var(--pm-border-soft)] hover:bg-[var(--pm-surface-subtle)]">
                     <td className="px-3 py-2 font-medium">{i.name}</td>
                     <td className="px-3 py-2 mono">{i.inStock}{i.unit}</td>
                     <td className="px-3 py-2 mono">{i.forecast7d.toFixed(1)}{i.unit}</td>
@@ -179,16 +179,16 @@ export default function ProductionForecast({ demoMode }: { demoMode?: boolean } 
         </div>
 
         {/* Meal Plans Ingredients */}
-        <div className="border border-[#F5B300]/20 bg-[#181818]">
+        <div className="border border-[#F5B300]/20 bg-[var(--pm-surface)]">
           <div className="px-4 py-3 border-b border-[#F5B300]/20 flex items-center gap-2">
             <div className="w-2 h-2 bg-[#F5B300]" />
             <span className="text-sm font-semibold" style={{ color: "#F5B300" }}>MP — Ingredient Requirements</span>
           </div>
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-[#2A2A2A]">
+              <tr className="border-b border-[var(--pm-border)]">
                 {["Ingredient", "In Stock", "Need (7d)", "Status"].map(h => (
-                  <th key={h} className="px-3 py-2 text-left text-[#AAAAAA] uppercase tracking-wider font-medium">{h}</th>
+                  <th key={h} className="px-3 py-2 text-left text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -197,7 +197,7 @@ export default function ProductionForecast({ demoMode }: { demoMode?: boolean } 
                 const deficit = i.forecast7d - i.inStock;
                 const ok = deficit <= 0;
                 return (
-                  <tr key={i.name} className="border-b border-[#1A1A1A] hover:bg-[#1F1F1F]">
+                  <tr key={i.name} className="border-b border-[var(--pm-border-soft)] hover:bg-[var(--pm-surface-subtle)]">
                     <td className="px-3 py-2 font-medium">{i.name}</td>
                     <td className="px-3 py-2 mono">{i.inStock}{i.unit}</td>
                     <td className="px-3 py-2 mono">{i.forecast7d.toFixed(1)}{i.unit}</td>
@@ -217,16 +217,16 @@ export default function ProductionForecast({ demoMode }: { demoMode?: boolean } 
 
       {/* Packaging forecast */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="border border-[#E85D04]/20 bg-[#181818]">
+        <div className="border border-[#E85D04]/20 bg-[var(--pm-surface)]">
           <div className="px-4 py-3 border-b border-[#E85D04]/20 flex items-center gap-2">
             <div className="w-2 h-2 bg-[#E85D04]" />
             <span className="text-sm font-semibold" style={{ color: "#E85D04" }}>RS — Packaging Requirements</span>
           </div>
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-[#2A2A2A]">
+              <tr className="border-b border-[var(--pm-border)]">
                 {["Item", "In Stock", "Need (7d)", "Status"].map(h => (
-                  <th key={h} className="px-3 py-2 text-left text-[#AAAAAA] uppercase tracking-wider font-medium">{h}</th>
+                  <th key={h} className="px-3 py-2 text-left text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -235,7 +235,7 @@ export default function ProductionForecast({ demoMode }: { demoMode?: boolean } 
                 const deficit = p.forecast7d - p.inStock;
                 const ok = deficit <= 0;
                 return (
-                  <tr key={p.name} className="border-b border-[#1A1A1A] hover:bg-[#1F1F1F]">
+                  <tr key={p.name} className="border-b border-[var(--pm-border-soft)] hover:bg-[var(--pm-surface-subtle)]">
                     <td className="px-3 py-2 font-medium">{p.name}</td>
                     <td className="px-3 py-2 mono">{p.inStock}</td>
                     <td className="px-3 py-2 mono">{p.forecast7d}</td>
@@ -252,16 +252,16 @@ export default function ProductionForecast({ demoMode }: { demoMode?: boolean } 
           </table>
         </div>
 
-        <div className="border border-[#F5B300]/20 bg-[#181818]">
+        <div className="border border-[#F5B300]/20 bg-[var(--pm-surface)]">
           <div className="px-4 py-3 border-b border-[#F5B300]/20 flex items-center gap-2">
             <div className="w-2 h-2 bg-[#F5B300]" />
             <span className="text-sm font-semibold" style={{ color: "#F5B300" }}>MP — Packaging Requirements</span>
           </div>
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-[#2A2A2A]">
+              <tr className="border-b border-[var(--pm-border)]">
                 {["Item", "In Stock", "Need (7d)", "Status"].map(h => (
-                  <th key={h} className="px-3 py-2 text-left text-[#AAAAAA] uppercase tracking-wider font-medium">{h}</th>
+                  <th key={h} className="px-3 py-2 text-left text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -270,7 +270,7 @@ export default function ProductionForecast({ demoMode }: { demoMode?: boolean } 
                 const deficit = p.forecast7d - p.inStock;
                 const ok = deficit <= 0;
                 return (
-                  <tr key={p.name} className="border-b border-[#1A1A1A] hover:bg-[#1F1F1F]">
+                  <tr key={p.name} className="border-b border-[var(--pm-border-soft)] hover:bg-[var(--pm-surface-subtle)]">
                     <td className="px-3 py-2 font-medium">{p.name}</td>
                     <td className="px-3 py-2 mono">{p.inStock}</td>
                     <td className="px-3 py-2 mono">{p.forecast7d}</td>
@@ -289,17 +289,17 @@ export default function ProductionForecast({ demoMode }: { demoMode?: boolean } 
       </div>
 
       {/* MP-specific forecast info */}
-      <div className="border border-[#F5B300]/20 bg-[#181818]">
+      <div className="border border-[#F5B300]/20 bg-[var(--pm-surface)]">
         <div className="px-4 py-3 border-b border-[#F5B300]/20 flex items-center gap-2">
           <div className="w-2 h-2 bg-[#F5B300]" />
           <span className="text-sm font-semibold" style={{ color: "#F5B300" }}>Meal Plan Subscriber Forecast</span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[#2A2A2A]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[var(--pm-surface-muted)]">
           {mpForecastInfo.map(row => (
-            <div key={row.label} className="bg-[#181818] p-4">
-              <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-2">{row.label}</div>
-              <div className="text-2xl font-extrabold mono text-[#F5B300]">{(row[period] as number).toLocaleString()}</div>
-              <div className="text-xs mono text-[#555] mt-1">{period} window</div>
+            <div key={row.label} className="bg-[var(--pm-surface)] p-4">
+              <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-2">{row.label}</div>
+              <div className="text-2xl font-extrabold mono text-[var(--pm-accent-text)]">{(row[period] as number).toLocaleString()}</div>
+              <div className="text-xs mono text-[var(--pm-text-muted)] mt-1">{period} window</div>
             </div>
           ))}
         </div>

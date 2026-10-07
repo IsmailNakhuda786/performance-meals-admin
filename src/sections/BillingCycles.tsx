@@ -86,7 +86,7 @@ export default function BillingCycles({ demoMode }: { demoMode?: boolean } = {})
     <div className="p-6 space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-extrabold">Billing Cycle Center</h2>
-        <button onClick={handleExportCSV} className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+        <button onClick={handleExportCSV} className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
           Export ↓
         </button>
       </div>
@@ -103,23 +103,23 @@ export default function BillingCycles({ demoMode }: { demoMode?: boolean } = {})
           const count = records.filter(r => r.currentCycle === cycle && r.status === "active").length;
           const revenue = cycle === "bi-weekly" ? biWeeklyRevenue : cycle === "monthly" ? monthlyRevenue : twoMonthRevenue;
           return (
-            <div key={cycle} className="border border-[#2A2A2A] bg-[#181818]">
-              <div className="px-4 py-3 border-b border-[#2A2A2A] flex items-center gap-2">
-                <span className="text-sm font-bold text-[#F5B300]">{cfg.label}</span>
-                <span className="text-xs mono text-[#555]">{cfg.desc}</span>
+            <div key={cycle} className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+              <div className="px-4 py-3 border-b border-[var(--pm-border)] flex items-center gap-2">
+                <span className="text-sm font-bold text-[var(--pm-accent-text)]">{cfg.label}</span>
+                <span className="text-xs mono text-[var(--pm-text-muted)]">{cfg.desc}</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-[#2A2A2A]">
-                <div className="bg-[#181818] p-4">
-                  <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-1">Active Plans</div>
-                  <div className="text-2xl font-extrabold mono text-[#E8E8E8]">{count}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-[var(--pm-surface-muted)]">
+                <div className="bg-[var(--pm-surface)] p-4">
+                  <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-1">Active Plans</div>
+                  <div className="text-2xl font-extrabold mono text-[var(--pm-text-secondary)]">{count}</div>
                 </div>
-                <div className="bg-[#181818] p-4">
-                  <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-1">Cycle Revenue</div>
-                  <div className="text-2xl font-extrabold mono text-[#F5B300]">${revenue}</div>
+                <div className="bg-[var(--pm-surface)] p-4">
+                  <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-1">Cycle Revenue</div>
+                  <div className="text-2xl font-extrabold mono text-[var(--pm-accent-text)]">${revenue}</div>
                 </div>
-                <div className="bg-[#181818] p-4">
-                  <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-1">Per Plan Avg</div>
-                  <div className="text-2xl font-extrabold mono text-[#E8E8E8]">${count > 0 ? Math.round(revenue / count) : 0}</div>
+                <div className="bg-[var(--pm-surface)] p-4">
+                  <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-1">Per Plan Avg</div>
+                  <div className="text-2xl font-extrabold mono text-[var(--pm-text-secondary)]">${count > 0 ? Math.round(revenue / count) : 0}</div>
                 </div>
               </div>
             </div>
@@ -128,25 +128,25 @@ export default function BillingCycles({ demoMode }: { demoMode?: boolean } = {})
       </div>
 
       {/* Pricing impact callout */}
-      <div className="border border-[#2A2A2A] bg-[#181818] px-4 py-3">
-        <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-3">Pricing Impact — Cycle Change</div>
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] px-4 py-3">
+        <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-3">Pricing Impact — Cycle Change</div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-          <div className="border border-[#2A2A2A] p-3">
-            <div className="text-[#F5B300] font-bold mono mb-1">Bi-Weekly</div>
-            <div className="text-[#888]">$168 / cycle · Every 2 weeks</div>
-            <div className="text-[#888]">20 meals per cycle</div>
-            <div className="text-[#555] mt-2 mono">= $8.40 / meal</div>
+          <div className="border border-[var(--pm-border)] p-3">
+            <div className="text-[var(--pm-accent-text)] font-bold mono mb-1">Bi-Weekly</div>
+            <div className="text-[var(--pm-text-muted)]">$168 / cycle · Every 2 weeks</div>
+            <div className="text-[var(--pm-text-muted)]">20 meals per cycle</div>
+            <div className="text-[var(--pm-text-muted)] mt-2 mono">= $8.40 / meal</div>
           </div>
-          <div className="border border-[#2A2A2A] p-3">
-            <div className="text-[#F5B300] font-bold mono mb-1">Monthly</div>
-            <div className="text-[#888]">$336 / cycle · Every 4 weeks</div>
-            <div className="text-[#888]">40 meals per cycle</div>
+          <div className="border border-[var(--pm-border)] p-3">
+            <div className="text-[var(--pm-accent-text)] font-bold mono mb-1">Monthly</div>
+            <div className="text-[var(--pm-text-muted)]">$336 / cycle · Every 4 weeks</div>
+            <div className="text-[var(--pm-text-muted)]">40 meals per cycle</div>
             <div className="text-green-400 mt-2 mono">= $8.40 / meal · no price diff</div>
           </div>
-          <div className="border border-[#2A2A2A] p-3">
-            <div className="text-[#F5B300] font-bold mono mb-1">2 Months</div>
-            <div className="text-[#888]">$672 / cycle · Every 8 weeks</div>
-            <div className="text-[#888]">80 meals per cycle</div>
+          <div className="border border-[var(--pm-border)] p-3">
+            <div className="text-[var(--pm-accent-text)] font-bold mono mb-1">2 Months</div>
+            <div className="text-[var(--pm-text-muted)]">$672 / cycle · Every 8 weeks</div>
+            <div className="text-[var(--pm-text-muted)]">80 meals per cycle</div>
             <div className="text-green-400 mt-2 mono">= $8.40 / meal · no price diff</div>
           </div>
         </div>
@@ -156,7 +156,7 @@ export default function BillingCycles({ demoMode }: { demoMode?: boolean } = {})
       <div className="flex gap-1">
         {(["all", "bi-weekly", "monthly", "2-months"] as (CycleType | "all")[]).map(c => (
           <button key={c} onClick={() => setCycleFilter(c)}
-            className={`text-xs px-3 py-1.5 mono border transition-colors ${cycleFilter === c ? "border-[#F5B300] text-[#F5B300] bg-[#F5B300]/10" : "border-[#2A2A2A] text-[#888] hover:text-[#E8E8E8]"}`}>
+            className={`text-xs px-3 py-1.5 mono border transition-colors ${cycleFilter === c ? "border-[#F5B300] text-[var(--pm-accent-text)] bg-[#F5B300]/10" : "border-[var(--pm-border)] text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)]"}`}>
             {c === "all" ? "All Cycles" : cycleConfig[c as CycleType].label}
           </button>
         ))}
@@ -164,35 +164,35 @@ export default function BillingCycles({ demoMode }: { demoMode?: boolean } = {})
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Table */}
-        <div className="col-span-2 border border-[#2A2A2A] bg-[#181818] overflow-x-auto">
+        <div className="col-span-2 border border-[var(--pm-border)] bg-[var(--pm-surface)] overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#2A2A2A]">
+              <tr className="border-b border-[var(--pm-border)]">
                 {["Subscriber", "Plan", "Goal", "Current Cycle", "Next Billing", "Amount", "Status"].map(h => (
-                  <th key={h} className="px-4 py-2.5 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
+                  <th key={h} className="px-4 py-2.5 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.map((r, i) => (
                 <tr key={r.id} onClick={() => { setSelected(r); setPendingCycle(null); }}
-                  className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] cursor-pointer transition-colors ${i % 2 === 0 ? "" : "bg-[#141414]"} ${selected?.id === r.id ? "bg-[#1F1F1F]" : ""}`}>
+                  className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] cursor-pointer transition-colors ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"} ${selected?.id === r.id ? "bg-[var(--pm-surface-subtle)]" : ""}`}>
                   <td className="px-4 py-2.5">
                     <div className="font-medium">{r.subscriber}</div>
-                    <div className="text-xs mono text-[#555]">{r.id}</div>
+                    <div className="text-xs mono text-[var(--pm-text-muted)]">{r.id}</div>
                   </td>
-                  <td className="px-4 py-2.5 text-xs text-[#888]">{r.plan}</td>
+                  <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{r.plan}</td>
                   <td className="px-4 py-2.5">
-                    <span className="text-xs mono font-bold text-[#F5B300]">{r.plan}</span>
+                    <span className="text-xs mono font-bold text-[var(--pm-accent-text)]">{r.plan}</span>
                   </td>
                   <td className="px-4 py-2.5">
-                    <span className="text-xs mono text-[#F5B300] font-bold">{cycleConfig[r.currentCycle].label}</span>
+                    <span className="text-xs mono text-[var(--pm-accent-text)] font-bold">{cycleConfig[r.currentCycle].label}</span>
                     {r.pendingCycle && (
-                      <div className="text-xs text-[#E85D04] mono">→ {cycleConfig[r.pendingCycle].label}</div>
+                      <div className="text-xs text-[var(--pm-secondary-text)] mono">→ {cycleConfig[r.pendingCycle].label}</div>
                     )}
                   </td>
-                  <td className="px-4 py-2.5 mono text-xs text-[#888]">{r.nextBillingDate}</td>
-                  <td className="px-4 py-2.5 mono font-bold text-[#E8E8E8]">${r.nextBillingAmt}</td>
+                  <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{r.nextBillingDate}</td>
+                  <td className="px-4 py-2.5 mono font-bold text-[var(--pm-text-secondary)]">${r.nextBillingAmt}</td>
                   <td className="px-4 py-2.5">
                     <span className="text-xs mono font-bold" style={{ color: statusColor[r.status] }}>
                       {r.status === "pending-change" ? "Change Pending" : r.status.charAt(0).toUpperCase() + r.status.slice(1)}
@@ -206,39 +206,39 @@ export default function BillingCycles({ demoMode }: { demoMode?: boolean } = {})
 
         {/* Detail panel */}
         {selected ? (
-          <div className="border border-[#2A2A2A] bg-[#181818] p-4 space-y-4">
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4 space-y-4">
             <div>
-              <div className="text-xs mono text-[#555]">{selected.id}</div>
+              <div className="text-xs mono text-[var(--pm-text-muted)]">{selected.id}</div>
               <div className="text-base font-bold">{selected.subscriber}</div>
-              <div className="text-xs text-[#888]">{selected.plan}</div>
+              <div className="text-xs text-[var(--pm-text-muted)]">{selected.plan}</div>
             </div>
             <div>
-              <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-1">Current Cycle</div>
-              <div className="text-sm font-bold text-[#F5B300]">{cycleConfig[selected.currentCycle].label}</div>
-              <div className="text-xs text-[#555] mono">{cycleConfig[selected.currentCycle].desc}</div>
+              <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-1">Current Cycle</div>
+              <div className="text-sm font-bold text-[var(--pm-accent-text)]">{cycleConfig[selected.currentCycle].label}</div>
+              <div className="text-xs text-[var(--pm-text-muted)] mono">{cycleConfig[selected.currentCycle].desc}</div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div>
-                <div className="text-[#AAAAAA] uppercase tracking-wider mb-0.5">Next Billing</div>
+                <div className="text-[var(--pm-text-muted)] uppercase tracking-wider mb-0.5">Next Billing</div>
                 <div className="mono">{selected.nextBillingDate}</div>
               </div>
               <div>
-                <div className="text-[#AAAAAA] uppercase tracking-wider mb-0.5">Amount Due</div>
-                <div className="mono font-bold text-[#F5B300]">${selected.nextBillingAmt}</div>
+                <div className="text-[var(--pm-text-muted)] uppercase tracking-wider mb-0.5">Amount Due</div>
+                <div className="mono font-bold text-[var(--pm-accent-text)]">${selected.nextBillingAmt}</div>
               </div>
             </div>
 
             <div>
-              <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-2">Change Billing Cycle</div>
+              <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-2">Change Billing Cycle</div>
               <div className="space-y-2">
                 {(["bi-weekly", "monthly", "2-months"] as CycleType[]).map(c => (
                   <button key={c}
                     onClick={() => setPendingCycle(c === selected.currentCycle ? null : c)}
                     disabled={c === selected.currentCycle}
-                    className={`w-full border p-3 text-left transition-colors text-xs ${c === selected.currentCycle ? "border-[#2A2A2A] text-[#555] cursor-default" : pendingCycle === c ? "border-[#F5B300] bg-[#F5B300]/10 text-[#F5B300]" : "border-[#2A2A2A] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]"}`}>
+                    className={`w-full border p-3 text-left transition-colors text-xs ${c === selected.currentCycle ? "border-[var(--pm-border)] text-[var(--pm-text-muted)] cursor-default" : pendingCycle === c ? "border-[#F5B300] bg-[#F5B300]/10 text-[var(--pm-accent-text)]" : "border-[var(--pm-border)] text-[var(--pm-text-muted)] hover:border-[var(--pm-border-strong)] hover:text-[var(--pm-text-secondary)]"}`}>
                     <div className="font-bold mono">{cycleConfig[c].label}</div>
-                    <div className="text-[#555]">{cycleConfig[c].desc}</div>
-                    {c === selected.currentCycle && <div className="text-[#555] mt-0.5">Current</div>}
+                    <div className="text-[var(--pm-text-muted)]">{cycleConfig[c].desc}</div>
+                    {c === selected.currentCycle && <div className="text-[var(--pm-text-muted)] mt-0.5">Current</div>}
                   </button>
                 ))}
               </div>
@@ -247,8 +247,8 @@ export default function BillingCycles({ demoMode }: { demoMode?: boolean } = {})
             {pendingCycle && pendingCycle !== selected.currentCycle && (
               <div className="space-y-2">
                 <div className="border border-[#F5B300]/20 bg-[#F5B300]/5 px-3 py-2 text-xs mono">
-                  <div className="text-[#888]">Impact: billing changes to <span className="text-[#F5B300] font-bold">{cycleConfig[pendingCycle].label}</span> at next renewal.</div>
-                  <div className="text-[#555] mt-1">New amount: <span className="text-[#F5B300] font-bold">${weeklyRate * cycleConfig[pendingCycle].multiplier}</span></div>
+                  <div className="text-[var(--pm-text-muted)]">Impact: billing changes to <span className="text-[var(--pm-accent-text)] font-bold">{cycleConfig[pendingCycle].label}</span> at next renewal.</div>
+                  <div className="text-[var(--pm-text-muted)] mt-1">New amount: <span className="text-[var(--pm-accent-text)] font-bold">${weeklyRate * cycleConfig[pendingCycle].multiplier}</span></div>
                 </div>
                 <button onClick={handleChangeCycle}
                   className="w-full bg-[#F5B300] text-black text-xs font-bold py-2 mono hover:bg-yellow-400 transition-colors">
@@ -258,7 +258,7 @@ export default function BillingCycles({ demoMode }: { demoMode?: boolean } = {})
             )}
           </div>
         ) : (
-          <div className="border border-[#2A2A2A] bg-[#181818] flex items-center justify-center text-[#555] text-sm p-8 text-center">
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] flex items-center justify-center text-[var(--pm-text-muted)] text-sm p-8 text-center">
             Select a subscriber to manage their billing cycle
           </div>
         )}

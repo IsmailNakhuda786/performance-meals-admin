@@ -6,14 +6,14 @@ function SlipModal({ order, onClose }: { order: Order; onClose: () => void }) {
   const handlePrint = () => window.print();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-      <div className="bg-[#181818] border border-[#2A2A2A] w-full max-w-[520px] max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#2A2A2A]">
-          <span className="font-bold mono text-[#F5B300]">{order.id} — Print Slip Preview</span>
+      <div className="bg-[var(--pm-surface)] border border-[var(--pm-border)] w-full max-w-[520px] max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--pm-border)]">
+          <span className="font-bold mono text-[var(--pm-accent-text)]">{order.id} — Print Slip Preview</span>
           <div className="flex gap-2">
             <button onClick={handlePrint} className="bg-[#F5B300] text-black text-xs font-bold px-3 py-1.5 hover:bg-[#C99200] transition-colors mono">
               Print
             </button>
-            <button onClick={onClose} className="border border-[#2A2A2A] text-[#888] text-xs px-3 py-1.5 hover:border-[#F5B300] hover:text-[#E8E8E8] transition-colors">
+            <button onClick={onClose} className="border border-[var(--pm-border)] text-[var(--pm-text-muted)] text-xs px-3 py-1.5 hover:border-[#F5B300] hover:text-[var(--pm-text-secondary)] transition-colors">
               Close
             </button>
           </div>
@@ -117,7 +117,7 @@ function SlipModal({ order, onClose }: { order: Order; onClose: () => void }) {
 
 const runLabels = ["Run A (9am–12pm)", "Run B (12pm–3pm)", "Run C (3pm–6pm)"];
 
-export default function PrintSlips({ stream, demoMode }: { stream: BusinessStream; demoMode?: boolean }) {
+export default function PrintSlips({ stream }: { stream: BusinessStream }) {
   const [activeRun, setActiveRun] = useState(0);
   const [modalOrder, setModalOrder] = useState<Order | null>(null);
 
@@ -145,15 +145,15 @@ export default function PrintSlips({ stream, demoMode }: { stream: BusinessStrea
       </div>
 
       {/* Run tabs */}
-      <div className="flex border-b border-[#2A2A2A]">
+      <div className="flex border-b border-[var(--pm-border)]">
         {runs.map((r, i) => (
           <button
             key={r}
             onClick={() => setActiveRun(i)}
             className={`px-5 py-3 text-sm font-medium mono transition-colors ${
               activeRun === i
-                ? "border-b-2 border-[#F5B300] text-[#F5B300]"
-                : "text-[#888] hover:text-[#E8E8E8]"
+                ? "border-b-2 border-[#F5B300] text-[var(--pm-accent-text)]"
+                : "text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)]"
             }`}
           >
             {r}
@@ -163,26 +163,26 @@ export default function PrintSlips({ stream, demoMode }: { stream: BusinessStrea
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {runOrders[activeRun].map(order => (
-          <div key={order.id} className="border border-[#2A2A2A] bg-[#181818] hover:border-[#F5B300]/40 transition-colors">
-            <div className="px-4 py-3 border-b border-[#2A2A2A] flex items-center justify-between">
+          <div key={order.id} className="border border-[var(--pm-border)] bg-[var(--pm-surface)] hover:border-[#F5B300]/40 transition-colors">
+            <div className="px-4 py-3 border-b border-[var(--pm-border)] flex items-center justify-between">
               <div>
-                <span className="mono text-[#F5B300] font-bold">{order.id}</span>
+                <span className="mono text-[var(--pm-accent-text)] font-bold">{order.id}</span>
                 <span className="text-sm ml-2 font-medium">{order.customer}</span>
               </div>
               <button
                 onClick={() => setModalOrder(order)}
-                className="text-xs border border-[#2A2A2A] px-3 py-1 text-[#888] hover:border-[#F5B300] hover:text-[#F5B300] transition-colors mono"
+                className="text-xs border border-[var(--pm-border)] px-3 py-1 text-[var(--pm-text-muted)] hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors mono"
               >
                 View & Print
               </button>
             </div>
-            <div className="px-4 py-3 text-xs text-[#888] space-y-1">
+            <div className="px-4 py-3 text-xs text-[var(--pm-text-muted)] space-y-1">
               <div className="flex justify-between">
                 <span>{order.planType}{order.goal ? ` — ${order.goal}` : ""}</span>
                 <span className="mono">{order.meals} meals</span>
               </div>
-              {order.planWeek && <div className="mono text-[#E85D04]">Plan {order.planWeek}</div>}
-              <div className="text-[#888]">{order.address}</div>
+              {order.planWeek && <div className="mono text-[var(--pm-secondary-text)]">Plan {order.planWeek}</div>}
+              <div className="text-[var(--pm-text-muted)]">{order.address}</div>
             </div>
           </div>
         ))}

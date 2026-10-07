@@ -72,7 +72,7 @@ export default function FailedDeliveries({ demoMode }: { demoMode?: boolean } = 
             <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 mono">{counts.open} open</span>
           )}
         </div>
-        <button onClick={() => downloadCSV(`failed-deliveries-${nowStr()}.csv`, failures.map(f => ({ id: f.id, customer: f.customer, orderId: f.orderId, stream: f.stream, reason: reasonLabels[f.reason], status: f.status, rider: f.rider, attempts: f.attempts, failedAt: f.failedAt, notes: f.notes })))} className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+        <button onClick={() => downloadCSV(`failed-deliveries-${nowStr()}.csv`, failures.map(f => ({ id: f.id, customer: f.customer, orderId: f.orderId, stream: f.stream, reason: reasonLabels[f.reason], status: f.status, rider: f.rider, attempts: f.attempts, failedAt: f.failedAt, notes: f.notes })))} className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
           Export ↓
         </button>
       </div>
@@ -85,8 +85,8 @@ export default function FailedDeliveries({ demoMode }: { demoMode?: boolean } = 
           { label: "Refund Requested", value: counts.refund, color: "#E85D04" },
           { label: "Resolved", value: counts.resolved, color: "#22C55E" },
         ].map(k => (
-          <div key={k.label} className="border border-[#2A2A2A] bg-[#181818] p-4">
-            <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-1">{k.label}</div>
+          <div key={k.label} className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4">
+            <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-1">{k.label}</div>
             <div className="text-3xl font-extrabold mono" style={{ color: k.color }}>{k.value}</div>
           </div>
         ))}
@@ -96,7 +96,7 @@ export default function FailedDeliveries({ demoMode }: { demoMode?: boolean } = 
       <div className="flex gap-1 flex-wrap">
         {(["all", "open", "reattempt-scheduled", "refund-requested", "escalated", "resolved"] as (FailStatus | "all")[]).map(s => (
           <button key={s} onClick={() => setStatusFilter(s)}
-            className={`text-xs px-3 py-1.5 mono border capitalize transition-colors ${statusFilter === s ? "border-[#F5B300] text-[#F5B300] bg-[#F5B300]/10" : "border-[#2A2A2A] text-[#888] hover:text-[#E8E8E8]"}`}>
+            className={`text-xs px-3 py-1.5 mono border capitalize transition-colors ${statusFilter === s ? "border-[#F5B300] text-[var(--pm-accent-text)] bg-[#F5B300]/10" : "border-[var(--pm-border)] text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)]"}`}>
             {s === "all" ? "All" : statusStyle[s as FailStatus].label}
           </button>
         ))}
@@ -104,12 +104,12 @@ export default function FailedDeliveries({ demoMode }: { demoMode?: boolean } = 
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Table */}
-        <div className="col-span-2 border border-[#2A2A2A] bg-[#181818] overflow-x-auto">
+        <div className="col-span-2 border border-[var(--pm-border)] bg-[var(--pm-surface)] overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#2A2A2A]">
+              <tr className="border-b border-[var(--pm-border)]">
                 {["ID", "Customer", "Rider", "Stream", "Reason", "Attempts", "Status"].map(h => (
-                  <th key={h} className="px-4 py-2.5 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
+                  <th key={h} className="px-4 py-2.5 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -119,15 +119,15 @@ export default function FailedDeliveries({ demoMode }: { demoMode?: boolean } = 
                 return (
                   <tr key={f.id}
                     onClick={() => setSelected(f)}
-                    className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] cursor-pointer transition-colors ${i % 2 === 0 ? "" : "bg-[#141414]"} ${selected?.id === f.id ? "bg-[#1F1F1F]" : ""}`}>
+                    className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] cursor-pointer transition-colors ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"} ${selected?.id === f.id ? "bg-[var(--pm-surface-subtle)]" : ""}`}>
                     <td className="px-4 py-2.5 mono text-xs text-red-400">{f.id}</td>
                     <td className="px-4 py-2.5 font-medium">{f.customer}</td>
-                    <td className="px-4 py-2.5 text-xs text-[#888]">{f.rider}</td>
+                    <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{f.rider}</td>
                     <td className="px-4 py-2.5">
                       <span className="text-xs mono font-bold" style={{ color: f.stream === "RS" ? "#E85D04" : "#F5B300" }}>{f.stream}</span>
                     </td>
-                    <td className="px-4 py-2.5 text-xs text-[#888]">{reasonLabels[f.reason]}</td>
-                    <td className="px-4 py-2.5 mono text-center text-[#E8E8E8]">{f.attempts}</td>
+                    <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{reasonLabels[f.reason]}</td>
+                    <td className="px-4 py-2.5 mono text-center text-[var(--pm-text-secondary)]">{f.attempts}</td>
                     <td className="px-4 py-2.5">
                       <span className={`text-xs mono px-2 py-0.5 font-bold ${cfg.bg}`} style={{ color: cfg.color }}>
                         {cfg.label}
@@ -142,50 +142,50 @@ export default function FailedDeliveries({ demoMode }: { demoMode?: boolean } = 
 
         {/* Detail panel */}
         {selected ? (
-          <div className="border border-[#2A2A2A] bg-[#181818] p-4 space-y-4">
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4 space-y-4">
             <div className="flex items-center justify-between">
               <span className="mono text-xs text-red-400 font-bold">{selected.id}</span>
               <span className="text-xs mono font-bold" style={{ color: selected.stream === "RS" ? "#E85D04" : "#F5B300" }}>{selected.stream}</span>
             </div>
             <div>
-              <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-0.5">Customer</div>
+              <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-0.5">Customer</div>
               <div className="font-semibold">{selected.customer}</div>
             </div>
             <div>
-              <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-0.5">Address</div>
-              <div className="text-xs text-[#888]">{selected.address}</div>
+              <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-0.5">Address</div>
+              <div className="text-xs text-[var(--pm-text-muted)]">{selected.address}</div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-0.5">Order</div>
+                <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-0.5">Order</div>
                 <div className="mono text-xs">{selected.orderId}</div>
               </div>
               <div>
-                <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-0.5">Rider</div>
+                <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-0.5">Rider</div>
                 <div className="text-xs">{selected.rider}</div>
               </div>
             </div>
             <div>
-              <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-0.5">Reason</div>
+              <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-0.5">Reason</div>
               <div className="text-xs">{reasonLabels[selected.reason]}</div>
             </div>
             <div>
-              <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-0.5">Notes</div>
-              <div className="text-xs text-[#888] bg-[#0F0F0F] border border-[#2A2A2A] p-2">{selected.notes}</div>
+              <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-0.5">Notes</div>
+              <div className="text-xs text-[var(--pm-text-muted)] bg-[var(--pm-bg)] border border-[var(--pm-border)] p-2">{selected.notes}</div>
             </div>
-            <div className="text-xs mono text-[#555]">Failed: {selected.failedAt} · Attempt {selected.attempts}</div>
+            <div className="text-xs mono text-[var(--pm-text-muted)]">Failed: {selected.failedAt} · Attempt {selected.attempts}</div>
 
             {(selected.status === "open" || selected.status === "reattempt-scheduled") && (
               <div className="space-y-2">
                 <button onClick={() => updateStatus(selected.id, "reattempt-scheduled")}
-                  className="w-full border border-[#F5B300]/40 text-[#F5B300] text-xs py-2 mono hover:bg-[#F5B300]/10 transition-colors font-bold">
+                  className="w-full border border-[#F5B300]/40 text-[var(--pm-accent-text)] text-xs py-2 mono hover:bg-[#F5B300]/10 transition-colors font-bold">
                   Schedule Redeliver
                 </button>
                 <div className="border border-yellow-800/30 bg-yellow-950/10 px-2 py-1 text-[10px] text-yellow-300 mono">
                   ℹ Refund decision recorded here. Shopify Admin executes the payment.
                 </div>
                 <button onClick={() => updateStatus(selected.id, "refund-requested")}
-                  className="w-full border border-[#E85D04]/40 text-[#E85D04] text-xs py-2 mono hover:bg-orange-950/30 transition-colors font-bold">
+                  className="w-full border border-[#E85D04]/40 text-[var(--pm-secondary-text)] text-xs py-2 mono hover:bg-orange-950/30 transition-colors font-bold">
                   Request Refund → Shopify ↗
                 </button>
                 <button onClick={() => updateStatus(selected.id, "escalated")}
@@ -205,7 +205,7 @@ export default function FailedDeliveries({ demoMode }: { demoMode?: boolean } = 
             )}
           </div>
         ) : (
-          <div className="border border-[#2A2A2A] bg-[#181818] flex items-center justify-center text-[#555] text-sm p-8 text-center">
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] flex items-center justify-center text-[var(--pm-text-muted)] text-sm p-8 text-center">
             Select a failed delivery to view details and actions
           </div>
         )}

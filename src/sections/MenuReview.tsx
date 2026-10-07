@@ -94,7 +94,7 @@ const weekLabels: Record<WeekTab, { label: string; dates: string; cutoff: string
 const statusStyle: Record<ReviewStatus, { color: string; label: string }> = {
   reviewed: { color: "#22C55E", label: "Reviewed" },
   pending: { color: "#F5B300", label: "Pending" },
-  locked: { color: "#888", label: "Locked" },
+  locked: { color: "var(--pm-text-muted)", label: "Locked" },
 };
 
 
@@ -163,7 +163,7 @@ export default function MenuReview({ demoMode }: { demoMode?: boolean } = {}) {
           <button onClick={() => {
             const rows = weekRows.map(r => ({ ID: r.id, Customer: r.customer, Plan: r.plan, Goal: r.goal, Selections: `${r.mealsSelected}/${r.totalSlots}`, Status: r.status, "Locked At": r.lockedAt ?? "" }));
             downloadCSV("menu-review.csv", rows);
-          }} className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+          }} className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
             Export Menu List ↓
           </button>
         </div>
@@ -182,10 +182,10 @@ export default function MenuReview({ demoMode }: { demoMode?: boolean } = {}) {
       )}
 
       {/* Week tabs */}
-      <div className="flex border-b border-[#2A2A2A]">
+      <div className="flex border-b border-[var(--pm-border)]">
         {(["current", "upcoming", "locked"] as WeekTab[]).map(tab => (
           <button key={tab} onClick={() => { setWeekTab(tab); setSelected(null); setShowMealChange(false); }}
-            className={`px-5 py-3 text-sm font-medium mono transition-colors ${weekTab === tab ? "border-b-2 border-[#F5B300] text-[#F5B300]" : "text-[#888] hover:text-[#E8E8E8]"}`}>
+            className={`px-5 py-3 text-sm font-medium mono transition-colors ${weekTab === tab ? "border-b-2 border-[#F5B300] text-[var(--pm-accent-text)]" : "text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)]"}`}>
             {weekLabels[tab].label}
             {tab === "current" && pendingCount > 0 && (
               <span className="ml-2 bg-yellow-900 text-yellow-400 text-xs px-1.5 py-0.5 mono">{pendingCount}</span>
@@ -196,41 +196,41 @@ export default function MenuReview({ demoMode }: { demoMode?: boolean } = {}) {
 
       {/* Week info bar */}
       <div className="flex items-center gap-4 text-xs">
-        <span className="text-[#F5B300] font-bold mono">{info.dates}</span>
-        <span className="text-[#555]">·</span>
-        <span className={`mono ${weekTab === "locked" ? "text-[#555]" : "text-[#888]"}`}>{info.cutoff}</span>
+        <span className="text-[var(--pm-accent-text)] font-bold mono">{info.dates}</span>
+        <span className="text-[var(--pm-text-muted)]">·</span>
+        <span className={`mono ${weekTab === "locked" ? "text-[var(--pm-text-muted)]" : "text-[var(--pm-text-muted)]"}`}>{info.cutoff}</span>
         <div className="ml-auto flex gap-4 mono text-xs">
           <span className="text-green-400">{reviewedCount} reviewed</span>
-          <span className="text-[#F5B300]">{pendingCount} pending</span>
-          {lockedCount > 0 && <span className="text-[#555]">{lockedCount} auto-locked</span>}
+          <span className="text-[var(--pm-accent-text)]">{pendingCount} pending</span>
+          {lockedCount > 0 && <span className="text-[var(--pm-text-muted)]">{lockedCount} auto-locked</span>}
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Review table */}
-        <div className="col-span-2 border border-[#2A2A2A] bg-[#181818] overflow-x-auto">
+        <div className="col-span-2 border border-[var(--pm-border)] bg-[var(--pm-surface)] overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#2A2A2A]">
+              <tr className="border-b border-[var(--pm-border)]">
                 {["ID", "Customer", "Plan", "Goal", "Selections", "Status", "Locked At"].map(h => (
-                  <th key={h} className="px-4 py-2.5 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
+                  <th key={h} className="px-4 py-2.5 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {weekRows.map((r, i) => (
                 <tr key={r.id} onClick={() => { setSelected(r); setShowMealChange(false); }}
-                  className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] cursor-pointer transition-colors ${i % 2 === 0 ? "" : "bg-[#141414]"} ${selected?.id === r.id ? "bg-[#1F1F1F]" : ""}`}>
-                  <td className="px-4 py-2.5 mono text-xs text-[#F5B300]">{r.id}</td>
+                  className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] cursor-pointer transition-colors ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"} ${selected?.id === r.id ? "bg-[var(--pm-surface-subtle)]" : ""}`}>
+                  <td className="px-4 py-2.5 mono text-xs text-[var(--pm-accent-text)]">{r.id}</td>
                   <td className="px-4 py-2.5 font-medium">{r.customer}</td>
-                  <td className="px-4 py-2.5 text-xs text-[#888]">{r.plan}</td>
+                  <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{r.plan}</td>
                   <td className="px-4 py-2.5">
-                    <span className="text-xs mono px-1.5 py-0.5 font-bold text-[#F5B300] bg-yellow-950/30 border border-yellow-800/30">{r.plan}</span>
+                    <span className="text-xs mono px-1.5 py-0.5 font-bold text-[var(--pm-accent-text)] bg-yellow-950/30 border border-yellow-800/30">{r.plan}</span>
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2">
-                      <span className="mono text-xs text-[#E8E8E8] font-bold">{r.mealsSelected}/{r.totalSlots}</span>
-                      <div className="w-16 h-1.5 bg-[#2A2A2A]">
+                      <span className="mono text-xs text-[var(--pm-text-secondary)] font-bold">{r.mealsSelected}/{r.totalSlots}</span>
+                      <div className="w-16 h-1.5 bg-[var(--pm-surface-muted)]">
                         <div className="h-1.5 bg-[#F5B300]" style={{ width: `${(r.mealsSelected / r.totalSlots) * 100}%` }} />
                       </div>
                     </div>
@@ -240,7 +240,7 @@ export default function MenuReview({ demoMode }: { demoMode?: boolean } = {}) {
                       {statusStyle[r.status].label}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 mono text-xs text-[#555]">{r.lockedAt ?? "—"}</td>
+                  <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{r.lockedAt ?? "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -249,49 +249,49 @@ export default function MenuReview({ demoMode }: { demoMode?: boolean } = {}) {
 
         {/* Detail panel */}
         {selected ? (
-          <div className="border border-[#2A2A2A] bg-[#181818] p-4 space-y-4 overflow-y-auto" style={{ maxHeight: "720px" }}>
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4 space-y-4 overflow-y-auto" style={{ maxHeight: "720px" }}>
             <div className="flex items-center justify-between">
-              <span className="mono text-xs text-[#F5B300]">{selected.id}</span>
-              <span className="text-xs mono px-1.5 py-0.5 font-bold text-[#F5B300] bg-yellow-950/30 border border-yellow-800/30">{selected.plan}</span>
+              <span className="mono text-xs text-[var(--pm-accent-text)]">{selected.id}</span>
+              <span className="text-xs mono px-1.5 py-0.5 font-bold text-[var(--pm-accent-text)] bg-yellow-950/30 border border-yellow-800/30">{selected.plan}</span>
             </div>
             <div>
               <div className="font-bold">{selected.customer}</div>
-              <div className="text-xs text-[#888]">{selected.plan}</div>
+              <div className="text-xs text-[var(--pm-text-muted)]">{selected.plan}</div>
             </div>
 
             {/* Meal Selections */}
             <div>
-              <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider mb-1">Meal Selections ({selected.mealsSelected}/{selected.totalSlots})</div>
+              <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider mb-1">Meal Selections ({selected.mealsSelected}/{selected.totalSlots})</div>
               {selected.meals.length > 0 ? (
                 <div className="space-y-1">
                   {selected.meals.map((m, i) => (
-                    <div key={`${selected.id}-meal-${i}`} className="text-xs text-[#E8E8E8] bg-[#0F0F0F] border border-[#1A1A1A] px-2 py-1.5">{m}</div>
+                    <div key={`${selected.id}-meal-${i}`} className="text-xs text-[var(--pm-text-secondary)] bg-[var(--pm-bg)] border border-[var(--pm-border-soft)] px-2 py-1.5">{m}</div>
                   ))}
                 </div>
               ) : (
-                <div className="text-xs text-[#555] italic">No selections yet</div>
+                <div className="text-xs text-[var(--pm-text-muted)] italic">No selections yet</div>
               )}
             </div>
 
             {/* Menu Validity — validated per actual delivery date */}
             {selected.meals.length > 0 && (
-              <div className="border border-[#2A2A2A] bg-[#0F0F0F] p-3 space-y-2">
-                <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider mb-2">Menu / Date Validity Matrix</div>
-                <div className="text-xs text-[#888] mono mb-2">Each meal validated against every delivery date — not a single hardcoded day.</div>
+              <div className="border border-[var(--pm-border)] bg-[var(--pm-bg)] p-3 space-y-2">
+                <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider mb-2">Menu / Date Validity Matrix</div>
+                <div className="text-xs text-[var(--pm-text-muted)] mono mb-2">Each meal validated against every delivery date — not a single hardcoded day.</div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
                       <tr>
-                        <th className="text-left text-[#AAAAAA] font-bold pb-1.5 pr-2 whitespace-nowrap">Meal</th>
+                        <th className="text-left text-[var(--pm-text-muted)] font-bold pb-1.5 pr-2 whitespace-nowrap">Meal</th>
                         {DELIVERY_DATES.map(d => (
-                          <th key={d.label} className="text-center text-[#AAAAAA] font-bold pb-1.5 px-1 whitespace-nowrap">{d.label}</th>
+                          <th key={d.label} className="text-center text-[var(--pm-text-muted)] font-bold pb-1.5 px-1 whitespace-nowrap">{d.label}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {[...new Set(selected.meals.map(m => m.replace(/\s*\(x\d+\)$/, "").trim()))].map(baseName => (
-                        <tr key={baseName} className="border-t border-[#1A1A1A]">
-                          <td className="py-1.5 pr-2 text-[#CCCCCC] mono leading-tight">{baseName}</td>
+                        <tr key={baseName} className="border-t border-[var(--pm-border-soft)]">
+                          <td className="py-1.5 pr-2 text-[var(--pm-text-secondary)] mono leading-tight">{baseName}</td>
                           {DELIVERY_DATES.map(d => {
                             const { valid, warning } = getMealValidity(baseName, d.day);
                             return (
@@ -332,72 +332,72 @@ export default function MenuReview({ demoMode }: { demoMode?: boolean } = {}) {
             )}
 
             {selected.lockedAt && (
-              <div className="text-xs mono text-[#555]">Locked: {selected.lockedAt}</div>
+              <div className="text-xs mono text-[var(--pm-text-muted)]">Locked: {selected.lockedAt}</div>
             )}
 
             {selected.status === "pending" && (
               <>
                 <button onClick={() => setShowOverride(true)}
-                  className="w-full border border-[#F5B300]/40 text-[#F5B300] text-xs py-2 mono hover:bg-[#F5B300]/10 transition-colors font-bold">
+                  className="w-full border border-[#F5B300]/40 text-[var(--pm-accent-text)] text-xs py-2 mono hover:bg-[#F5B300]/10 transition-colors font-bold">
                   Override Review
                 </button>
                 <button
-                  className="w-full border border-[#2A2A2A] text-[#888] text-xs py-2 mono hover:border-[#555] hover:text-[#E8E8E8] transition-colors">
+                  className="w-full border border-[var(--pm-border)] text-[var(--pm-text-muted)] text-xs py-2 mono hover:border-[var(--pm-border-strong)] hover:text-[var(--pm-text-secondary)] transition-colors">
                   Send Reminder
                 </button>
               </>
             )}
             {selected.status === "reviewed" && (
               <button onClick={() => setShowOverride(true)}
-                className="w-full border border-[#2A2A2A] text-[#888] text-xs py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+                className="w-full border border-[var(--pm-border)] text-[var(--pm-text-muted)] text-xs py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
                 Override Selections
               </button>
             )}
             {selected.status === "locked" && (
-              <div className="text-xs text-[#555] mono text-center py-2">Menu is locked — view only</div>
+              <div className="text-xs text-[var(--pm-text-muted)] mono text-center py-2">Menu is locked — view only</div>
             )}
 
             {/* Admin Override Section */}
-            <div className="border-t border-[#2A2A2A] pt-4 space-y-3">
-              <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider">Admin Override</div>
+            <div className="border-t border-[var(--pm-border)] pt-4 space-y-3">
+              <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">Admin Override</div>
               {!showMealChange ? (
                 <button onClick={() => setShowMealChange(true)}
-                  className="w-full border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-1.5 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+                  className="w-full border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-1.5 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
                   Change Meal Selection
                 </button>
               ) : (
-                <div className="bg-[#0F0F0F] border border-[#2A2A2A] p-3 space-y-3">
+                <div className="bg-[var(--pm-bg)] border border-[var(--pm-border)] p-3 space-y-3">
                   {/* Original selections — read-only */}
                   <div>
-                    <div className="text-xs text-[#DDDDDD] mb-1">Original Selections</div>
+                    <div className="text-xs text-[var(--pm-text-secondary)] mb-1">Original Selections</div>
                     <div className="space-y-0.5">
                       {selected.meals.length > 0
                         ? selected.meals.map((m, i) => (
-                          <div key={i} className="text-xs mono text-[#555] px-2 py-1 bg-[#181818] border border-[#1A1A1A]">{m}</div>
+                          <div key={i} className="text-xs mono text-[var(--pm-text-muted)] px-2 py-1 bg-[var(--pm-surface)] border border-[var(--pm-border-soft)]">{m}</div>
                         ))
-                        : <div className="text-xs mono text-[#555] italic">No selections</div>
+                        : <div className="text-xs mono text-[var(--pm-text-muted)] italic">No selections</div>
                       }
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-xs text-[#DDDDDD] block mb-1">New Meal</label>
+                    <label className="text-xs text-[var(--pm-text-secondary)] block mb-1">New Meal</label>
                     <select value={newMeal} onChange={e => setNewMeal(e.target.value)}
-                      className="w-full bg-[#181818] border border-[#2A2A2A] text-[#E8E8E8] text-xs px-2 py-1.5 mono focus:outline-none focus:border-[#F5B300]">
+                      className="w-full bg-[var(--pm-surface)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-xs px-2 py-1.5 mono focus:outline-none focus:border-[#F5B300]">
                       {MEAL_OPTIONS.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-xs text-[#DDDDDD] block mb-1">Delivery Date</label>
+                    <label className="text-xs text-[var(--pm-text-secondary)] block mb-1">Delivery Date</label>
                     <select value={changeDelivery} onChange={e => setChangeDelivery(e.target.value)}
-                      className="w-full bg-[#181818] border border-[#2A2A2A] text-[#E8E8E8] text-xs px-2 py-1.5 mono focus:outline-none focus:border-[#F5B300]">
+                      className="w-full bg-[var(--pm-surface)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-xs px-2 py-1.5 mono focus:outline-none focus:border-[#F5B300]">
                       {DELIVERY_DATES.map(d => <option key={d.label} value={d.label}>{d.label}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-xs text-[#DDDDDD] block mb-1">
+                    <label className="text-xs text-[var(--pm-text-secondary)] block mb-1">
                       Reason <span className="text-red-400">*</span>
                     </label>
                     <textarea
@@ -405,19 +405,19 @@ export default function MenuReview({ demoMode }: { demoMode?: boolean } = {}) {
                       value={changeReason}
                       onChange={e => { setChangeReason(e.target.value); setReasonError(false); }}
                       placeholder="Required — state reason for admin change…"
-                      className={`w-full bg-[#181818] border text-[#E8E8E8] text-xs px-2 py-1.5 mono focus:outline-none resize-none ${reasonError ? "border-red-600" : "border-[#2A2A2A] focus:border-[#F5B300]"}`}
+                      className={`w-full bg-[var(--pm-surface)] border text-[var(--pm-text-secondary)] text-xs px-2 py-1.5 mono focus:outline-none resize-none ${reasonError ? "border-red-600" : "border-[var(--pm-border)] focus:border-[#F5B300]"}`}
                     />
                     {reasonError && <div className="text-xs text-red-400 mono mt-1">Reason is required.</div>}
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mono">
                     <div>
-                      <div className="text-[#DDDDDD] mb-0.5">Admin</div>
-                      <div className="text-[#555]">Jerome Lim (Super Admin)</div>
+                      <div className="text-[var(--pm-text-secondary)] mb-0.5">Admin</div>
+                      <div className="text-[var(--pm-text-muted)]">Jerome Lim (Super Admin)</div>
                     </div>
                     <div>
-                      <div className="text-[#DDDDDD] mb-0.5">Timestamp</div>
-                      <div className="text-[#555]">{nowStr()}</div>
+                      <div className="text-[var(--pm-text-secondary)] mb-0.5">Timestamp</div>
+                      <div className="text-[var(--pm-text-muted)]">{nowStr()}</div>
                     </div>
                   </div>
 
@@ -427,7 +427,7 @@ export default function MenuReview({ demoMode }: { demoMode?: boolean } = {}) {
                       Save Change
                     </button>
                     <button onClick={() => { setShowMealChange(false); setReasonError(false); setChangeReason(""); }}
-                      className="flex-1 border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-1.5 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+                      className="flex-1 border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-1.5 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
                       Cancel
                     </button>
                   </div>
@@ -439,56 +439,56 @@ export default function MenuReview({ demoMode }: { demoMode?: boolean } = {}) {
             {showPropagation && selectedLogs.length > 0 && (
               <div className="border border-[#F5B300]/30 bg-[#1A1500] p-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="text-xs font-bold text-[#F5B300] uppercase tracking-wider">Change Propagation</div>
-                  <button onClick={() => setShowPropagation(false)} className="text-[#555] hover:text-[#888] mono text-sm">×</button>
+                  <div className="text-xs font-bold text-[var(--pm-accent-text)] uppercase tracking-wider">Change Propagation</div>
+                  <button onClick={() => setShowPropagation(false)} className="text-[var(--pm-text-muted)] hover:text-[var(--pm-text-muted)] mono text-sm">×</button>
                 </div>
-                <div className="text-xs text-[#888] mono mb-1">Admin meal change will propagate through the following systems:</div>
+                <div className="text-xs text-[var(--pm-text-muted)] mono mb-1">Admin meal change will propagate through the following systems:</div>
                 <div className="flex flex-col gap-1">
                   {[
                     { step: "Admin Change", note: "Saved to admin portal", color: "#F5B300", done: true },
-                    { step: "Subscriber Record", note: "Meal selection updated", color: "#CCCCCC", done: true },
-                    { step: "Order", note: "Order line item updated", color: "#CCCCCC", done: false },
-                    { step: "Kitchen / Packing", note: "Production list updated", color: "#CCCCCC", done: false },
-                    { step: "Delivery Order", note: "Manifest updated", color: "#CCCCCC", done: false },
-                    { step: "Customer Notification", note: "WhatsApp / Email sent", color: "#CCCCCC", done: false },
+                    { step: "Subscriber Record", note: "Meal selection updated", color: "var(--pm-text-secondary)", done: true },
+                    { step: "Order", note: "Order line item updated", color: "var(--pm-text-secondary)", done: false },
+                    { step: "Kitchen / Packing", note: "Production list updated", color: "var(--pm-text-secondary)", done: false },
+                    { step: "Delivery Order", note: "Manifest updated", color: "var(--pm-text-secondary)", done: false },
+                    { step: "Customer Notification", note: "WhatsApp / Email sent", color: "var(--pm-text-secondary)", done: false },
                     { step: "Audit Log", note: "Immutable record created", color: "#22C55E", done: true },
                   ].map((s, i, arr) => (
                     <div key={s.step} className="flex items-start gap-2">
                       <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
-                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center text-xs font-bold ${s.done ? "bg-[#F5B300]/20 border-[#F5B300]/50 text-[#F5B300]" : "bg-[#1A1A1A] border-[#2A2A2A] text-[#555]"}`}>
+                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center text-xs font-bold ${s.done ? "bg-[#F5B300]/20 border-[#F5B300]/50 text-[var(--pm-accent-text)]" : "bg-[var(--pm-surface-muted)] border-[var(--pm-border)] text-[var(--pm-text-muted)]"}`}>
                           {s.done ? "✓" : i + 1}
                         </div>
-                        {i < arr.length - 1 && <div className="w-px h-3 bg-[#2A2A2A]" />}
+                        {i < arr.length - 1 && <div className="w-px h-3 bg-[var(--pm-surface-muted)]" />}
                       </div>
                       <div className="pb-1">
                         <div className="text-xs font-bold" style={{ color: s.color }}>{s.step}</div>
-                        <div className="text-xs text-[#555] mono">{s.note}</div>
+                        <div className="text-xs text-[var(--pm-text-muted)] mono">{s.note}</div>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="text-xs text-[#888] mono border-t border-[#2A2A2A] pt-2">Replacement meal passed menu/date validation before propagation.</div>
+                <div className="text-xs text-[var(--pm-text-muted)] mono border-t border-[var(--pm-border)] pt-2">Replacement meal passed menu/date validation before propagation.</div>
               </div>
             )}
 
             {/* Change Log */}
             {selectedLogs.length > 0 && (
-              <div className="border-t border-[#2A2A2A] pt-4 space-y-2">
-                <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider">Change Log</div>
+              <div className="border-t border-[var(--pm-border)] pt-4 space-y-2">
+                <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">Change Log</div>
                 <div className="space-y-2">
                   {selectedLogs.map(log => (
-                    <div key={log.id} className="bg-[#0F0F0F] border border-[#1A1A1A] p-2.5 space-y-1 text-xs">
+                    <div key={log.id} className="bg-[var(--pm-bg)] border border-[var(--pm-border-soft)] p-2.5 space-y-1 text-xs">
                       <div className="flex items-center justify-between">
-                        <span className="mono text-[#F5B300] font-bold">{log.changedBy}</span>
-                        <span className="mono text-[#555]">{log.date}</span>
+                        <span className="mono text-[var(--pm-accent-text)] font-bold">{log.changedBy}</span>
+                        <span className="mono text-[var(--pm-text-muted)]">{log.date}</span>
                       </div>
                       <div className="mono">
                         <span className="text-red-400">{log.fromMeal}</span>
-                        <span className="text-[#555]"> → </span>
+                        <span className="text-[var(--pm-text-muted)]"> → </span>
                         <span className="text-green-400">{log.toMeal}</span>
                       </div>
-                      <div className="mono text-[#555]">Delivery: {log.deliveryDate}</div>
-                      <div className="text-[#CCCCCC]">{log.reason}</div>
+                      <div className="mono text-[var(--pm-text-muted)]">Delivery: {log.deliveryDate}</div>
+                      <div className="text-[var(--pm-text-secondary)]">{log.reason}</div>
                     </div>
                   ))}
                 </div>
@@ -496,7 +496,7 @@ export default function MenuReview({ demoMode }: { demoMode?: boolean } = {}) {
             )}
           </div>
         ) : (
-          <div className="border border-[#2A2A2A] bg-[#181818] flex items-center justify-center text-[#555] text-sm p-8 text-center">
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] flex items-center justify-center text-[var(--pm-text-muted)] text-sm p-8 text-center">
             Select a review to see meal selections
           </div>
         )}
@@ -505,18 +505,18 @@ export default function MenuReview({ demoMode }: { demoMode?: boolean } = {}) {
       {/* Override modal */}
       {showOverride && selected && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onClick={() => setShowOverride(false)}>
-          <div className="bg-[#141414] border border-[#2A2A2A] w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--pm-surface-subtle)] border border-[var(--pm-border)] w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-bold">Override Review — {selected.customer}</h3>
-              <button onClick={() => setShowOverride(false)} className="text-[#888] hover:text-[#E8E8E8] text-xl mono">×</button>
+              <button onClick={() => setShowOverride(false)} className="text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)] text-xl mono">×</button>
             </div>
             <div className="border border-yellow-800/30 bg-yellow-950/10 px-3 py-2 text-xs text-yellow-300 mono">
               Overriding meal selections will notify the customer via email and WhatsApp.
             </div>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-[#AAAAAA] uppercase tracking-wider block mb-1">Override Reason</label>
-                <select className="w-full bg-[#181818] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-2 mono focus:outline-none focus:border-[#F5B300]">
+                <label className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider block mb-1">Override Reason</label>
+                <select className="w-full bg-[var(--pm-surface)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 mono focus:outline-none focus:border-[#F5B300]">
                   <option>Customer request (called in)</option>
                   <option>Meal unavailable — substitution</option>
                   <option>Nutritional adjustment required</option>
@@ -524,9 +524,9 @@ export default function MenuReview({ demoMode }: { demoMode?: boolean } = {}) {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-[#AAAAAA] uppercase tracking-wider block mb-1">Override Notes</label>
+                <label className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider block mb-1">Override Notes</label>
                 <textarea rows={3} placeholder="Describe the override…"
-                  className="w-full bg-[#181818] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-2 mono focus:outline-none focus:border-[#F5B300] resize-none" />
+                  className="w-full bg-[var(--pm-surface)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 mono focus:outline-none focus:border-[#F5B300] resize-none" />
               </div>
             </div>
             <div className="flex gap-2">
@@ -540,7 +540,7 @@ export default function MenuReview({ demoMode }: { demoMode?: boolean } = {}) {
                 Save Override
               </button>
               <button onClick={() => setShowOverride(false)}
-                className="flex-1 border border-[#2A2A2A] text-[#888] text-xs py-2.5 mono hover:text-[#E8E8E8] transition-colors">
+                className="flex-1 border border-[var(--pm-border)] text-[var(--pm-text-muted)] text-xs py-2.5 mono hover:text-[var(--pm-text-secondary)] transition-colors">
                 Cancel
               </button>
             </div>
@@ -549,28 +549,28 @@ export default function MenuReview({ demoMode }: { demoMode?: boolean } = {}) {
       )}
 
       {/* Kitchen Handoff Panel */}
-      <div className="border border-[#F5B300]/30 bg-[#181818]">
+      <div className="border border-[#F5B300]/30 bg-[var(--pm-surface)]">
         <div className="px-4 py-2.5 border-b border-[#F5B300]/20 flex items-center gap-2">
           <div className="w-1.5 h-1.5 bg-[#F5B300]" />
-          <span className="text-xs font-extrabold tracking-widest uppercase text-[#F5B300]">Menu → Kitchen Handoff</span>
-          <span className="ml-auto text-xs mono text-[#555]">Impact of current week selections on Kitchen</span>
+          <span className="text-xs font-extrabold tracking-widest uppercase text-[var(--pm-accent-text)]">Menu → Kitchen Handoff</span>
+          <span className="ml-auto text-xs mono text-[var(--pm-text-muted)]">Impact of current week selections on Kitchen</span>
         </div>
         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { label: "Meals Confirmed", value: "48", sub: "Current week", color: "#22C55E" },
             { label: "Pending Review", value: "12", sub: "Awaiting customer", color: "#F5B300" },
             { label: "Kitchen Qty Impact", value: "+60", sub: "vs. base forecast", color: "#3B82F6" },
-            { label: "Packing Update", value: "Triggered", sub: "Labels regenerated", color: "#888" },
+            { label: "Packing Update", value: "Triggered", sub: "Labels regenerated", color: "var(--pm-text-muted)" },
           ].map(k => (
-            <div key={k.label} className="border border-[#2A2A2A] bg-[#0F0F0F] p-3 text-center">
-              <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-1">{k.label}</div>
+            <div key={k.label} className="border border-[var(--pm-border)] bg-[var(--pm-bg)] p-3 text-center">
+              <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-1">{k.label}</div>
               <div className="text-xl font-extrabold mono" style={{ color: k.color }}>{k.value}</div>
-              <div className="text-xs text-[#555] mt-1">{k.sub}</div>
+              <div className="text-xs text-[var(--pm-text-muted)] mt-1">{k.sub}</div>
             </div>
           ))}
         </div>
         <div className="px-4 pb-4">
-          <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-2">Handoff Workflow Status</div>
+          <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-2">Handoff Workflow Status</div>
           <div className="flex items-center gap-1 text-xs mono overflow-x-auto pb-1">
             {[
               { step: "Customer Selection", done: true },
@@ -583,8 +583,8 @@ export default function MenuReview({ demoMode }: { demoMode?: boolean } = {}) {
               { step: "Audit Logged", done: true },
             ].map((s, i, arr) => (
               <div key={s.step} className="flex items-center gap-1 whitespace-nowrap">
-                <span className={`px-2 py-1 border ${s.done ? "border-green-800/40 text-green-400 bg-green-950/20" : "border-[#2A2A2A] text-[#555]"}`}>{s.step}</span>
-                {i < arr.length - 1 && <span className="text-[#333]">→</span>}
+                <span className={`px-2 py-1 border ${s.done ? "border-green-800/40 text-green-400 bg-green-950/20" : "border-[var(--pm-border)] text-[var(--pm-text-muted)]"}`}>{s.step}</span>
+                {i < arr.length - 1 && <span className="text-[var(--pm-text-muted)]">→</span>}
               </div>
             ))}
           </div>

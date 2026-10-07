@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { readySeriesProducts } from "../catalog";
 
 const ingredients = [
   { id: "I01", name: "Chicken Breast (1kg)", category: "Protein", unit: "packs", stock: 8, minimum: 20, weeklyUsage: 45, supplier: "SG Fresh Meats", cost: 12.50 },
@@ -13,29 +14,26 @@ const ingredients = [
   { id: "I10", name: "Quinoa (1kg)", category: "Carbs", unit: "bags", stock: 9, minimum: 6, weeklyUsage: 8, supplier: "Fairprice Wholesale", cost: 8.90 },
 ];
 
-const packaging = [
-  { id: "P01", name: "500ml PP Tray", type: "Container", stock: 480, minimum: 200, weeklyUsage: 320 },
-  { id: "P02", name: "650ml PP Tray", type: "Container", stock: 180, minimum: 150, weeklyUsage: 120 },
-  { id: "P03", name: "Vacuum Seal Bag (M)", type: "Packaging", stock: 350, minimum: 200, weeklyUsage: 200 },
-  { id: "P04", name: "Clamshell Box (S)", type: "Container", stock: 90, minimum: 100, weeklyUsage: 80 },
-  { id: "P05", name: "Performance Meals Label", type: "Label", stock: 650, minimum: 400, weeklyUsage: 500 },
-  { id: "P06", name: "Delivery Box (Large)", type: "Shipping", stock: 45, minimum: 60, weeklyUsage: 50 },
-];
-
 const categories = ["All", "Protein", "Carbs", "Veg"];
 
 // Ready Series frozen products with physical vs rolling stock
-const frozenProducts = [
-  { id: "RS-01", name: "Chicken Teriyaki Bowl", sku: "RS-CHK-001", rollingStock: 42, physicalStock: 38, parLevel: 60, lastPhysicalAudit: "11 Sep 2024", status: "LOW" },
-  { id: "RS-02", name: "Salmon Fillet Pack",    sku: "RS-SAL-002", rollingStock: 28, physicalStock: 25, parLevel: 40, lastPhysicalAudit: "11 Sep 2024", status: "LOW" },
-  { id: "RS-03", name: "Beef Bolognese",        sku: "RS-BEF-003", rollingStock: 75, physicalStock: 72, parLevel: 50, lastPhysicalAudit: "11 Sep 2024", status: "OK" },
-  { id: "RS-04", name: "Grilled Lemon Chicken", sku: "RS-GLC-004", rollingStock: 18, physicalStock: 18, parLevel: 40, lastPhysicalAudit: "11 Sep 2024", status: "LOW" },
-  { id: "RS-05", name: "Vegetable Stir Fry",    sku: "RS-VEG-005", rollingStock: 55, physicalStock: 52, parLevel: 45, lastPhysicalAudit: "11 Sep 2024", status: "OK" },
-  { id: "RS-06", name: "Prawn Fried Rice",      sku: "RS-PRN-006", rollingStock: 0,  physicalStock: 0,  parLevel: 30, lastPhysicalAudit: "11 Sep 2024", status: "OUT" },
-  { id: "RS-07", name: "Korean BBQ Pork",       sku: "RS-KBQ-007", rollingStock: 63, physicalStock: 60, parLevel: 50, lastPhysicalAudit: "11 Sep 2024", status: "OK" },
-];
+const frozenProducts = readySeriesProducts.map((product, index) => {
+  const rollingStock = [42, 18, 55, 28, 63, 16, 34, 47, 22, 31, 26, 11][index];
+  const physicalStock = Math.max(0, rollingStock - (index % 3));
+  const parLevel = product.category === "Just Protein" ? 40 : 35;
+  return {
+    id: `RS-${product.id}`,
+    name: product.name,
+    sku: `RS-${product.id}`,
+    rollingStock,
+    physicalStock,
+    parLevel,
+    lastPhysicalAudit: "11 Sep 2024",
+    status: rollingStock < parLevel ? "LOW" : "OK",
+  };
+});
 
-export default function Inventory({ demoMode }: { demoMode?: boolean } = {}) {
+export default function Inventory() {
   const [tab, setTab] = useState<"ingredients" | "ready-series">("ingredients");
   const [catFilter, setCatFilter] = useState("All");
   const [search, setSearch] = useState("");
@@ -47,14 +45,13 @@ export default function Inventory({ demoMode }: { demoMode?: boolean } = {}) {
   });
 
   const lowStockIng = ingredients.filter(i => i.stock < i.minimum).length;
-  const lowStockPkg = packaging.filter(p => p.stock < p.minimum).length;
 
   return (
     <div className="p-6 space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-extrabold">Inventory</h2>
         <div className="flex gap-2">
-          <button className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+          <button className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
             Export CSV
           </button>
           <button className="bg-[#F5B300] text-black text-xs font-bold px-4 py-2 mono hover:bg-[#C99200] transition-colors">
@@ -71,24 +68,24 @@ export default function Inventory({ demoMode }: { demoMode?: boolean } = {}) {
           { label: "Frozen Products", value: String(frozenProducts.length), sub: "RS tracked" },
           { label: "Frozen Alerts", value: String(frozenProducts.filter(r => r.status !== "OK").length), sub: "below par / out", warn: frozenProducts.filter(r => r.status !== "OK").length > 0 },
         ].map(k => (
-          <div key={k.label} className="border bg-[#181818] p-4" style={{ borderColor: k.accent || k.warn ? "#ef444440" : "#2A2A2A" }}>
-            <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-widest mb-2">{k.label}</div>
-            <div className={`text-3xl font-extrabold mono ${k.accent || k.warn ? "text-red-400" : "text-[#E8E8E8]"}`}>{k.value}</div>
-            <div className="text-xs text-[#888] mt-1 mono">{k.sub}</div>
+          <div key={k.label} className="border bg-[var(--pm-surface)] p-4" style={{ borderColor: k.accent || k.warn ? "#ef444440" : "var(--pm-border)" }}>
+            <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-widest mb-2">{k.label}</div>
+            <div className={`text-3xl font-extrabold mono ${k.accent || k.warn ? "text-red-400" : "text-[var(--pm-text-secondary)]"}`}>{k.value}</div>
+            <div className="text-xs text-[var(--pm-text-muted)] mt-1 mono">{k.sub}</div>
           </div>
         ))}
       </div>
 
       {/* Operational schedule notice */}
-      <div className="border border-[#2A2A2A] bg-[#0D0D0D] px-4 py-2.5 flex items-center gap-4 flex-wrap">
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: "#444", letterSpacing: "0.1em" }}>SCHEDULE:</span>
-        <span className="text-xs text-[#555]"><span className="mono text-[#888]">Thu 3pm</span> — Export Inventory Report</span>
-        <span className="text-xs text-[#555]"><span className="mono text-[#888]">Biweekly Wed</span> — Update physical stock date (audit & rolling stock accuracy)</span>
-        <span className="text-xs text-[#555]"><span className="mono text-[#888]">Every other day</span> — Deduct sold meals · Add new stock ready to sell</span>
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-bg)] px-4 py-2.5 flex items-center gap-4 flex-wrap">
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: "var(--pm-text-muted)", letterSpacing: "0.1em" }}>SCHEDULE:</span>
+        <span className="text-xs text-[var(--pm-text-muted)]"><span className="mono text-[var(--pm-text-muted)]">Thu 3pm</span> — Export Inventory Report</span>
+        <span className="text-xs text-[var(--pm-text-muted)]"><span className="mono text-[var(--pm-text-muted)]">Biweekly Wed</span> — Update physical stock date (audit & rolling stock accuracy)</span>
+        <span className="text-xs text-[var(--pm-text-muted)]"><span className="mono text-[var(--pm-text-muted)]">Every other day</span> — Deduct sold meals · Add new stock ready to sell</span>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-[#2A2A2A]">
+      <div className="flex border-b border-[var(--pm-border)]">
         {([
           { id: "ingredients" as const,  label: "Ingredients",           badge: lowStockIng },
           { id: "ready-series" as const, label: "Ready Series — Frozen",  badge: frozenProducts.filter(r => r.status !== "OK").length },
@@ -97,7 +94,7 @@ export default function Inventory({ demoMode }: { demoMode?: boolean } = {}) {
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`px-5 py-3 text-sm font-medium mono transition-colors ${
-              tab === t.id ? "border-b-2 border-[#F5B300] text-[#F5B300]" : "text-[#888] hover:text-[#E8E8E8]"
+              tab === t.id ? "border-b-2 border-[#F5B300] text-[var(--pm-accent-text)]" : "text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)]"
             }`}
           >
             {t.label}
@@ -116,7 +113,7 @@ export default function Inventory({ demoMode }: { demoMode?: boolean } = {}) {
               placeholder="Search ingredient…"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="bg-[#181818] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-2 w-64 focus:outline-none focus:border-[#F5B300] placeholder:text-[#444]"
+              className="bg-[var(--pm-surface)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 w-64 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]"
             />
             <div className="flex gap-1">
               {categories.map(c => (
@@ -124,7 +121,7 @@ export default function Inventory({ demoMode }: { demoMode?: boolean } = {}) {
                   key={c}
                   onClick={() => setCatFilter(c)}
                   className={`px-3 py-2 text-xs mono transition-colors ${
-                    catFilter === c ? "bg-[#F5B300] text-black font-bold" : "border border-[#2A2A2A] text-[#888] hover:text-[#E8E8E8]"
+                    catFilter === c ? "bg-[#F5B300] text-black font-bold" : "border border-[var(--pm-border)] text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)]"
                   }`}
                 >
                   {c}
@@ -132,12 +129,12 @@ export default function Inventory({ demoMode }: { demoMode?: boolean } = {}) {
               ))}
             </div>
           </div>
-          <div className="border border-[#2A2A2A] bg-[#181818] overflow-x-auto">
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#2A2A2A]">
+                <tr className="border-b border-[var(--pm-border)]">
                   {["#", "Ingredient", "Category", "In Stock", "Minimum", "Wkly Usage", "Weeks Cover", "Supplier", "Unit Cost", "Status"].map(h => (
-                    <th key={h} className="px-4 py-2 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
+                    <th key={h} className="px-4 py-2 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -146,15 +143,15 @@ export default function Inventory({ demoMode }: { demoMode?: boolean } = {}) {
                   const isLow = item.stock < item.minimum;
                   const weeksCover = item.weeklyUsage > 0 ? (item.stock / item.weeklyUsage * 7).toFixed(1) : "—";
                   return (
-                    <tr key={item.id} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] transition-colors ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
-                      <td className="px-4 py-2.5 mono text-xs text-[#555]">{item.id}</td>
+                    <tr key={item.id} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] transition-colors ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
+                      <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{item.id}</td>
                       <td className="px-4 py-2.5 font-medium">{item.name}</td>
-                      <td className="px-4 py-2.5 text-xs text-[#888]">{item.category}</td>
+                      <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{item.category}</td>
                       <td className={`px-4 py-2.5 mono font-bold ${isLow ? "text-red-400" : "text-green-400"}`}>{item.stock} {item.unit}</td>
-                      <td className="px-4 py-2.5 mono text-xs text-[#888]">{item.minimum}</td>
-                      <td className="px-4 py-2.5 mono text-xs text-[#888]">{item.weeklyUsage}</td>
-                      <td className={`px-4 py-2.5 mono text-xs font-bold ${Number(weeksCover) < 1 ? "text-red-400" : "text-[#888]"}`}>{weeksCover}d</td>
-                      <td className="px-4 py-2.5 text-xs text-[#888]">{item.supplier}</td>
+                      <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{item.minimum}</td>
+                      <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{item.weeklyUsage}</td>
+                      <td className={`px-4 py-2.5 mono text-xs font-bold ${Number(weeksCover) < 1 ? "text-red-400" : "text-[var(--pm-text-muted)]"}`}>{weeksCover}d</td>
+                      <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{item.supplier}</td>
                       <td className="px-4 py-2.5 mono text-xs">${item.cost.toFixed(2)}</td>
                       <td className="px-4 py-2.5">
                         <span className={`text-xs mono px-2 py-0.5 font-bold ${isLow ? "bg-red-950 text-red-400" : "bg-green-950 text-green-400"}`}>
@@ -175,17 +172,17 @@ export default function Inventory({ demoMode }: { demoMode?: boolean } = {}) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider display">Ready Series — Frozen Stock</p>
-              <p className="text-xs text-[#666] mono mt-0.5">Rolling stock (system) vs Physical stock (packing supervisor audit) · Par level reference for Chef production planning</p>
+              <p className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider display">Ready Series — Frozen Stock</p>
+              <p className="text-xs text-[var(--pm-text-muted)] mono mt-0.5">Rolling stock (system) vs Physical stock (packing supervisor audit) · Par level reference for Chef production planning</p>
             </div>
             <div className="flex gap-2">
-              <div className="border border-[#2A2A2A] px-3 py-1.5 text-xs mono text-[#888]">
-                Last physical audit: <span className="text-[#CCCCCC]">Wed 11 Sep 2024</span>
+              <div className="border border-[var(--pm-border)] px-3 py-1.5 text-xs mono text-[var(--pm-text-muted)]">
+                Last physical audit: <span className="text-[var(--pm-text-secondary)]">Wed 11 Sep 2024</span>
               </div>
-              <button className="border border-[#2A2A2A] text-[#888] text-xs px-3 py-1.5 mono hover:border-[#E85D04] hover:text-[#E85D04] transition-colors">
+              <button className="border border-[var(--pm-border)] text-[var(--pm-text-muted)] text-xs px-3 py-1.5 mono hover:border-[#E85D04] hover:text-[var(--pm-secondary-text)] transition-colors">
                 Update Physical Stock Date
               </button>
-              <button className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-1.5 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+              <button className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-1.5 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
                 Export Inventory Report ↓
               </button>
             </div>
@@ -197,19 +194,19 @@ export default function Inventory({ demoMode }: { demoMode?: boolean } = {}) {
               { label: "Out of Stock",    value: String(frozenProducts.filter(r => r.status === "OUT").length),  color: "#EF4444" },
               { label: "Stock OK",        value: String(frozenProducts.filter(r => r.status === "OK").length),   color: "#22C55E" },
             ].map(s => (
-              <div key={s.label} className="border border-[#2A2A2A] bg-[#181818] p-4 text-center">
+              <div key={s.label} className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4 text-center">
                 <div className="text-2xl font-extrabold mono" style={{ color: s.color }}>{s.value}</div>
-                <div className="text-xs text-[#888] mt-1 uppercase tracking-wider">{s.label}</div>
+                <div className="text-xs text-[var(--pm-text-muted)] mt-1 uppercase tracking-wider">{s.label}</div>
               </div>
             ))}
           </div>
 
-          <div className="border border-[#2A2A2A] bg-[#181818] overflow-x-auto">
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-[#2A2A2A]">
+                <tr className="border-b border-[var(--pm-border)]">
                   {["Product", "SKU", "Rolling Stock", "Physical Stock", "Variance", "Par Level", "Status", "Last Physical Audit", "Actions"].map(h => (
-                    <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[#FFFFFF] uppercase tracking-wider whitespace-nowrap">{h}</th>
+                    <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -218,17 +215,17 @@ export default function Inventory({ demoMode }: { demoMode?: boolean } = {}) {
                   const variance = r.physicalStock - r.rollingStock;
                   const statusStyle = r.status === "OK" ? "bg-green-950 text-green-400" : r.status === "OUT" ? "bg-red-950 text-red-400" : "bg-yellow-950 text-yellow-400";
                   return (
-                    <tr key={r.sku} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
-                      <td className="px-4 py-2.5 font-medium text-[#E8E8E8]">{r.name}</td>
-                      <td className="px-4 py-2.5 mono text-[#E85D04]">{r.sku}</td>
-                      <td className="px-4 py-2.5 mono text-center text-[#AAAAAA]">{r.rollingStock}</td>
+                    <tr key={r.sku} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
+                      <td className="px-4 py-2.5 font-medium text-[var(--pm-text-secondary)]">{r.name}</td>
+                      <td className="px-4 py-2.5 mono text-[var(--pm-secondary-text)]">{r.sku}</td>
+                      <td className="px-4 py-2.5 mono text-center text-[var(--pm-text-muted)]">{r.rollingStock}</td>
                       <td className="px-4 py-2.5 mono text-center font-bold" style={{ color: r.physicalStock === 0 ? "#EF4444" : r.physicalStock < r.parLevel ? "#F5B300" : "#22C55E" }}>{r.physicalStock}</td>
                       <td className="px-4 py-2.5 mono text-center text-xs" style={{ color: variance < 0 ? "#EF4444" : variance > 0 ? "#F5B300" : "#555" }}>{variance === 0 ? "—" : (variance > 0 ? "+" : "") + variance}</td>
-                      <td className="px-4 py-2.5 mono text-center text-[#888]">{r.parLevel}</td>
+                      <td className="px-4 py-2.5 mono text-center text-[var(--pm-text-muted)]">{r.parLevel}</td>
                       <td className="px-4 py-2.5"><span className={`mono px-2 py-0.5 ${statusStyle}`}>{r.status}</span></td>
-                      <td className="px-4 py-2.5 mono text-[#666] text-xs">{r.lastPhysicalAudit}</td>
+                      <td className="px-4 py-2.5 mono text-[var(--pm-text-muted)] text-xs">{r.lastPhysicalAudit}</td>
                       <td className="px-4 py-2.5">
-                        <button className="text-xs mono text-[#888] border border-[#2A2A2A] px-2 py-0.5 hover:border-[#E85D04] hover:text-[#E85D04] transition-colors">
+                        <button className="text-xs mono text-[var(--pm-text-muted)] border border-[var(--pm-border)] px-2 py-0.5 hover:border-[#E85D04] hover:text-[var(--pm-secondary-text)] transition-colors">
                           Update Count
                         </button>
                       </td>
@@ -238,7 +235,7 @@ export default function Inventory({ demoMode }: { demoMode?: boolean } = {}) {
               </tbody>
             </table>
           </div>
-          <p className="text-[10px] text-[#444] mono">Rolling Stock = system-tracked count. Physical Stock = Packing Supervisor physical count. Biweekly Wednesday: update physical stock date for audit accuracy. New stock ready to sell → use "+ Add Stock" to increase rolling stock.</p>
+          <p className="text-[10px] text-[var(--pm-text-muted)] mono">Rolling Stock = system-tracked count. Physical Stock = Packing Supervisor physical count. Biweekly Wednesday: update physical stock date for audit accuracy. New stock ready to sell → use "+ Add Stock" to increase rolling stock.</p>
         </div>
       )}
     </div>

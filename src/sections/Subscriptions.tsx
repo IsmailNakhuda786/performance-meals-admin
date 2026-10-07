@@ -1,6 +1,6 @@
 import { useState } from "react";
-import StatusBadge from "../components/StatusBadge";
 import { subscriptions, type CustomerStatus } from "../data";
+import { mealPlanProgrammes, mealPlanVariants, readySeriesSubscriptions } from "../catalog";
 import type { BusinessStream } from "../App";
 import { downloadCSV, downloadExcel } from "../utils/flowUtils";
 
@@ -57,7 +57,7 @@ const resultStyle: Record<ResultType, { bg: string; text: string }> = {
   paused:       { bg: "bg-yellow-950", text: "text-yellow-400" },
   existing:     { bg: "bg-blue-950",   text: "text-blue-400" },
   credit:       { bg: "bg-orange-950", text: "text-orange-400" },
-  nodays:       { bg: "bg-[#1E1E1E]",  text: "text-[#888]" },
+  nodays:       { bg: "bg-[var(--pm-surface-muted)]", text: "text-[var(--pm-text-muted)]" },
   "fail-menu":     { bg: "bg-red-950",   text: "text-red-400" },
   "fail-pricing":  { bg: "bg-red-950",   text: "text-red-400" },
   "fail-slot":     { bg: "bg-red-950",   text: "text-red-400" },
@@ -96,13 +96,13 @@ function AutoLogicFlow() {
       {steps.map((step, idx) => (
         <div key={idx} className="flex items-stretch gap-4 w-full">
           <div className="flex flex-col items-center">
-            <div className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center mono ${idx === 0 ? "bg-[#F5B300] text-black" : "bg-[#2A2A2A] text-[#F5B300] border border-[#F5B300]"}`}>
+            <div className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center mono ${idx === 0 ? "bg-[#F5B300] text-black" : "bg-[var(--pm-surface-muted)] text-[var(--pm-accent-text)] border border-[#F5B300]"}`}>
               {idx + 1}
             </div>
-            <div className="w-px flex-1 bg-[#2A2A2A] mt-1" />
+            <div className="w-px flex-1 bg-[var(--pm-surface-muted)] mt-1" />
           </div>
           <div className="flex-1 pb-4">
-            <p className="text-sm font-medium text-[#E8E8E8] mb-2">{step.label}</p>
+            <p className="text-sm font-medium text-[var(--pm-text-secondary)] mb-2">{step.label}</p>
             <div className="flex gap-3 flex-wrap">
               <span className={`mono text-xs px-2 py-1 ${step.yesStyle}`}>{step.yes}</span>
               <span className={`mono text-xs px-2 py-1 ${step.noStyle}`}>{step.no}</span>
@@ -114,22 +114,22 @@ function AutoLogicFlow() {
       {/* Step 4 */}
       <div className="flex items-stretch gap-4 w-full">
         <div className="flex flex-col items-center">
-          <div className="w-7 h-7 rounded-full bg-[#2A2A2A] text-[#F5B300] text-xs font-bold flex items-center justify-center mono border border-[#F5B300]">4</div>
-          <div className="w-px flex-1 bg-[#2A2A2A] mt-1" />
+          <div className="w-7 h-7 rounded-full bg-[var(--pm-surface-muted)] text-[var(--pm-accent-text)] text-xs font-bold flex items-center justify-center mono border border-[#F5B300]">4</div>
+          <div className="w-px flex-1 bg-[var(--pm-surface-muted)] mt-1" />
         </div>
         <div className="flex-1 pb-4">
-          <p className="text-sm font-medium text-[#E8E8E8] mb-1">Determine dinner plan</p>
-          <p className="text-xs text-[#888]">2 / 3 / 4 / 5 dinners per week</p>
+          <p className="text-sm font-medium text-[var(--pm-text-secondary)] mb-1">Determine dinner plan</p>
+          <p className="text-xs text-[var(--pm-text-muted)]">2 / 3 / 4 / 5 dinners per week</p>
         </div>
       </div>
 
       {/* Step 5 */}
       <div className="flex items-stretch gap-4 w-full">
         <div className="flex flex-col items-center">
-          <div className="w-7 h-7 rounded-full bg-[#2A2A2A] text-[#F5B300] text-xs font-bold flex items-center justify-center mono border border-[#F5B300]">5</div>
+          <div className="w-7 h-7 rounded-full bg-[var(--pm-surface-muted)] text-[var(--pm-accent-text)] text-xs font-bold flex items-center justify-center mono border border-[#F5B300]">5</div>
         </div>
         <div className="flex-1 pb-2">
-          <p className="text-sm font-medium text-[#E8E8E8] mb-2">Existing orders for period?</p>
+          <p className="text-sm font-medium text-[var(--pm-text-secondary)] mb-2">Existing orders for period?</p>
           <div className="flex gap-3 flex-wrap">
             <span className="mono text-xs px-2 py-1 bg-green-950 text-green-400 border border-green-800">NO → Create order using default delivery days</span>
             <span className="mono text-xs px-2 py-1 bg-blue-950 text-blue-400 border border-blue-800">YES → End (skip)</span>
@@ -152,16 +152,16 @@ function DetailModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 overflow-y-auto py-8 px-4">
-      <div className="w-full max-w-[1200px] bg-[#161616] border border-[#2A2A2A]">
+      <div className="w-full max-w-[1200px] bg-[var(--pm-surface)] border border-[var(--pm-border)]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#2A2A2A]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--pm-border)]">
           <div>
-            <h3 className="text-sm font-bold text-[#FFFFFF] uppercase tracking-wider display">Automation Run Detail</h3>
-            <p className="text-xs text-[#888] mono mt-0.5">Thu 12 Sep 2024 — 14:55:00 SGT</p>
+            <h3 className="text-sm font-bold text-[var(--pm-text)] uppercase tracking-wider display">Automation Run Detail</h3>
+            <p className="text-xs text-[var(--pm-text-muted)] mono mt-0.5">Thu 12 Sep 2024 — 14:55:00 SGT</p>
           </div>
           <button
             onClick={onClose}
-            className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors"
+            className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors"
           >
             Close ✕
           </button>
@@ -169,13 +169,13 @@ function DetailModal({ onClose }: { onClose: () => void }) {
 
         {/* Subscriber results */}
         <div className="px-6 pt-5 pb-3">
-          <p className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider display mb-3">Subscriber Results</p>
+          <p className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider display mb-3">Subscriber Results</p>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-[#2A2A2A]">
+                <tr className="border-b border-[var(--pm-border)]">
                   {["Subscriber", "Sub ID", "Plan", "Dinners/wk", "Default Days", "Timeslot", "Credit", "Required", "Paused", "Existing Order", "Menu", "Delivery Dates", "Price", "Applicable Period", "Result", "Reason"].map(h => (
-                    <th key={h} className="px-3 py-2 text-left text-xs font-bold text-[#FFFFFF] uppercase tracking-wider whitespace-nowrap">{h}</th>
+                    <th key={h} className="px-3 py-2 text-left text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -183,27 +183,27 @@ function DetailModal({ onClose }: { onClose: () => void }) {
                 {subscriberDetails.map((row, i) => {
                   const rs = resultStyle[row.resultType];
                   return (
-                    <tr key={row.subId} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] transition-colors ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
-                      <td className="px-3 py-2.5 font-medium text-[#E8E8E8] whitespace-nowrap">{row.name}</td>
-                      <td className="px-3 py-2.5 mono text-[#F5B300] whitespace-nowrap">{row.subId}</td>
-                      <td className="px-3 py-2.5 text-[#888] whitespace-nowrap">{row.plan}</td>
+                    <tr key={row.subId} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] transition-colors ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
+                      <td className="px-3 py-2.5 font-medium text-[var(--pm-text-secondary)] whitespace-nowrap">{row.name}</td>
+                      <td className="px-3 py-2.5 mono text-[var(--pm-accent-text)] whitespace-nowrap">{row.subId}</td>
+                      <td className="px-3 py-2.5 text-[var(--pm-text-muted)] whitespace-nowrap">{row.plan}</td>
                       <td className="px-3 py-2.5 mono text-center">{row.dinnersPerWeek}</td>
-                      <td className="px-3 py-2.5 mono text-[#CCCCCC] whitespace-nowrap">{row.defaultDays}</td>
+                      <td className="px-3 py-2.5 mono text-[var(--pm-text-secondary)] whitespace-nowrap">{row.defaultDays}</td>
                       <td className="px-3 py-2.5 mono whitespace-nowrap">{row.timeslot}</td>
                       <td className="px-3 py-2.5 mono text-green-400">{row.credit}</td>
-                      <td className="px-3 py-2.5 mono text-[#CCCCCC]">{row.required}</td>
+                      <td className="px-3 py-2.5 mono text-[var(--pm-text-secondary)]">{row.required}</td>
                       <td className="px-3 py-2.5 mono">
-                        <span className={row.paused.startsWith("YES") ? "text-yellow-400" : "text-[#888]"}>{row.paused}</span>
+                        <span className={row.paused.startsWith("YES") ? "text-yellow-400" : "text-[var(--pm-text-muted)]"}>{row.paused}</span>
                       </td>
-                      <td className="px-3 py-2.5 mono text-[#888]">{row.existingOrder}</td>
-                      <td className="px-3 py-2.5 mono text-[#888]">{row.menu}</td>
-                      <td className="px-3 py-2.5 mono text-[#CCCCCC] whitespace-nowrap">{row.deliveryDates}</td>
-                      <td className="px-3 py-2.5 mono text-[#CCCCCC]">{row.price}</td>
-                      <td className="px-3 py-2.5 mono text-[#AAAAAA] whitespace-nowrap">{row.period}</td>
+                      <td className="px-3 py-2.5 mono text-[var(--pm-text-muted)]">{row.existingOrder}</td>
+                      <td className="px-3 py-2.5 mono text-[var(--pm-text-muted)]">{row.menu}</td>
+                      <td className="px-3 py-2.5 mono text-[var(--pm-text-secondary)] whitespace-nowrap">{row.deliveryDates}</td>
+                      <td className="px-3 py-2.5 mono text-[var(--pm-text-secondary)]">{row.price}</td>
+                      <td className="px-3 py-2.5 mono text-[var(--pm-text-muted)] whitespace-nowrap">{row.period}</td>
                       <td className="px-3 py-2.5">
                         <span className={`mono px-2 py-0.5 whitespace-nowrap ${rs.bg} ${rs.text}`}>{row.result}</span>
                       </td>
-                      <td className="px-3 py-2.5 text-[#888] text-xs max-w-[260px]">{row.reason}</td>
+                      <td className="px-3 py-2.5 text-[var(--pm-text-muted)] text-xs max-w-[260px]">{row.reason}</td>
                     </tr>
                   );
                 })}
@@ -214,14 +214,14 @@ function DetailModal({ onClose }: { onClose: () => void }) {
 
         {/* Junior Pricing breakdown */}
         <div className="px-6 pt-2 pb-4">
-          <p className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider display mb-1 mt-4">Junior Item Pricing — Orders Created This Run</p>
-          <p className="text-xs text-[#666] mb-3">Rule-driven via BR-12. Final price configurable in Business Rules. Values pending business confirmation.</p>
-          <div className="border border-[#2A2A2A] bg-[#181818] overflow-x-auto">
+          <p className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider display mb-1 mt-4">Junior Item Pricing — Orders Created This Run</p>
+          <p className="text-xs text-[var(--pm-text-muted)] mb-3">Rule-driven via BR-12. Final price configurable in Business Rules. Values pending business confirmation.</p>
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-[#2A2A2A]">
+                <tr className="border-b border-[var(--pm-border)]">
                   {["Subscriber", "Item", "Item Type", "Base Price", "Pricing Rule", "Final Price", "Validation"].map(h => (
-                    <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[#FFFFFF] uppercase tracking-wider whitespace-nowrap">{h}</th>
+                    <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -234,12 +234,12 @@ function DetailModal({ onClose }: { onClose: () => void }) {
                   { sub: "Bryan Low",   item: "Teriyaki Bowl (Junior)",    type: "Junior Main",  base: "$42.00", rule: "BR-12 · 60% of adult", final: "$25.20", valid: "VALID" },
                   { sub: "Farid Hassan", item: "Salmon Fillet (Junior)",   type: "Junior Main",  base: "$48.00", rule: "BR-12 · 60% of adult", final: "—",       valid: "FAILED — null" },
                 ].map((row, i) => (
-                  <tr key={i} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] transition-colors ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
-                    <td className="px-4 py-2.5 font-medium text-[#E8E8E8] whitespace-nowrap">{row.sub}</td>
-                    <td className="px-4 py-2.5 text-[#CCCCCC] whitespace-nowrap">{row.item}</td>
-                    <td className="px-4 py-2.5 text-[#888]">{row.type}</td>
-                    <td className="px-4 py-2.5 mono text-[#AAAAAA]">{row.base}</td>
-                    <td className="px-4 py-2.5 mono text-[#F5B300] whitespace-nowrap">{row.rule}</td>
+                  <tr key={i} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] transition-colors ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
+                    <td className="px-4 py-2.5 font-medium text-[var(--pm-text-secondary)] whitespace-nowrap">{row.sub}</td>
+                    <td className="px-4 py-2.5 text-[var(--pm-text-secondary)] whitespace-nowrap">{row.item}</td>
+                    <td className="px-4 py-2.5 text-[var(--pm-text-muted)]">{row.type}</td>
+                    <td className="px-4 py-2.5 mono text-[var(--pm-text-muted)]">{row.base}</td>
+                    <td className="px-4 py-2.5 mono text-[var(--pm-accent-text)] whitespace-nowrap">{row.rule}</td>
                     <td className="px-4 py-2.5 mono font-bold text-green-400">{row.final}</td>
                     <td className="px-4 py-2.5">
                       <span className={`mono px-2 py-0.5 ${row.valid === "VALID" ? "bg-green-950 text-green-400" : "bg-red-950 text-red-400"}`}>{row.valid}</span>
@@ -249,27 +249,27 @@ function DetailModal({ onClose }: { onClose: () => void }) {
               </tbody>
             </table>
           </div>
-          <p className="text-[10px] text-[#555] mt-2 mono">⚠ BR-12 percentage (currently 60%) is configurable under Business Rules → BR-12. Farid Hassan order was not created due to pricing validation failure.</p>
+          <p className="text-[10px] text-[var(--pm-text-muted)] mt-2 mono">⚠ BR-12 percentage (currently 60%) is configurable under Business Rules → BR-12. Farid Hassan order was not created due to pricing validation failure.</p>
         </div>
 
         {/* Timeslot validation */}
         <div className="px-6 pt-2 pb-6">
-          <p className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider display mb-3 mt-4">Timeslot Validation</p>
-          <div className="border border-[#2A2A2A] bg-[#181818] overflow-x-auto">
+          <p className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider display mb-3 mt-4">Timeslot Validation</p>
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-[#2A2A2A]">
+                <tr className="border-b border-[var(--pm-border)]">
                   {["Subscriber", "Customer Slot", "Generated Order Slot", "Status"].map(h => (
-                    <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[#FFFFFF] uppercase tracking-wider">{h}</th>
+                    <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {timeslotRows.map((row, i) => (
-                  <tr key={row.name} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] transition-colors ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
-                    <td className="px-4 py-2.5 font-medium text-[#E8E8E8]">{row.name}</td>
-                    <td className="px-4 py-2.5 mono text-[#CCCCCC]">{row.customerSlot}</td>
-                    <td className="px-4 py-2.5 mono text-[#CCCCCC]">{row.orderSlot}</td>
+                  <tr key={row.name} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] transition-colors ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
+                    <td className="px-4 py-2.5 font-medium text-[var(--pm-text-secondary)]">{row.name}</td>
+                    <td className="px-4 py-2.5 mono text-[var(--pm-text-secondary)]">{row.customerSlot}</td>
+                    <td className="px-4 py-2.5 mono text-[var(--pm-text-secondary)]">{row.orderSlot}</td>
                     <td className="px-4 py-2.5">
                       <span className={`mono px-2 py-0.5 ${row.status === "MATCHED" ? "bg-green-950 text-green-400" : "bg-red-950 text-red-400"}`}>
                         {row.status}
@@ -293,53 +293,53 @@ function AutomationTab() {
   const [selectedRun, setSelectedRun] = useState<number | null>(null);
 
   const stats = [
-    { label: "Evaluated",             value: "11", color: "text-[#E8E8E8]" },
+    { label: "Evaluated",             value: "11", color: "text-[var(--pm-text-secondary)]" },
     { label: "Orders Created",        value: "4",  color: "text-green-400" },
     { label: "Skipped",               value: "4",  color: "text-blue-400" },
     { label: "Insufficient Credit",   value: "1",  color: "text-orange-400" },
     { label: "Paused Subs",           value: "1",  color: "text-yellow-400" },
-    { label: "No Default Days",       value: "1",  color: "text-[#888]" },
+    { label: "No Default Days",       value: "1",  color: "text-[var(--pm-text-muted)]" },
     { label: "Failed",                value: "3",  color: "text-red-400" },
   ];
 
   return (
     <div className="space-y-4">
       {/* Engine status card */}
-      <div className="border border-[#2A2A2A] bg-[#181818] p-5">
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-5">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="text-sm font-bold text-[#FFFFFF] uppercase tracking-wider display mb-2">Meal Plan Auto-Order Engine</h3>
+            <h3 className="text-sm font-bold text-[var(--pm-text)] uppercase tracking-wider display mb-2">Meal Plan Auto-Order Engine</h3>
             <span className="mono text-xs px-2 py-0.5 bg-green-950 text-green-400 border border-green-800">● ACTIVE</span>
           </div>
         </div>
-        <div className="flex gap-6 flex-wrap text-xs text-[#888] mb-4">
-          <span>Last run: <span className="mono text-[#CCCCCC]">Thu 12 Sep 2024 — 14:55:00 SGT</span></span>
+        <div className="flex gap-6 flex-wrap text-xs text-[var(--pm-text-muted)] mb-4">
+          <span>Last run: <span className="mono text-[var(--pm-text-secondary)]">Thu 12 Sep 2024 — 14:55:00 SGT</span></span>
           <span>
-            Next run: <span className="mono text-[#F5B300]">Thu 19 Sep 2024 — 14:55:00 SGT</span>
-            {" "}<span className="text-[#666]">(Every Thursday 2:55 PM GMT+8)</span>
+            Next run: <span className="mono text-[var(--pm-accent-text)]">Thu 19 Sep 2024 — 14:55:00 SGT</span>
+            {" "}<span className="text-[var(--pm-text-muted)]">(Every Thursday 2:55 PM GMT+8)</span>
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:grid-cols-7 gap-2">
           {stats.map(stat => (
-            <div key={stat.label} className="border border-[#2A2A2A] bg-[#0D0D0D] px-3 py-2.5 text-center">
+            <div key={stat.label} className="border border-[var(--pm-border)] bg-[var(--pm-bg)] px-3 py-2.5 text-center">
               <div className={`text-lg font-bold mono ${stat.color}`}>{stat.value}</div>
-              <div className="text-[10px] text-[#666] uppercase tracking-wide mt-0.5 leading-tight">{stat.label}</div>
+              <div className="text-[10px] text-[var(--pm-text-muted)] uppercase tracking-wide mt-0.5 leading-tight">{stat.label}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Automation Logic — collapsible */}
-      <div className="border border-[#2A2A2A] bg-[#181818]">
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
         <button
           onClick={() => setShowLogic(v => !v)}
-          className="w-full flex items-center justify-between px-5 py-3 text-left hover:bg-[#1F1F1F] transition-colors"
+          className="w-full flex items-center justify-between px-5 py-3 text-left hover:bg-[var(--pm-surface-subtle)] transition-colors"
         >
-          <span className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider display">Automation Logic — 5-Step Flow</span>
-          <span className="mono text-[#888] text-sm">{showLogic ? "▲" : "▼"}</span>
+          <span className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider display">Automation Logic — 5-Step Flow</span>
+          <span className="mono text-[var(--pm-text-muted)] text-sm">{showLogic ? "▲" : "▼"}</span>
         </button>
         {showLogic && (
-          <div className="px-5 pb-5 pt-3 border-t border-[#2A2A2A]">
+          <div className="px-5 pb-5 pt-3 border-t border-[var(--pm-border)]">
             <AutoLogicFlow />
           </div>
         )}
@@ -347,20 +347,20 @@ function AutomationTab() {
 
       {/* Run History */}
       <div>
-        <p className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider display mb-3">Run History</p>
-        <div className="border border-[#2A2A2A] bg-[#181818] overflow-x-auto">
+        <p className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider display mb-3">Run History</p>
+        <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#2A2A2A]">
+              <tr className="border-b border-[var(--pm-border)]">
                 {["Run Date / Time", "Evaluated", "Created", "Skipped", "Failed", "Top-up Sent", "Status", "Action"].map(h => (
-                  <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[#FFFFFF] uppercase tracking-wider whitespace-nowrap">{h}</th>
+                  <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {runHistory.map((row, i) => (
-                <tr key={row.date} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] transition-colors ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
-                  <td className="px-4 py-2.5 mono text-xs text-[#CCCCCC] whitespace-nowrap">{row.date}</td>
+                <tr key={row.date} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] transition-colors ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
+                  <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-secondary)] whitespace-nowrap">{row.date}</td>
                   <td className="px-4 py-2.5 mono text-center">{row.evaluated}</td>
                   <td className="px-4 py-2.5 mono text-center text-green-400">{row.created}</td>
                   <td className="px-4 py-2.5 mono text-center text-blue-400">{row.skipped}</td>
@@ -374,7 +374,7 @@ function AutomationTab() {
                   <td className="px-4 py-2.5">
                     <button
                       onClick={() => setSelectedRun(i)}
-                      className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-1 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors"
+                      className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-1 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors"
                     >
                       View Detail
                     </button>
@@ -397,7 +397,7 @@ function AutomationTab() {
 
 type TabType = CustomerStatus | "Automation";
 
-export default function Subscriptions({ swapAlert, stream, demoMode }: { swapAlert: boolean; stream: BusinessStream; demoMode?: boolean }) {
+export default function Subscriptions({ swapAlert, stream }: { swapAlert: boolean; stream: BusinessStream }) {
   const [activeTab, setActiveTab] = useState<TabType>("Active");
 
   const accent = stream === "meal-plans" ? "#F5B300" : "#E85D04";
@@ -419,7 +419,8 @@ export default function Subscriptions({ swapAlert, stream, demoMode }: { swapAle
   const subRows = streamSubs.map(s => ({
     "Sub ID": s.id,
     "Customer": s.customerName,
-    "Plan Type": s.planType,
+    "Plan Type": s.mealPlanType ?? s.planType,
+    "Programme": s.programme ?? "",
     "Goal": s.goal ?? "",
     "Meals/wk": s.mealsPerWeek,
     "Status": s.status,
@@ -437,8 +438,8 @@ export default function Subscriptions({ swapAlert, stream, demoMode }: { swapAle
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-extrabold">Subscriptions</h2>
         <div className="flex gap-2">
-          <button onClick={() => downloadCSV("subscriptions.csv", subRows)} className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">CSV ↓</button>
-          <button onClick={() => downloadExcel("subscriptions.xlsx", subRows)} className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">Excel ↓</button>
+          <button onClick={() => downloadCSV("subscriptions.csv", subRows)} className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">CSV ↓</button>
+          <button onClick={() => downloadExcel("subscriptions.xlsx", subRows)} className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">Excel ↓</button>
         </div>
       </div>
 
@@ -452,8 +453,71 @@ export default function Subscriptions({ swapAlert, stream, demoMode }: { swapAle
         </div>
       )}
 
+      {stream === "meal-plans" ? (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4">
+            <div className="pm-section-heading mb-3">Current Programmes</div>
+            <div className="flex flex-wrap gap-2">
+              {mealPlanProgrammes.map(programme => (
+                <div key={programme.id} className="border border-[var(--pm-border)] bg-[var(--pm-surface-subtle)] px-3 py-2">
+                  <div className="text-xs font-bold text-[var(--pm-text-secondary)]">{programme.name}</div>
+                  <div className="mt-0.5 text-[10px] text-[var(--pm-text-muted)] mono">{programme.kind} · {programme.coverage}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4">
+            <div className="pm-section-heading mb-3">Meal Variants &amp; Delivery Pricing</div>
+            <div className="space-y-2">
+              {mealPlanVariants.map(variant => (
+                <div key={variant.id} className="flex items-center justify-between gap-4 border-b border-[var(--pm-border-soft)] pb-2 text-xs last:border-0 last:pb-0">
+                  <div>
+                    <div className="font-semibold text-[var(--pm-text-secondary)]">{variant.id}</div>
+                    <div className="text-[var(--pm-text-muted)] mono">{variant.calories} · P {variant.protein}g · C {variant.carbs}g</div>
+                  </div>
+                  <div className="text-right text-[var(--pm-text-muted)] mono">
+                    <div>Lunch ${variant.lunchOnly}</div>
+                    <div>Lunch + Dinner ${variant.lunchDinner}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+          <div className="border-b border-[var(--pm-border)] px-4 py-3">
+            <div className="text-sm font-semibold">Ready Series Subscription Catalog</div>
+            <div className="mt-1 text-xs text-[var(--pm-text-muted)]">Predefined products · one planned delivery each month · 3- or 6-month term</div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[var(--pm-border-soft)]">
+                  {["SKU", "Package", "Variant", "Items / Delivery", "3 Months", "6 Months"].map(heading => (
+                    <th key={heading} className="whitespace-nowrap px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--pm-text-muted)]">{heading}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {readySeriesSubscriptions.map(product => (
+                  <tr key={product.sku} className="border-b border-[var(--pm-border-soft)]">
+                    <td className="px-4 py-2 text-xs font-bold text-[var(--pm-secondary-text)] mono">{product.sku}</td>
+                    <td className="px-4 py-2 text-xs font-semibold text-[var(--pm-text-secondary)]">{product.name}</td>
+                    <td className="px-4 py-2 text-xs text-[var(--pm-text-muted)]">{product.variant}</td>
+                    <td className="px-4 py-2 text-xs text-[var(--pm-text-secondary)] mono">{product.items}</td>
+                    <td className="px-4 py-2 text-xs text-[var(--pm-text-secondary)] mono">${product.price3m.toFixed(2)}</td>
+                    <td className="px-4 py-2 text-xs text-[var(--pm-text-secondary)] mono">${product.price6m.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Tabs */}
-      <div className="flex border-b border-[#2A2A2A]">
+      <div className="flex border-b border-[var(--pm-border)]">
         {allTabs.map(tab => {
           const isActive = activeTab === tab;
           return (
@@ -461,7 +525,7 @@ export default function Subscriptions({ swapAlert, stream, demoMode }: { swapAle
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-5 py-3 text-sm font-medium mono transition-colors flex items-center gap-2 ${
-                isActive ? "border-b-2" : "text-[#888] hover:text-[#E8E8E8]"
+                isActive ? "border-b-2" : "text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)]"
               }`}
               style={isActive ? { borderBottomColor: accent, color: accent } : undefined}
             >
@@ -469,7 +533,7 @@ export default function Subscriptions({ swapAlert, stream, demoMode }: { swapAle
               {tab !== "Automation" && (
                 <span
                   className="text-xs px-1.5 py-0.5"
-                  style={isActive ? { background: accent, color: "black" } : { background: "#2A2A2A", color: "#888" }}
+                  style={isActive ? { background: accent, color: "black" } : { background: "var(--pm-surface-muted)", color: "var(--pm-text-muted)" }}
                 >
                   {counts[tab as CustomerStatus]}
                 </span>
@@ -483,25 +547,25 @@ export default function Subscriptions({ swapAlert, stream, demoMode }: { swapAle
       {isAutoTab ? (
         <AutomationTab />
       ) : (
-        <div className="border border-[#2A2A2A] bg-[#181818] overflow-x-auto">
+        <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#2A2A2A]">
+              <tr className="border-b border-[var(--pm-border)]">
                 {stream === "ready-series"
                   ? (activeTab === "Paused"
                       ? ["Sub ID", "Customer", "SKU", "Term", "Pause Period", "Resume Date", "Payment"].map(h => (
-                          <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[#FFFFFF] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
+                          <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                         ))
                       : ["Sub ID", "Customer", "SKU", "Term", "Deliveries", "Renewal Date", "Next Delivery", "Payment", ""].map(h => (
-                          <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[#FFFFFF] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
+                          <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                         ))
                     )
                   : (activeTab === "Paused"
                       ? ["Sub ID", "Customer", "Plan", "Goal", "Meals/wk", "Pause Period", "Resume Date", "Menu"].map(h => (
-                          <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[#FFFFFF] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
+                          <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                         ))
                       : ["Sub ID", "Customer", "Plan", "Goal", "Meals/wk", "Plan Week", "Wks Left", "Next Delivery", "Next Billing", "Menu", ""].map(h => (
-                          <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[#FFFFFF] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
+                          <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                         ))
                     )
                 }
@@ -509,14 +573,14 @@ export default function Subscriptions({ swapAlert, stream, demoMode }: { swapAle
             </thead>
             <tbody>
               {filtered.map((s, i) => (
-                <tr key={s.id} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] transition-colors ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
+                <tr key={s.id} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] transition-colors ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
                   <td className="px-4 py-2.5 mono text-xs" style={{ color: accent }}>{s.id}</td>
                   <td className="px-4 py-2.5 font-medium">{s.customerName}</td>
 
                   {stream === "ready-series" ? (
                     <>
-                      <td className="px-4 py-2.5 mono text-xs text-[#888]">{s.sku ?? "—"}</td>
-                      <td className="px-4 py-2.5 mono text-xs text-[#E85D04]">{s.term ?? "—"}</td>
+                      <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{s.sku ?? "—"}</td>
+                      <td className="px-4 py-2.5 mono text-xs text-[var(--pm-secondary-text)]">{s.term ?? "—"}</td>
                       {activeTab === "Paused" ? (
                         <>
                           <td className="px-4 py-2.5 mono text-xs text-yellow-400">{s.pauseStart} – {s.pauseEnd}</td>
@@ -529,7 +593,7 @@ export default function Subscriptions({ swapAlert, stream, demoMode }: { swapAle
                               ? <span>{s.deliveriesCompleted} / {s.deliveriesTotal}</span>
                               : "—"}
                           </td>
-                          <td className="px-4 py-2.5 mono text-xs text-[#F5B300]">{s.renewalDate ?? "—"}</td>
+                          <td className="px-4 py-2.5 mono text-xs text-[var(--pm-accent-text)]">{s.renewalDate ?? "—"}</td>
                           <td className="px-4 py-2.5 mono text-xs">{s.nextDelivery}</td>
                         </>
                       )}
@@ -544,7 +608,7 @@ export default function Subscriptions({ swapAlert, stream, demoMode }: { swapAle
                       </td>
                       {activeTab !== "Paused" && (
                         <td className="px-4 py-2.5">
-                          <button className="text-xs border border-[#2A2A2A] px-2 py-1 text-[#888] hover:border-[#E85D04] hover:text-[#E85D04] transition-colors mono">
+                          <button className="text-xs border border-[var(--pm-border)] px-2 py-1 text-[var(--pm-text-muted)] hover:border-[#E85D04] hover:text-[var(--pm-secondary-text)] transition-colors mono">
                             Manage
                           </button>
                         </td>
@@ -552,9 +616,12 @@ export default function Subscriptions({ swapAlert, stream, demoMode }: { swapAle
                     </>
                   ) : (
                     <>
-                      <td className="px-4 py-2.5 text-xs text-[#888]">{s.planType}</td>
+                      <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">
+                        <span className="block text-[var(--pm-text-secondary)]">{s.mealPlanType ?? s.planType}</span>
+                        {s.programme && <span className="block text-[var(--pm-text-muted)] mono">{s.programme}</span>}
+                      </td>
                       <td className="px-4 py-2.5">
-                        {s.goal ? <span className="mono text-xs font-bold text-[#E85D04]">{s.goal}</span> : <span className="text-[#444]">—</span>}
+                        {s.goal ? <span className="mono text-xs font-bold text-[var(--pm-secondary-text)]">{s.goal}</span> : <span className="text-[var(--pm-text-muted)]">—</span>}
                       </td>
                       <td className="px-4 py-2.5 mono text-center">{s.mealsPerWeek}</td>
 
@@ -567,7 +634,7 @@ export default function Subscriptions({ swapAlert, stream, demoMode }: { swapAle
                         <>
                           <td className="px-4 py-2.5 mono text-xs">
                             {s.planWeek !== "–" ? (
-                              <span className={parseInt(s.planWeek.split(" ")[1]) > parseInt(s.planWeek.split("/")[1]) ? "text-[#E85D04]" : ""}>
+                              <span className={parseInt(s.planWeek.split(" ")[1]) > parseInt(s.planWeek.split("/")[1]) ? "text-[var(--pm-secondary-text)]" : ""}>
                                 {s.planWeek}
                               </span>
                             ) : "–"}
@@ -594,7 +661,7 @@ export default function Subscriptions({ swapAlert, stream, demoMode }: { swapAle
 
                       {activeTab !== "Paused" && (
                         <td className="px-4 py-2.5">
-                          <button className="text-xs border border-[#2A2A2A] px-2 py-1 text-[#888] hover:border-[#F5B300] hover:text-[#F5B300] transition-colors mono">
+                          <button className="text-xs border border-[var(--pm-border)] px-2 py-1 text-[var(--pm-text-muted)] hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors mono">
                             Manage
                           </button>
                         </td>
@@ -606,7 +673,7 @@ export default function Subscriptions({ swapAlert, stream, demoMode }: { swapAle
             </tbody>
           </table>
           {filtered.length === 0 && (
-            <div className="px-4 py-8 text-center text-[#888] text-sm">No {(activeTab as string).toLowerCase()} subscriptions</div>
+            <div className="px-4 py-8 text-center text-[var(--pm-text-muted)] text-sm">No {(activeTab as string).toLowerCase()} subscriptions</div>
           )}
         </div>
       )}

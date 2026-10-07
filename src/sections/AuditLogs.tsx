@@ -44,10 +44,10 @@ const typeColor: Record<string, string> = {
   update: "text-yellow-400 bg-yellow-950/40",
   create: "text-green-400 bg-green-950",
   assign: "text-purple-400 bg-purple-950",
-  finance: "text-[#F5B300] bg-yellow-950/40",
-  export: "text-[#888] bg-[#2A2A2A]",
+  finance: "text-[var(--pm-accent-text)] bg-yellow-950/40",
+  export: "text-[var(--pm-text-muted)] bg-[var(--pm-surface-muted)]",
   alert: "text-red-400 bg-red-950",
-  admin: "text-[#E85D04] bg-orange-950",
+  admin: "text-[var(--pm-secondary-text)] bg-orange-950",
   automation: "text-purple-400 bg-purple-950/40",
   "menu-change": "text-cyan-400 bg-cyan-950/40",
   "credit-adjust": "text-emerald-400 bg-emerald-950/40",
@@ -91,15 +91,15 @@ export default function AuditLogs({ demoMode }: { demoMode?: boolean } = {}) {
     <div className="p-6 space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-extrabold">Audit Logs</h2>
-        <button className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+        <button className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
           Export Logs CSV
         </button>
       </div>
 
-      <div className="border border-[#2A2A2A] bg-[#0D0D0D] px-4 py-3 flex items-start gap-3">
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "#555", background: "#1A1A1A", border: "1px solid #2A2A2A", padding: "2px 6px", flexShrink: 0, marginTop: 1 }}>PROTOTYPE</span>
-        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "#555", lineHeight: 1.6 }}>
-          <span className="text-[#777]">Production audit records must be server-side and tamper-resistant.</span>{" "}
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-bg)] px-4 py-3 flex items-start gap-3">
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "var(--pm-text-muted)", background: "var(--pm-surface-muted)", border: "1px solid var(--pm-border)", padding: "2px 6px", flexShrink: 0, marginTop: 1 }}>PROTOTYPE</span>
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "var(--pm-text-muted)", lineHeight: 1.6 }}>
+          <span className="text-[var(--pm-text-muted)]">Production audit records must be server-side and tamper-resistant.</span>{" "}
           The log entries shown here are prototype representations for workflow reference. In production, sensitive actions (order generation, menu changes, wallet adjustments, refund decisions, permission changes) are recorded server-side with immutable timestamps and cannot be altered from the admin UI.
         </p>
       </div>
@@ -115,33 +115,33 @@ export default function AuditLogs({ demoMode }: { demoMode?: boolean } = {}) {
           placeholder="Search user, action, module…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="bg-[#181818] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-2 w-64 focus:outline-none focus:border-[#F5B300] placeholder:text-[#444]"
+          className="bg-[var(--pm-surface)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 w-64 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]"
         />
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider">Dept</span>
+          <span className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">Dept</span>
           <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)}
-            className="bg-[#181818] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-2 mono focus:outline-none focus:border-[#F5B300]">
+            className="bg-[var(--pm-surface)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 mono focus:outline-none focus:border-[#F5B300]">
             {depts.map(d => <option key={d}>{d}</option>)}
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider">Type</span>
+          <span className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">Type</span>
           <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-            className="bg-[#181818] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-2 mono focus:outline-none focus:border-[#F5B300]">
+            className="bg-[var(--pm-surface)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 mono focus:outline-none focus:border-[#F5B300]">
             {types.map(t => <option key={t} value={t}>{typeLabel[t] ?? t}</option>)}
           </select>
         </div>
-        <div className="ml-auto text-xs text-[#888] mono self-center">{filtered.length} entries</div>
+        <div className="ml-auto text-xs text-[var(--pm-text-muted)] mono self-center">{filtered.length} entries</div>
       </div>
 
       <div className={`grid gap-4 ${selectedLog ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1"}`}>
         {/* Log table */}
-        <div className={`${selectedLog ? "col-span-2" : ""} border border-[#2A2A2A] bg-[#181818] overflow-x-auto`}>
+        <div className={`${selectedLog ? "col-span-2" : ""} border border-[var(--pm-border)] bg-[var(--pm-surface)] overflow-x-auto`}>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#2A2A2A]">
+              <tr className="border-b border-[var(--pm-border)]">
                 {["Log ID", "Timestamp", "User", "Department", "Action", "Module", "Type"].map(h => (
-                  <th key={h} className="px-4 py-2 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
+                  <th key={h} className="px-4 py-2 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -149,15 +149,15 @@ export default function AuditLogs({ demoMode }: { demoMode?: boolean } = {}) {
               {filtered.map((log, i) => (
                 <tr key={log.id}
                   onClick={() => setSelectedLog(selectedLog?.id === log.id ? null : log)}
-                  className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] transition-colors cursor-pointer ${i % 2 === 0 ? "" : "bg-[#141414]"} ${selectedLog?.id === log.id ? "bg-[#1F1F1F]" : ""}`}>
-                  <td className="px-4 py-2.5 mono text-xs text-[#F5B300]">{log.id}</td>
-                  <td className="px-4 py-2.5 mono text-xs text-[#888] whitespace-nowrap">{log.ts}</td>
+                  className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] transition-colors cursor-pointer ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"} ${selectedLog?.id === log.id ? "bg-[var(--pm-surface-subtle)]" : ""}`}>
+                  <td className="px-4 py-2.5 mono text-xs text-[var(--pm-accent-text)]">{log.id}</td>
+                  <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)] whitespace-nowrap">{log.ts}</td>
                   <td className="px-4 py-2.5 font-medium whitespace-nowrap">{log.user}</td>
-                  <td className="px-4 py-2.5 text-xs text-[#888]">{log.dept}</td>
+                  <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{log.dept}</td>
                   <td className="px-4 py-2.5 text-xs max-w-[240px] truncate">{log.action}</td>
-                  <td className="px-4 py-2.5 text-xs text-[#888]">{log.module}</td>
+                  <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{log.module}</td>
                   <td className="px-4 py-2.5">
-                    <span className={`text-xs mono px-2 py-0.5 font-bold ${typeColor[log.type] ?? "text-[#888]"}`}>
+                    <span className={`text-xs mono px-2 py-0.5 font-bold ${typeColor[log.type] ?? "text-[var(--pm-text-muted)]"}`}>
                       {typeLabel[log.type] ?? log.type}
                     </span>
                   </td>
@@ -169,64 +169,64 @@ export default function AuditLogs({ demoMode }: { demoMode?: boolean } = {}) {
 
         {/* Detail panel */}
         {selectedLog && (
-          <div className="border border-[#2A2A2A] bg-[#181818] p-4 space-y-4">
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4 space-y-4">
             <div className="flex items-center justify-between">
-              <span className="mono text-xs text-[#F5B300] font-bold">{selectedLog.id}</span>
-              <button onClick={() => setSelectedLog(null)} className="text-[#555] hover:text-[#E8E8E8] text-lg mono">×</button>
+              <span className="mono text-xs text-[var(--pm-accent-text)] font-bold">{selectedLog.id}</span>
+              <button onClick={() => setSelectedLog(null)} className="text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)] text-lg mono">×</button>
             </div>
             <div className="space-y-3">
               <div>
-                <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider mb-1">Action</div>
-                <div className="text-xs text-[#E8E8E8] leading-relaxed">{selectedLog.action}</div>
+                <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider mb-1">Action</div>
+                <div className="text-xs text-[var(--pm-text-secondary)] leading-relaxed">{selectedLog.action}</div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <div className="text-xs text-[#DDDDDD] mb-0.5">User</div>
-                  <div className="text-xs mono text-[#E8E8E8]">{selectedLog.user}</div>
+                  <div className="text-xs text-[var(--pm-text-secondary)] mb-0.5">User</div>
+                  <div className="text-xs mono text-[var(--pm-text-secondary)]">{selectedLog.user}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-[#DDDDDD] mb-0.5">Role / Dept</div>
-                  <div className="text-xs mono text-[#888]">{selectedLog.dept}</div>
+                  <div className="text-xs text-[var(--pm-text-secondary)] mb-0.5">Role / Dept</div>
+                  <div className="text-xs mono text-[var(--pm-text-muted)]">{selectedLog.dept}</div>
                 </div>
               </div>
               <div>
-                <div className="text-xs text-[#DDDDDD] mb-0.5">Timestamp</div>
-                <div className="text-xs mono text-[#888]">{selectedLog.ts}</div>
+                <div className="text-xs text-[var(--pm-text-secondary)] mb-0.5">Timestamp</div>
+                <div className="text-xs mono text-[var(--pm-text-muted)]">{selectedLog.ts}</div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <div className="text-xs text-[#DDDDDD] mb-0.5">Module</div>
-                  <div className="text-xs mono text-[#888]">{selectedLog.module}</div>
+                  <div className="text-xs text-[var(--pm-text-secondary)] mb-0.5">Module</div>
+                  <div className="text-xs mono text-[var(--pm-text-muted)]">{selectedLog.module}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-[#DDDDDD] mb-0.5">Type</div>
-                  <span className={`text-xs mono px-2 py-0.5 font-bold ${typeColor[selectedLog.type] ?? "text-[#888]"}`}>
+                  <div className="text-xs text-[var(--pm-text-secondary)] mb-0.5">Type</div>
+                  <span className={`text-xs mono px-2 py-0.5 font-bold ${typeColor[selectedLog.type] ?? "text-[var(--pm-text-muted)]"}`}>
                     {typeLabel[selectedLog.type] ?? selectedLog.type}
                   </span>
                 </div>
               </div>
-              <div className="border border-[#2A2A2A] bg-[#0F0F0F] p-3 space-y-2">
+              <div className="border border-[var(--pm-border)] bg-[var(--pm-bg)] p-3 space-y-2">
                 <div>
-                  <div className="text-xs text-[#DDDDDD] mb-0.5">Previous Value</div>
-                  <div className="text-xs mono text-[#888]">{selectedLog.prevValue ?? "—"}</div>
+                  <div className="text-xs text-[var(--pm-text-secondary)] mb-0.5">Previous Value</div>
+                  <div className="text-xs mono text-[var(--pm-text-muted)]">{selectedLog.prevValue ?? "—"}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-[#DDDDDD] mb-0.5">New Value</div>
+                  <div className="text-xs text-[var(--pm-text-secondary)] mb-0.5">New Value</div>
                   <div className="text-xs mono text-green-400">{selectedLog.newValue ?? "—"}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-[#DDDDDD] mb-0.5">Reason</div>
-                  <div className="text-xs text-[#CCCCCC]">{selectedLog.reason ?? "—"}</div>
+                  <div className="text-xs text-[var(--pm-text-secondary)] mb-0.5">Reason</div>
+                  <div className="text-xs text-[var(--pm-text-secondary)]">{selectedLog.reason ?? "—"}</div>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <div className="text-xs text-[#DDDDDD] mb-0.5">IP Address</div>
-                  <div className="text-xs mono text-[#555]">{selectedLog.ip}</div>
+                  <div className="text-xs text-[var(--pm-text-secondary)] mb-0.5">IP Address</div>
+                  <div className="text-xs mono text-[var(--pm-text-muted)]">{selectedLog.ip}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-[#DDDDDD] mb-0.5">Device</div>
-                  <div className="text-xs mono text-[#555]">{selectedLog.device}</div>
+                  <div className="text-xs text-[var(--pm-text-secondary)] mb-0.5">Device</div>
+                  <div className="text-xs mono text-[var(--pm-text-muted)]">{selectedLog.device}</div>
                 </div>
               </div>
             </div>

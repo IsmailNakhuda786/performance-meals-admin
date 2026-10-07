@@ -1,5 +1,4 @@
 import { useState } from "react";
-import type { BusinessStream } from "../App";
 import { printHtml, nowStr, nowTime } from "../utils/flowUtils";
 
 const riders = [
@@ -27,11 +26,11 @@ interface DispatchOrder {
 }
 
 const allOrders: DispatchOrder[] = [
-  { id: "ORD-2421", customer: "Wei Jie Lim", phone: "+65 9101 1234", unit: "#08-11", address: "Blk 204 Tampines St 21", zone: "East", window: "10:00–12:00", pickupTime: "08:30", dispatchPoint: "Tampines Hub", type: "Box Subscription", stream: "RS", status: "out-for-delivery", rider: "Ahmad Zaki" },
-  { id: "ORD-2422", customer: "Jade Koh", phone: "+65 9202 5678", unit: "#03-22", address: "12 Woodlands Ave 5", zone: "North", window: "10:00–12:00", pickupTime: "08:30", dispatchPoint: "Woodlands DC", type: "Box Subscription", stream: "RS", status: "assigned", rider: "James Ng" },
-  { id: "ORD-2423", customer: "Darren Ong", phone: "+65 9303 9012", unit: "#11-04", address: "88 Bukit Timah Rd", zone: "West", window: "14:00–16:00", pickupTime: "12:30", dispatchPoint: "Buona Vista Hub", type: "Ready-to-Go", stream: "RS", status: "pending" },
-  { id: "ORD-2424", customer: "Jason Yeo", phone: "+65 9404 3456", unit: "#06-08", address: "Blk 44 Geylang Bahru", zone: "Central", window: "14:00–16:00", pickupTime: "12:30", dispatchPoint: "Toa Payoh Hub", type: "Box Subscription", stream: "RS", status: "pending" },
-  { id: "ORD-2425", customer: "Priya K", phone: "+65 9505 7890", unit: "#12-02", address: "3 Orchard Blvd", zone: "Central", window: "10:00–12:00", pickupTime: "08:30", dispatchPoint: "Toa Payoh Hub", type: "Ready-to-Go", stream: "RS", status: "delivered", rider: "Raju Kumar" },
+  { id: "ORD-2421", customer: "Wei Jie Lim", phone: "+65 9101 1234", unit: "#08-11", address: "Blk 204 Tampines St 21", zone: "East", window: "10:00–12:00", pickupTime: "08:30", dispatchPoint: "Tampines Hub", type: "Ready Series Subscription", stream: "RS", status: "out-for-delivery", rider: "Ahmad Zaki" },
+  { id: "ORD-2422", customer: "Jade Koh", phone: "+65 9202 5678", unit: "#03-22", address: "12 Woodlands Ave 5", zone: "North", window: "10:00–12:00", pickupTime: "08:30", dispatchPoint: "Woodlands DC", type: "Ready Series Subscription", stream: "RS", status: "assigned", rider: "James Ng" },
+  { id: "ORD-2423", customer: "Darren Ong", phone: "+65 9303 9012", unit: "#11-04", address: "88 Bukit Timah Rd", zone: "West", window: "14:00–16:00", pickupTime: "12:30", dispatchPoint: "Buona Vista Hub", type: "Ready Series A-la-carte", stream: "RS", status: "pending" },
+  { id: "ORD-2424", customer: "Jason Yeo", phone: "+65 9404 3456", unit: "#06-08", address: "Blk 44 Geylang Bahru", zone: "Central", window: "14:00–16:00", pickupTime: "12:30", dispatchPoint: "Toa Payoh Hub", type: "Ready Series Subscription", stream: "RS", status: "pending" },
+  { id: "ORD-2425", customer: "Priya K", phone: "+65 9505 7890", unit: "#12-02", address: "3 Orchard Blvd", zone: "Central", window: "10:00–12:00", pickupTime: "08:30", dispatchPoint: "Toa Payoh Hub", type: "Ready Series A-la-carte", stream: "RS", status: "delivered", rider: "Raju Kumar" },
   { id: "SUB-2201", customer: "Marcus Tan", phone: "+65 9606 1122", unit: "#05-14", address: "Blk 113 Bishan St 12", zone: "Central", window: "10:00–12:00", pickupTime: "08:30", dispatchPoint: "Toa Payoh Hub", type: "12-Week BUILD · 10 meals", stream: "MP", status: "out-for-delivery", rider: "Daniel Tan" },
   { id: "SUB-2202", customer: "Priya Nair", phone: "+65 9707 3344", unit: "#04-22", address: "Blk 88 Tampines Ave 7", zone: "East", window: "10:00–12:00", pickupTime: "08:30", dispatchPoint: "Tampines Hub", type: "8-Week CUT · 10 meals", stream: "MP", status: "assigned", rider: "Ahmad Zaki" },
   { id: "SUB-2203", customer: "Natalie Foo", phone: "+65 9808 5566", unit: "#14-33", address: "Blk 77 Clementi Ave 2", zone: "West", window: "14:00–16:00", pickupTime: "12:30", dispatchPoint: "Buona Vista Hub", type: "12-Week BUILD · 10 meals", stream: "MP", status: "pending" },
@@ -40,7 +39,7 @@ const allOrders: DispatchOrder[] = [
 ];
 
 const statusConfig: Record<DispatchOrder["status"], { label: string; color: string }> = {
-  pending: { label: "Pending", color: "#888" },
+  pending: { label: "Pending", color: "var(--pm-text-muted)" },
   assigned: { label: "Assigned", color: "#3B82F6" },
   "out-for-delivery": { label: "Out for Delivery", color: "#F5B300" },
   delivered: { label: "Delivered", color: "#22C55E" },
@@ -50,10 +49,10 @@ const statusConfig: Record<DispatchOrder["status"], { label: string; color: stri
 const riderStatusColor: Record<string, string> = {
   Available: "text-green-400",
   "On Route": "text-yellow-400",
-  Completed: "text-[#555]",
+  Completed: "text-[var(--pm-text-muted)]",
 };
 
-export default function Dispatch({ stream, demoMode }: { stream: BusinessStream; demoMode?: boolean }) {
+export default function Dispatch({ demoMode }: { demoMode?: boolean } = {}) {
   const [assignModal, setAssignModal] = useState<string | null>(demoMode ? allOrders.find(o => o.status === "pending")?.id ?? null : null);
   const [orders, setOrders] = useState(allOrders);
   const [selectedRider, setSelectedRider] = useState("");
@@ -111,7 +110,7 @@ export default function Dispatch({ stream, demoMode }: { stream: BusinessStream;
                 <div class="footer">Performance Meals · Dispatch Portal · ${nowStr()} ${nowTime()}</div>
               `);
             }}
-            className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+            className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
             Generate Manifest
           </button>
           <button
@@ -146,7 +145,7 @@ export default function Dispatch({ stream, demoMode }: { stream: BusinessStream;
                 <div class="footer">Performance Meals · Dispatch Portal · ${nowStr()} ${nowTime()}</div>
               `);
             }}
-            className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+            className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
             ⎙ Route Sheet
           </button>
         </div>
@@ -154,41 +153,41 @@ export default function Dispatch({ stream, demoMode }: { stream: BusinessStream;
 
       {/* CRITICAL: Two-stream KPI blocks — never merged */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="border border-[#E85D04]/30 bg-[#181818]">
+        <div className="border border-[#E85D04]/30 bg-[var(--pm-surface)]">
           <div className="px-4 py-2.5 border-b border-[#E85D04]/20 flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-[#E85D04]" />
             <span className="text-xs font-extrabold tracking-widest uppercase" style={{ color: "#E85D04" }}>Ready Series Queue</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[#2A2A2A]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[var(--pm-surface-muted)]">
             {[
               { label: "Total", value: rsKpis.total },
               { label: "Pending", value: rsKpis.pending, warn: true },
               { label: "En Route", value: rsKpis.outForDelivery },
               { label: "Delivered", value: rsKpis.delivered, good: true },
             ].map(k => (
-              <div key={k.label} className="bg-[#181818] p-3 text-center">
-                <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-1">{k.label}</div>
-                <div className="text-xl font-extrabold mono" style={{ color: k.good ? "#22C55E" : k.warn && k.value > 0 ? "#E85D04" : "#E8E8E8" }}>{k.value}</div>
+              <div key={k.label} className="bg-[var(--pm-surface)] p-3 text-center">
+                <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-1">{k.label}</div>
+                <div className="text-xl font-extrabold mono" style={{ color: k.good ? "#22C55E" : k.warn && k.value > 0 ? "#E85D04" : "var(--pm-text-secondary)" }}>{k.value}</div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="border border-[#F5B300]/30 bg-[#181818]">
+        <div className="border border-[#F5B300]/30 bg-[var(--pm-surface)]">
           <div className="px-4 py-2.5 border-b border-[#F5B300]/20 flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-[#F5B300]" />
             <span className="text-xs font-extrabold tracking-widest uppercase" style={{ color: "#F5B300" }}>Meal Plans Queue</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[#2A2A2A]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[var(--pm-surface-muted)]">
             {[
               { label: "Total", value: mpKpis.total },
               { label: "Pending", value: mpKpis.pending, warn: true },
               { label: "En Route", value: mpKpis.outForDelivery },
               { label: "Delivered", value: mpKpis.delivered, good: true },
             ].map(k => (
-              <div key={k.label} className="bg-[#181818] p-3 text-center">
-                <div className="text-xs text-[#AAAAAA] uppercase tracking-wider mb-1">{k.label}</div>
-                <div className="text-xl font-extrabold mono" style={{ color: k.good ? "#22C55E" : k.warn && k.value > 0 ? "#F5B300" : "#E8E8E8" }}>{k.value}</div>
+              <div key={k.label} className="bg-[var(--pm-surface)] p-3 text-center">
+                <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider mb-1">{k.label}</div>
+                <div className="text-xl font-extrabold mono" style={{ color: k.good ? "#22C55E" : k.warn && k.value > 0 ? "#F5B300" : "var(--pm-text-secondary)" }}>{k.value}</div>
               </div>
             ))}
           </div>
@@ -197,28 +196,28 @@ export default function Dispatch({ stream, demoMode }: { stream: BusinessStream;
 
       {/* Queue stream selector */}
       <div className="flex items-center gap-3">
-        <div className="text-xs mono text-[#555] uppercase tracking-widest">Dispatch Queue</div>
-        <div className="flex gap-1 border border-[#2A2A2A]">
+        <div className="text-xs mono text-[var(--pm-text-muted)] uppercase tracking-widest">Dispatch Queue</div>
+        <div className="flex gap-1 border border-[var(--pm-border)]">
           <button onClick={() => setQueueStream("RS")}
-            className={`px-4 py-1.5 text-xs font-extrabold mono uppercase transition-colors ${queueStream === "RS" ? "bg-[#E85D04] text-black" : "text-[#888] hover:text-[#E8E8E8]"}`}>
+            className={`px-4 py-1.5 text-xs font-extrabold mono uppercase transition-colors ${queueStream === "RS" ? "bg-[#E85D04] text-black" : "text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)]"}`}>
             Ready Series
           </button>
-          <div className="w-px bg-[#2A2A2A]" />
+          <div className="w-px bg-[var(--pm-surface-muted)]" />
           <button onClick={() => setQueueStream("MP")}
-            className={`px-4 py-1.5 text-xs font-extrabold mono uppercase transition-colors ${queueStream === "MP" ? "bg-[#F5B300] text-black" : "text-[#888] hover:text-[#E8E8E8]"}`}>
+            className={`px-4 py-1.5 text-xs font-extrabold mono uppercase transition-colors ${queueStream === "MP" ? "bg-[#F5B300] text-black" : "text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)]"}`}>
             Meal Plans
           </button>
         </div>
-        <div className="text-xs mono text-[#555]">— {queueOrders.length} orders in queue</div>
+        <div className="text-xs mono text-[var(--pm-text-muted)]">— {queueOrders.length} orders in queue</div>
       </div>
 
       {/* Orders table */}
-      <div className="border border-[#2A2A2A] bg-[#181818] overflow-x-auto">
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#2A2A2A]">
+            <tr className="border-b border-[var(--pm-border)]">
               {["Order ID", "Customer", "Phone", "Address", "Window", "Pickup", "Dispatch Point", "Type", "Rider", "Status", "Actions"].map(h => (
-                <th key={h} className="px-4 py-2.5 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
+                <th key={h} className="px-4 py-2.5 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
@@ -226,19 +225,19 @@ export default function Dispatch({ stream, demoMode }: { stream: BusinessStream;
             {queueOrders.map((o, i) => {
               const cfg = statusConfig[o.status];
               return (
-                <tr key={o.id} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] transition-colors ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
+                <tr key={o.id} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] transition-colors ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
                   <td className="px-4 py-2.5 mono text-xs" style={{ color: queueStream === "RS" ? "#E85D04" : "#F5B300" }}>{o.id}</td>
                   <td className="px-4 py-2.5 font-medium whitespace-nowrap">{o.customer}</td>
-                  <td className="px-4 py-2.5 mono text-xs text-[#AAAAAA] whitespace-nowrap">{o.phone ?? <span className="text-[#555]">—</span>}</td>
-                  <td className="px-4 py-2.5 text-xs text-[#CCCCCC]">
+                  <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)] whitespace-nowrap">{o.phone ?? <span className="text-[var(--pm-text-muted)]">—</span>}</td>
+                  <td className="px-4 py-2.5 text-xs text-[var(--pm-text-secondary)]">
                     <div>{o.address}</div>
-                    {o.unit && <div className="text-[#888] mono">{o.unit}</div>}
+                    {o.unit && <div className="text-[var(--pm-text-muted)] mono">{o.unit}</div>}
                   </td>
-                  <td className="px-4 py-2.5 mono text-xs text-[#F5B300] whitespace-nowrap">{o.window}</td>
-                  <td className="px-4 py-2.5 mono text-xs text-[#888] whitespace-nowrap">{o.pickupTime ?? <span className="text-[#555]">—</span>}</td>
-                  <td className="px-4 py-2.5 text-xs text-[#888] whitespace-nowrap">{o.dispatchPoint ?? <span className="text-[#555]">—</span>}</td>
-                  <td className="px-4 py-2.5 text-xs text-[#888] whitespace-nowrap">{o.type}</td>
-                  <td className="px-4 py-2.5 text-xs whitespace-nowrap">{o.rider ?? <span className="text-[#555]">Unassigned</span>}</td>
+                  <td className="px-4 py-2.5 mono text-xs text-[var(--pm-accent-text)] whitespace-nowrap">{o.window}</td>
+                  <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)] whitespace-nowrap">{o.pickupTime ?? <span className="text-[var(--pm-text-muted)]">—</span>}</td>
+                  <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)] whitespace-nowrap">{o.dispatchPoint ?? <span className="text-[var(--pm-text-muted)]">—</span>}</td>
+                  <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)] whitespace-nowrap">{o.type}</td>
+                  <td className="px-4 py-2.5 text-xs whitespace-nowrap">{o.rider ?? <span className="text-[var(--pm-text-muted)]">Unassigned</span>}</td>
                   <td className="px-4 py-2.5">
                     <span className="text-xs mono font-bold whitespace-nowrap" style={{ color: cfg.color }}>{cfg.label}</span>
                   </td>
@@ -246,13 +245,13 @@ export default function Dispatch({ stream, demoMode }: { stream: BusinessStream;
                     <div className="flex gap-1">
                       {o.status === "pending" && (
                         <button onClick={() => setAssignModal(o.id)}
-                          className="text-xs border border-[#2A2A2A] text-[#888] px-2 py-1 hover:border-[#F5B300] hover:text-[#F5B300] mono transition-colors whitespace-nowrap">
+                          className="text-xs border border-[var(--pm-border)] text-[var(--pm-text-muted)] px-2 py-1 hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] mono transition-colors whitespace-nowrap">
                           Assign Rider
                         </button>
                       )}
                       {o.status === "assigned" && (
                         <button onClick={() => setAssignModal(o.id)}
-                          className="text-xs border border-[#2A2A2A] text-[#888] px-2 py-1 hover:border-[#F5B300] hover:text-[#F5B300] mono transition-colors">
+                          className="text-xs border border-[var(--pm-border)] text-[var(--pm-text-muted)] px-2 py-1 hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] mono transition-colors">
                           Reassign
                         </button>
                       )}
@@ -266,16 +265,16 @@ export default function Dispatch({ stream, demoMode }: { stream: BusinessStream;
       </div>
 
       {/* Rider availability */}
-      <div className="border border-[#2A2A2A] bg-[#181818]">
-        <div className="px-4 py-3 border-b border-[#2A2A2A]">
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+        <div className="px-4 py-3 border-b border-[var(--pm-border)]">
           <span className="text-sm font-semibold">Rider Availability</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#2A2A2A]">
+              <tr className="border-b border-[var(--pm-border)]">
                 {["Rider", "Vehicle", "Zone", "Status", "Assigned Today"].map(h => (
-                  <th key={h} className="px-4 py-2 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium">{h}</th>
+                  <th key={h} className="px-4 py-2 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -283,14 +282,14 @@ export default function Dispatch({ stream, demoMode }: { stream: BusinessStream;
               {riders.map((r, i) => {
                 const assigned = orders.filter(o => o.rider === r.name).length;
                 return (
-                  <tr key={r.id} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
+                  <tr key={r.id} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
                     <td className="px-4 py-2.5 font-medium">{r.name}</td>
-                    <td className="px-4 py-2.5 text-xs text-[#888]">{r.vehicle}</td>
-                    <td className="px-4 py-2.5 text-xs text-[#888]">{r.zone}</td>
+                    <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{r.vehicle}</td>
+                    <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{r.zone}</td>
                     <td className="px-4 py-2.5">
                       <span className={`text-xs mono font-bold ${riderStatusColor[r.status]}`}>{r.status}</span>
                     </td>
-                    <td className="px-4 py-2.5 mono text-xs text-[#E8E8E8]">{assigned} orders</td>
+                    <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-secondary)]">{assigned} orders</td>
                   </tr>
                 );
               })}
@@ -302,13 +301,13 @@ export default function Dispatch({ stream, demoMode }: { stream: BusinessStream;
       {/* Assign modal */}
       {assignModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onClick={() => setAssignModal(null)}>
-          <div className="bg-[#141414] border border-[#2A2A2A] w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--pm-surface-subtle)] border border-[var(--pm-border)] w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-bold">Assign Rider — {assignModal}</h3>
-              <button onClick={() => setAssignModal(null)} className="text-[#888] hover:text-[#E8E8E8] text-xl mono">×</button>
+              <button onClick={() => setAssignModal(null)} className="text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)] text-xl mono">×</button>
             </div>
             <select value={selectedRider} onChange={e => setSelectedRider(e.target.value)}
-              className="w-full bg-[#181818] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-2 mono focus:outline-none focus:border-[#F5B300]">
+              className="w-full bg-[var(--pm-surface)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 mono focus:outline-none focus:border-[#F5B300]">
               <option value="">Select rider…</option>
               {riders.filter(r => r.status !== "Completed").map(r => (
                 <option key={r.id} value={r.name}>{r.name} · {r.zone} · {r.status}</option>
@@ -321,7 +320,7 @@ export default function Dispatch({ stream, demoMode }: { stream: BusinessStream;
                 Assign
               </button>
               <button onClick={() => setAssignModal(null)}
-                className="flex-1 border border-[#2A2A2A] text-[#888] text-xs py-2.5 mono hover:text-[#E8E8E8] transition-colors">
+                className="flex-1 border border-[var(--pm-border)] text-[var(--pm-text-muted)] text-xs py-2.5 mono hover:text-[var(--pm-text-secondary)] transition-colors">
                 Cancel
               </button>
             </div>

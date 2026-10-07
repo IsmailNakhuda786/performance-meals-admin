@@ -1,10 +1,10 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import StatusBadge from "../components/StatusBadge";
-import { orders, weeklyRevenue, stockAlerts, subscriptions } from "../data";
+import { orders, weeklyRevenue, stockAlerts, subscriptions, otherSales } from "../data";
 import type { BusinessStream, Theme } from "../App";
 
 const mpOrders = orders.filter(o => o.planType === "Meal Plan");
-const rsOrders = orders.filter(o => o.planType === "Box Subscription" || o.planType === "Ready-to-Go");
+const rsOrders = orders.filter(o => o.planType !== "Meal Plan");
 
 const mpRevenue = mpOrders.reduce((s, o) => s + o.total, 0);
 const rsRevenue = rsOrders.reduce((s, o) => s + o.total, 0);
@@ -46,7 +46,6 @@ const activityColor: Record<string, string> = {
 interface Props {
   stream: BusinessStream;
   swapAlert: boolean;
-  demoMode?: boolean;
   theme: Theme;
 }
 
@@ -86,7 +85,7 @@ function MealPlansDashboard({ swapAlert, theme }: { swapAlert: boolean; theme: T
         <div className="bg-[var(--pm-surface)] border border-[var(--pm-border)] p-4">
           <div className="pm-section-heading mb-3">Active Plans by Type</div>
           <div className="space-y-3">
-            {(["Low Carb Regular", "Low Carb Regular+", "Balance Regular", "Balance Regular+", "6 by 60", "6 by 60 Plus"] as const).map(pt => {
+            {(["Low Carb Regular", "Low Carb Regular+", "Balance Regular", "Balance Regular+"] as const).map(pt => {
               const count = activeMpSubs.filter(s => s.mealPlanType === pt).length;
               return (
                 <div key={pt}>
@@ -260,9 +259,9 @@ function MealPlansDashboard({ swapAlert, theme }: { swapAlert: boolean; theme: T
 }
 
 function ReadySeriesDashboard({ swapAlert, theme }: { swapAlert: boolean; theme: Theme }) {
-  const activeRsSubs = subscriptions.filter(s => s.status === "Active" && s.planType === "Box Subscription");
-  const subOrders = rsOrders.filter(o => o.planType === "Box Subscription");
-  const rtgOrders = rsOrders.filter(o => o.planType === "Ready-to-Go");
+  const activeRsSubs = subscriptions.filter(s => s.status === "Active" && s.planType === "Ready Series Subscription");
+  const subOrders = rsOrders.filter(o => o.planType === "Ready Series Subscription");
+  const rtgOrders = rsOrders.filter(o => o.planType === "Ready Series A-la-carte");
 
   const termBreakdown = [
     { term: "3 Months", count: subscriptions.filter(s => s.planType !== "Meal Plan" && s.term === "3 months" && s.status === "Active").length },
@@ -285,7 +284,7 @@ function ReadySeriesDashboard({ swapAlert, theme }: { swapAlert: boolean; theme:
         {[
           { label: "Active RS Subscriptions", value: String(activeRsSubs.length), sub: `${pausedRsSubs.length} paused`, accent: false },
           { label: "Subscription Orders Today", value: String(subOrders.length), sub: `${subOrders.reduce((a, o) => a + o.meals, 0)} items`, accent: false },
-          { label: "Ready-to-Go Today", value: String(rtgOrders.length), sub: `${rtgOrders.reduce((a, o) => a + o.meals, 0)} individual meals`, accent: false },
+          { label: "Ready Series A-la-carte Today", value: String(rtgOrders.length), sub: `${rtgOrders.reduce((a, o) => a + o.meals, 0)} individual meals`, accent: false },
           { label: "RS Revenue Today", value: `$${rsRevenue.toFixed(0)}`, sub: "SGD", accent: true },
         ].map(k => (
           <div key={k.label} className="pm-stat-card pm-stat-card-orange p-5" style={{ borderColor: k.accent ? "rgba(194,65,12,0.20)" : "var(--pm-border)" }}>
@@ -398,8 +397,8 @@ function ReadySeriesDashboard({ swapAlert, theme }: { swapAlert: boolean; theme:
                   <td className="px-4 py-2.5 mono text-[var(--pm-secondary-text)] text-xs">{o.id}</td>
                   <td className="px-4 py-2.5 font-medium">{o.customer}</td>
                   <td className="px-4 py-2.5">
-                    <span className={`text-xs mono font-bold ${o.planType === "Box Subscription" ? "text-[var(--pm-secondary-text)]" : "text-[var(--pm-text-muted)]"}`}>
-                      {o.planType === "Box Subscription" ? "Box Sub" : "RtG"}
+                    <span className={`text-xs mono font-bold ${o.planType === "Ready Series Subscription" ? "text-[var(--pm-secondary-text)]" : "text-[var(--pm-text-muted)]"}`}>
+                      {o.productName ?? o.planType}
                     </span>
                   </td>
                   <td className="px-4 py-2.5 mono text-center">{o.meals}</td>
@@ -460,9 +459,110 @@ function ReadySeriesDashboard({ swapAlert, theme }: { swapAlert: boolean; theme:
   );
 }
 
+function OtherSalesDashboard({ theme }: { theme: Theme }) {
+  const paidSales = otherSales.filter(sale => sale.status === "Paid");
+  const walletSales = paidSales.filter(sale => sale.type === "Wallet Top-Up");
+  const giftCardSales = paidSales.filter(sale => sale.type === "Gift Card");
+  const walletRevenue = walletSales.reduce((total, sale) => total + sale.amount, 0);
+  const giftCardRevenue = giftCardSales.reduce((total, sale) => total + sale.amount, 0);
+  const totalRevenue = walletRevenue + giftCardRevenue;
+  const chartData = [
+    { category: "Wallet Top-Ups", revenue: walletRevenue },
+    { category: "Gift Cards", revenue: giftCardRevenue },
+  ];
+
+  return (
+    <div className="dashboard-pilot p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] px-4 py-3">
+        <div className="text-sm font-semibold text-[var(--pm-text)]">Non-product sales</div>
+        <div className="mt-1 text-xs text-[var(--pm-text-muted)]">
+          Wallet top-ups and gift-card purchases are reported here only. They do not create meals, subscriptions, production demand, packing tasks, or delivery orders.
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: "Other Sales Revenue", value: `$${totalRevenue.toFixed(2)}`, sub: "paid transactions" },
+          { label: "Wallet Top-Ups", value: `$${walletRevenue.toFixed(2)}`, sub: `${walletSales.length} successful` },
+          { label: "Gift Card Sales", value: `$${giftCardRevenue.toFixed(2)}`, sub: `${giftCardSales.length} successful` },
+          { label: "Pending", value: String(otherSales.filter(sale => sale.status === "Pending").length), sub: "awaiting payment confirmation" },
+        ].map(item => (
+          <div key={item.label} className="pm-stat-card p-5">
+            <div className="pm-section-heading mb-3">{item.label}</div>
+            <div className="text-3xl font-extrabold leading-none text-[var(--pm-text)] mono">{item.value}</div>
+            <div className="mt-2 text-xs text-[var(--pm-text-muted)] mono">{item.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] lg:col-span-2">
+          <div className="border-b border-[var(--pm-border)] px-4 py-3">
+            <span className="text-sm font-semibold tracking-wide">Other Sales Transactions</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[var(--pm-border-soft)]">
+                  {["Sale", "Date", "Customer", "Type", "Reference", "Amount", "Status"].map(heading => (
+                    <th key={heading} className="whitespace-nowrap px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--pm-text-muted)]">{heading}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {otherSales.map((sale, index) => (
+                  <tr key={sale.id} className={`border-b border-[var(--pm-border-soft)] ${index % 2 ? "bg-[var(--pm-surface-subtle)]" : ""}`}>
+                    <td className="px-4 py-2.5 text-xs text-[var(--pm-text-secondary)] mono">{sale.id}</td>
+                    <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)] mono">{sale.date}</td>
+                    <td className="px-4 py-2.5 font-medium">{sale.customer}</td>
+                    <td className="px-4 py-2.5 text-xs text-[var(--pm-text-secondary)]">{sale.type}</td>
+                    <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)] mono">{sale.reference}</td>
+                    <td className="px-4 py-2.5 font-bold mono">{sale.amount < 0 ? `-$${Math.abs(sale.amount).toFixed(2)}` : `$${sale.amount.toFixed(2)}`}</td>
+                    <td className="px-4 py-2.5">
+                      <span className={`px-2 py-0.5 text-xs font-bold mono ${
+                        sale.status === "Paid"
+                          ? theme === "dark" ? "bg-green-950 text-green-400" : "bg-green-50 text-green-700"
+                          : sale.status === "Pending"
+                            ? theme === "dark" ? "bg-yellow-950 text-yellow-400" : "bg-amber-50 text-amber-700"
+                            : "bg-[var(--pm-surface-muted)] text-[var(--pm-text-muted)]"
+                      }`}>{sale.status}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+          <div className="border-b border-[var(--pm-border)] px-4 py-3">
+            <span className="text-sm font-semibold tracking-wide">Revenue by Type</span>
+          </div>
+          <div className="h-64 p-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} layout="vertical" margin={{ left: 12 }}>
+                <XAxis type="number" hide />
+                <YAxis dataKey="category" type="category" width={94} tick={{ fill: "var(--pm-text-muted)", fontSize: 10 }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  contentStyle={{ background: "var(--pm-surface)", border: "1px solid var(--pm-border)", borderRadius: 8, fontFamily: "JetBrains Mono", fontSize: 11 }}
+                  formatter={(value) => [`$${Number(value ?? 0).toFixed(2)}`, "Revenue"]}
+                />
+                <Bar dataKey="revenue" fill="var(--pm-text-secondary)" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard({ stream, swapAlert, theme }: Props) {
   if (stream === "meal-plans") {
     return <MealPlansDashboard swapAlert={swapAlert} theme={theme} />;
   }
-  return <ReadySeriesDashboard swapAlert={swapAlert} theme={theme} />;
+  if (stream === "ready-series") {
+    return <ReadySeriesDashboard swapAlert={swapAlert} theme={theme} />;
+  }
+  return <OtherSalesDashboard theme={theme} />;
 }

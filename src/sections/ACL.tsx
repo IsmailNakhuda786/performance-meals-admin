@@ -91,7 +91,7 @@ export default function ACL({ users = [], currentUserId, onCreate, onUpdate, onD
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#B77900]">Super Admin</p>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--pm-accent-text)]">Super Admin</p>
             <h2 className="mt-1 font-display text-2xl font-extrabold">Users, roles and access</h2>
             <p className="mt-1 text-sm" style={{ color: "var(--pm-text-muted)" }}>
               Assign departments and roles, then tailor module access for each user.

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { BusinessStream } from "../App";
+import { otherSales } from "../data";
 import { downloadCSV, downloadExcel, printHtml, nowStr, nowTime } from "../utils/flowUtils";
 
 const mpTransactions = [
@@ -12,18 +13,28 @@ const mpTransactions = [
 ];
 
 const rsTransactions = [
-  { id: "TXN-4101", date: "14 Sep 2024", customer: "Wei Jie Lim", type: "Box Subscription", amount: 76.50, method: "Card (via Shopify)", status: "Paid" },
-  { id: "TXN-4102", date: "14 Sep 2024", customer: "Jade Koh", type: "Box Subscription", amount: 144.00, method: "PayNow", status: "Paid" },
-  { id: "TXN-4103", date: "14 Sep 2024", customer: "Darren Ong", type: "Ready-to-Go Purchase", amount: 28.50, method: "Card (via Shopify)", status: "Paid" },
-  { id: "TXN-4104", date: "14 Sep 2024", customer: "Jason Yeo", type: "Box Subscription", amount: 216.00, method: "GrabPay", status: "Pending" },
-  { id: "TXN-4105", date: "13 Sep 2024", customer: "Serene Tay", type: "Ready-to-Go Purchase", amount: 19.00, method: "Card (via Shopify)", status: "Refunded" },
+  { id: "TXN-4101", date: "14 Sep 2024", customer: "Wei Jie Lim", type: "Signature 5 — Non-Beef", amount: 48.99, method: "Card (via Shopify)", status: "Paid" },
+  { id: "TXN-4102", date: "14 Sep 2024", customer: "Jade Koh", type: "JPSUB01 · 6 Months", amount: 480.50, method: "PayNow", status: "Paid" },
+  { id: "TXN-4103", date: "14 Sep 2024", customer: "Darren Ong", type: "Ready Series A-la-carte", amount: 38.70, method: "Card (via Shopify)", status: "Paid" },
+  { id: "TXN-4104", date: "14 Sep 2024", customer: "Jason Yeo", type: "LCMIXSUB01 · 3 Months", amount: 354.56, method: "GrabPay", status: "Pending" },
+  { id: "TXN-4105", date: "13 Sep 2024", customer: "Serene Tay", type: "Ready Series A-la-carte", amount: 26.00, method: "Card (via Shopify)", status: "Refunded" },
 ];
+
+const otherTransactions = otherSales.map(sale => ({
+  id: sale.id,
+  date: sale.date,
+  customer: sale.customer,
+  type: sale.type,
+  amount: sale.amount,
+  method: sale.method,
+  status: sale.status,
+}));
 
 const statusStyle: Record<string, string> = {
   Paid: "bg-green-950 text-green-400",
   Pending: "bg-yellow-950 text-yellow-400",
   Failed: "bg-red-950 text-red-400",
-  Refunded: "bg-[#2A2A2A] text-[#888]",
+  Refunded: "bg-[var(--pm-surface-muted)] text-[var(--pm-text-muted)]",
 };
 
 type Txn = typeof mpTransactions[0];
@@ -34,14 +45,16 @@ interface ShopifyModal {
   confirmed: boolean;
 }
 
-export default function Finance({ stream, demoMode }: { stream: BusinessStream; demoMode?: boolean }) {
+export default function Finance({ stream }: { stream: BusinessStream }) {
   const [tab, setTab] = useState<"transactions" | "failed" | "refunds">("transactions");
   const [retryModal, setRetryModal] = useState<ShopifyModal | null>(null);
   const [refundModal, setRefundModal] = useState<ShopifyModal | null>(null);
 
   const isMp = stream === "meal-plans";
-  const accent = isMp ? "#F5B300" : "#E85D04";
-  const txns = isMp ? mpTransactions : rsTransactions;
+  const isRs = stream === "ready-series";
+  const streamLabel = isMp ? "Meal Plans" : isRs ? "Ready Series" : "Other Sales";
+  const accent = isMp ? "#F5B300" : isRs ? "#E85D04" : "var(--pm-text-secondary)";
+  const txns = isMp ? mpTransactions : isRs ? rsTransactions : otherTransactions;
 
   const totalRevenue = txns.filter(t => t.status === "Paid").reduce((a, t) => a + t.amount, 0);
   const totalPending = txns.filter(t => t.status === "Pending").reduce((a, t) => a + t.amount, 0);
@@ -58,7 +71,7 @@ export default function Finance({ stream, demoMode }: { stream: BusinessStream; 
   }));
 
   const handleExport = (type: string) => {
-    const label = isMp ? "MealPlans" : "ReadySeries";
+    const label = isMp ? "MealPlans" : isRs ? "ReadySeries" : "OtherSales";
     if (type === "CSV") {
       downloadCSV(`Finance_${label}_${nowStr()}.csv`, exportRows);
     } else if (type === "Excel") {
@@ -76,7 +89,7 @@ export default function Finance({ stream, demoMode }: { stream: BusinessStream; 
         </tr>`).join("");
       printHtml("Finance Export — Performance Meals", `
         <div class="badge">Finance Export</div>
-        <h1>Finance & Billing — ${isMp ? "Meal Plans" : "Ready Series"}</h1>
+        <h1>Finance & Billing — ${streamLabel}</h1>
         <div class="meta">Exported ${nowStr()} at ${nowTime()}</div>
         <table>
           <thead><tr><th>ID</th><th>Date</th><th>Customer</th><th>Type</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead>
@@ -90,11 +103,11 @@ export default function Finance({ stream, demoMode }: { stream: BusinessStream; 
   return (
     <div className="p-6 space-y-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-extrabold">Finance & Billing — {isMp ? "Meal Plans" : "Ready Series"}</h2>
+        <h2 className="text-xl font-extrabold">Finance & Billing — {streamLabel}</h2>
         <div className="flex gap-2">
-          <button onClick={() => handleExport("CSV")} className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">CSV ↓</button>
-          <button onClick={() => handleExport("Excel")} className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">Excel ↓</button>
-          <button onClick={() => handleExport("PDF")} className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">PDF ↓</button>
+          <button onClick={() => handleExport("CSV")} className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">CSV ↓</button>
+          <button onClick={() => handleExport("Excel")} className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">Excel ↓</button>
+          <button onClick={() => handleExport("PDF")} className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">PDF ↓</button>
         </div>
       </div>
 
@@ -113,23 +126,23 @@ export default function Finance({ stream, demoMode }: { stream: BusinessStream; 
         ].map(k => (
           <div
             key={k.label}
-            className="border bg-[#181818] p-4"
-            style={{ borderColor: k.accent ? `${accent}40` : k.error ? "#ef444440" : k.warn ? "#f5b30040" : "#2A2A2A" }}
+            className="border bg-[var(--pm-surface)] p-4"
+            style={{ borderColor: k.accent ? `${accent}40` : k.error ? "#ef444440" : k.warn ? "#f5b30040" : "var(--pm-border)" }}
           >
-            <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-widest mb-2">{k.label}</div>
+            <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-widest mb-2">{k.label}</div>
             <div
               className="text-3xl font-extrabold mono"
-              style={{ color: k.accent ? accent : k.error ? "#EF4444" : k.warn ? "#F5B300" : "#E8E8E8" }}
+              style={{ color: k.accent ? accent : k.error ? "#EF4444" : k.warn ? "#F5B300" : "var(--pm-text-secondary)" }}
             >{k.value}</div>
-            <div className="text-xs text-[#888] mt-1 mono">{k.sub}</div>
+            <div className="text-xs text-[var(--pm-text-muted)] mt-1 mono">{k.sub}</div>
           </div>
         ))}
       </div>
 
       {/* Billing summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="col-span-2 border border-[#2A2A2A] bg-[#181818]">
-          <div className="px-4 py-3 border-b border-[#2A2A2A] flex items-center justify-between">
+        <div className="col-span-2 border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+          <div className="px-4 py-3 border-b border-[var(--pm-border)] flex items-center justify-between">
             <span className="text-sm font-semibold tracking-wide">Revenue Summary</span>
           </div>
           <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -138,17 +151,17 @@ export default function Finance({ stream, demoMode }: { stream: BusinessStream; 
               { period: "This Week", revenue: totalRevenue * 3.2, orders: txns.length * 2 },
               { period: "This Month", revenue: totalRevenue * 14, orders: txns.length * 8 },
             ].map(p => (
-              <div key={p.period} className="border border-[#2A2A2A] p-4">
-                <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider mb-2">{p.period}</div>
+              <div key={p.period} className="border border-[var(--pm-border)] p-4">
+                <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider mb-2">{p.period}</div>
                 <div className="text-2xl font-extrabold mono" style={{ color: accent }}>${p.revenue.toFixed(0)}</div>
-                <div className="text-xs text-[#888] mono mt-1">{p.orders} transactions</div>
+                <div className="text-xs text-[var(--pm-text-muted)] mono mt-1">{p.orders} transactions</div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="border border-[#2A2A2A] bg-[#181818] p-4">
-          <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider mb-3">Payment Methods</div>
+        <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4">
+          <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider mb-3">Payment Methods</div>
           <div className="space-y-3">
             {[
               { method: "Card (via Shopify)", pct: 68, color: accent },
@@ -157,10 +170,10 @@ export default function Finance({ stream, demoMode }: { stream: BusinessStream; 
             ].map(p => (
               <div key={p.method}>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-[#E8E8E8]">{p.method}</span>
+                  <span className="text-[var(--pm-text-secondary)]">{p.method}</span>
                   <span className="mono font-bold" style={{ color: p.color }}>{p.pct}%</span>
                 </div>
-                <div className="h-1.5 bg-[#2A2A2A]">
+                <div className="h-1.5 bg-[var(--pm-surface-muted)]">
                   <div className="h-1.5" style={{ width: `${p.pct}%`, background: p.color }} />
                 </div>
               </div>
@@ -170,13 +183,13 @@ export default function Finance({ stream, demoMode }: { stream: BusinessStream; 
       </div>
 
       {/* Transactions tab */}
-      <div className="flex border-b border-[#2A2A2A]">
+      <div className="flex border-b border-[var(--pm-border)]">
         {(["transactions", "failed", "refunds"] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`px-5 py-3 text-sm font-medium mono transition-colors capitalize ${
-              tab === t ? "border-b-2 text-[#E8E8E8]" : "text-[#888] hover:text-[#E8E8E8]"
+              tab === t ? "border-b-2 text-[var(--pm-text-secondary)]" : "text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)]"
             }`}
             style={tab === t ? { borderBottomColor: accent, color: accent } : undefined}
           >
@@ -188,12 +201,12 @@ export default function Finance({ stream, demoMode }: { stream: BusinessStream; 
         ))}
       </div>
 
-      <div className="border border-[#2A2A2A] bg-[#181818] overflow-x-auto">
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#2A2A2A]">
+            <tr className="border-b border-[var(--pm-border)]">
               {["Transaction ID", "Date", "Customer", "Type", "Amount", "Method", "Status", ""].map(h => (
-                <th key={h} className="px-4 py-2 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
+                <th key={h} className="px-4 py-2 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
@@ -205,15 +218,15 @@ export default function Finance({ stream, demoMode }: { stream: BusinessStream; 
                 return true;
               })
               .map((t, i) => (
-                <tr key={t.id} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] transition-colors ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
+                <tr key={t.id} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] transition-colors ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
                   <td className="px-4 py-2.5 mono text-xs" style={{ color: accent }}>{t.id}</td>
-                  <td className="px-4 py-2.5 mono text-xs text-[#888]">{t.date}</td>
+                  <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{t.date}</td>
                   <td className="px-4 py-2.5 font-medium">{t.customer}</td>
-                  <td className="px-4 py-2.5 text-xs text-[#888]">{t.type}</td>
-                  <td className={`px-4 py-2.5 mono font-bold ${t.amount < 0 ? "text-red-400" : "text-[#E8E8E8]"}`}>
+                  <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{t.type}</td>
+                  <td className={`px-4 py-2.5 mono font-bold ${t.amount < 0 ? "text-red-400" : "text-[var(--pm-text-secondary)]"}`}>
                     {t.amount < 0 ? `-$${Math.abs(t.amount).toFixed(2)}` : `$${t.amount.toFixed(2)}`}
                   </td>
-                  <td className="px-4 py-2.5 text-xs text-[#888]">{t.method}</td>
+                  <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{t.method}</td>
                   <td className="px-4 py-2.5">
                     <span className={`text-xs mono px-2 py-0.5 font-bold ${statusStyle[t.status]}`}>{t.status}</span>
                   </td>
@@ -221,14 +234,14 @@ export default function Finance({ stream, demoMode }: { stream: BusinessStream; 
                     {t.status === "Failed" && (
                       <button
                         onClick={() => setRetryModal({ txn: t, reason: "", confirmed: false })}
-                        className="text-xs border border-[#E85D04]/40 text-[#E85D04] px-2 py-1 hover:bg-orange-950/30 mono transition-colors">
+                        className="text-xs border border-[#E85D04]/40 text-[var(--pm-secondary-text)] px-2 py-1 hover:bg-orange-950/30 mono transition-colors">
                         Retry → Shopify
                       </button>
                     )}
                     {t.status === "Paid" && (
                       <button
                         onClick={() => setRefundModal({ txn: t, reason: "", confirmed: false })}
-                        className="text-xs border border-[#2A2A2A] text-[#888] px-2 py-1 hover:border-[#F5B300] hover:text-[#F5B300] mono transition-colors">
+                        className="text-xs border border-[var(--pm-border)] text-[var(--pm-text-muted)] px-2 py-1 hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] mono transition-colors">
                         Refund → Shopify ↗
                       </button>
                     )}
@@ -242,19 +255,19 @@ export default function Finance({ stream, demoMode }: { stream: BusinessStream; 
       {/* Retry → Shopify modal */}
       {retryModal && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center" onClick={() => setRetryModal(null)}>
-          <div className="bg-[#141414] border border-[#2A2A2A] w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--pm-surface-subtle)] border border-[var(--pm-border)] w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-bold mono text-[#E8E8E8]">Retry Payment — {retryModal.txn.id}</h3>
-              <button onClick={() => setRetryModal(null)} className="text-[#888] hover:text-[#E8E8E8] text-xl mono">×</button>
+              <h3 className="font-bold mono text-[var(--pm-text-secondary)]">Retry Payment — {retryModal.txn.id}</h3>
+              <button onClick={() => setRetryModal(null)} className="text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)] text-xl mono">×</button>
             </div>
 
             {/* Transaction details */}
-            <div className="border border-[#2A2A2A] bg-[#181818] p-3 space-y-1 text-xs mono">
-              <div className="flex justify-between"><span className="text-[#555]">Customer</span><span className="text-[#E8E8E8]">{retryModal.txn.customer}</span></div>
-              <div className="flex justify-between"><span className="text-[#555]">Amount</span><span className="text-[#E8E8E8]">${retryModal.txn.amount.toFixed(2)}</span></div>
-              <div className="flex justify-between"><span className="text-[#555]">Method</span><span className="text-[#E8E8E8]">{retryModal.txn.method}</span></div>
-              <div className="flex justify-between"><span className="text-[#555]">Date</span><span className="text-[#E8E8E8]">{retryModal.txn.date}</span></div>
-              <div className="flex justify-between"><span className="text-[#555]">Status</span><span className="text-red-400 font-bold">{retryModal.txn.status}</span></div>
+            <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-3 space-y-1 text-xs mono">
+              <div className="flex justify-between"><span className="text-[var(--pm-text-muted)]">Customer</span><span className="text-[var(--pm-text-secondary)]">{retryModal.txn.customer}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--pm-text-muted)]">Amount</span><span className="text-[var(--pm-text-secondary)]">${retryModal.txn.amount.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--pm-text-muted)]">Method</span><span className="text-[var(--pm-text-secondary)]">{retryModal.txn.method}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--pm-text-muted)]">Date</span><span className="text-[var(--pm-text-secondary)]">{retryModal.txn.date}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--pm-text-muted)]">Status</span><span className="text-red-400 font-bold">{retryModal.txn.status}</span></div>
             </div>
 
             {/* Shopify boundary notice */}
@@ -265,13 +278,13 @@ export default function Finance({ stream, demoMode }: { stream: BusinessStream; 
             {!retryModal.confirmed ? (
               <>
                 <div>
-                  <label className="text-xs text-[#555] mono uppercase tracking-wider block mb-1">Reason</label>
+                  <label className="text-xs text-[var(--pm-text-muted)] mono uppercase tracking-wider block mb-1">Reason</label>
                   <input
                     type="text"
                     value={retryModal.reason}
                     onChange={e => setRetryModal(prev => prev ? { ...prev, reason: e.target.value } : null)}
                     placeholder="e.g. Customer confirmed card details updated"
-                    className="w-full bg-[#181818] border border-[#2A2A2A] text-[#E8E8E8] text-xs px-3 py-2 mono focus:outline-none focus:border-[#F5B300] placeholder-[#444]"
+                    className="w-full bg-[var(--pm-surface)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]"
                   />
                 </div>
                 <div className="flex gap-2">
@@ -284,7 +297,7 @@ export default function Finance({ stream, demoMode }: { stream: BusinessStream; 
                     Retry → Shopify Admin ↗
                   </button>
                   <button onClick={() => setRetryModal(null)}
-                    className="flex-1 border border-[#2A2A2A] text-[#888] text-xs py-2.5 mono hover:text-[#E8E8E8] transition-colors">
+                    className="flex-1 border border-[var(--pm-border)] text-[var(--pm-text-muted)] text-xs py-2.5 mono hover:text-[var(--pm-text-secondary)] transition-colors">
                     Cancel
                   </button>
                 </div>
@@ -305,19 +318,19 @@ export default function Finance({ stream, demoMode }: { stream: BusinessStream; 
       {/* Refund → Shopify modal */}
       {refundModal && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center" onClick={() => setRefundModal(null)}>
-          <div className="bg-[#141414] border border-[#2A2A2A] w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--pm-surface-subtle)] border border-[var(--pm-border)] w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-bold mono text-[#E8E8E8]">Refund — {refundModal.txn.id}</h3>
-              <button onClick={() => setRefundModal(null)} className="text-[#888] hover:text-[#E8E8E8] text-xl mono">×</button>
+              <h3 className="font-bold mono text-[var(--pm-text-secondary)]">Refund — {refundModal.txn.id}</h3>
+              <button onClick={() => setRefundModal(null)} className="text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)] text-xl mono">×</button>
             </div>
 
             {/* Transaction details */}
-            <div className="border border-[#2A2A2A] bg-[#181818] p-3 space-y-1 text-xs mono">
-              <div className="flex justify-between"><span className="text-[#555]">Customer</span><span className="text-[#E8E8E8]">{refundModal.txn.customer}</span></div>
-              <div className="flex justify-between"><span className="text-[#555]">Amount</span><span className="text-[#E8E8E8]">${refundModal.txn.amount.toFixed(2)}</span></div>
-              <div className="flex justify-between"><span className="text-[#555]">Method</span><span className="text-[#E8E8E8]">{refundModal.txn.method}</span></div>
-              <div className="flex justify-between"><span className="text-[#555]">Date</span><span className="text-[#E8E8E8]">{refundModal.txn.date}</span></div>
-              <div className="flex justify-between"><span className="text-[#555]">Status</span><span className="text-green-400 font-bold">{refundModal.txn.status}</span></div>
+            <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-3 space-y-1 text-xs mono">
+              <div className="flex justify-between"><span className="text-[var(--pm-text-muted)]">Customer</span><span className="text-[var(--pm-text-secondary)]">{refundModal.txn.customer}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--pm-text-muted)]">Amount</span><span className="text-[var(--pm-text-secondary)]">${refundModal.txn.amount.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--pm-text-muted)]">Method</span><span className="text-[var(--pm-text-secondary)]">{refundModal.txn.method}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--pm-text-muted)]">Date</span><span className="text-[var(--pm-text-secondary)]">{refundModal.txn.date}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--pm-text-muted)]">Status</span><span className="text-green-400 font-bold">{refundModal.txn.status}</span></div>
             </div>
 
             {/* Shopify boundary notice */}
@@ -328,13 +341,13 @@ export default function Finance({ stream, demoMode }: { stream: BusinessStream; 
             {!refundModal.confirmed ? (
               <>
                 <div>
-                  <label className="text-xs text-[#555] mono uppercase tracking-wider block mb-1">Reason</label>
+                  <label className="text-xs text-[var(--pm-text-muted)] mono uppercase tracking-wider block mb-1">Reason</label>
                   <input
                     type="text"
                     value={refundModal.reason}
                     onChange={e => setRefundModal(prev => prev ? { ...prev, reason: e.target.value } : null)}
                     placeholder="e.g. Customer requested cancellation"
-                    className="w-full bg-[#181818] border border-[#2A2A2A] text-[#E8E8E8] text-xs px-3 py-2 mono focus:outline-none focus:border-[#F5B300] placeholder-[#444]"
+                    className="w-full bg-[var(--pm-surface)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]"
                   />
                 </div>
                 <div className="flex gap-2">
@@ -347,7 +360,7 @@ export default function Finance({ stream, demoMode }: { stream: BusinessStream; 
                     Refund → Shopify Admin ↗
                   </button>
                   <button onClick={() => setRefundModal(null)}
-                    className="flex-1 border border-[#2A2A2A] text-[#888] text-xs py-2.5 mono hover:text-[#E8E8E8] transition-colors">
+                    className="flex-1 border border-[var(--pm-border)] text-[var(--pm-text-muted)] text-xs py-2.5 mono hover:text-[var(--pm-text-secondary)] transition-colors">
                     Cancel
                   </button>
                 </div>

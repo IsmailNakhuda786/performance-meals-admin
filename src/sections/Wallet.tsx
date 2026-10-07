@@ -1,18 +1,20 @@
 import { useState } from "react";
 import StatusBadge from "../components/StatusBadge";
 import { customers } from "../data";
+import { giftCardRules, walletRules } from "../catalog";
 
-const tiers = [
-  { points: 500, value: 5, bonus: null, label: "Bronze" },
-  { points: 1000, value: 11, bonus: "+10% bonus", label: "Silver" },
-  { points: 2000, value: 25, bonus: "+25% bonus", label: "Gold" },
-];
+const tiers = walletRules.redemptionTiers.map((tier, index) => ({
+  points: tier.points,
+  value: tier.credit,
+  bonus: index === 1 ? "+10% bonus" : index === 2 ? "+25% bonus" : null,
+  label: index === 0 ? "Standard" : index === 1 ? "Bonus" : "Best Value",
+}));
 
 const earnRates = [
-  { type: "Meal Plan", rate: "2× points", note: "per $ spent" },
-  { type: "Box Subscription", rate: "1× points", note: "per $ spent" },
-  { type: "Ready-to-Go", rate: "1× points", note: "per $ spent" },
-  { type: "Referral", rate: "500 pts", note: "per successful referral" },
+  { type: "Meal Plan", rate: "1.5× points", note: "automatic plan multiplier" },
+  { type: "Ready Series", rate: "Tier rate", note: "1× / 1.5× / 2× per $ spent" },
+  { type: "Referral", rate: `${walletRules.referralPoints} pts`, note: "after the first completed order" },
+  { type: "Points validity", rate: "90 days", note: "place an order to remain active" },
 ];
 
 interface TxRecord {
@@ -44,10 +46,10 @@ const statusColor: Record<string, string> = {
   "Credit Applied": "text-green-400",
   "Payment Failed": "text-red-400",
   "Payment Pending": "text-yellow-400",
-  "Credit Not Applied": "text-[#888]",
+  "Credit Not Applied": "text-[var(--pm-text-muted)]",
 };
 
-export default function Wallet({ demoMode }: { demoMode?: boolean } = {}) {
+export default function Wallet() {
   const [creditCustomer, setCreditCustomer] = useState("");
   const [creditAmount, setCreditAmount] = useState("");
   const [creditType, setCreditType] = useState<"credit" | "points">("credit");
@@ -74,10 +76,34 @@ export default function Wallet({ demoMode }: { demoMode?: boolean } = {}) {
     <div className="p-6 space-y-6">
       <h2 className="text-xl font-extrabold">Wallet & Rewards</h2>
 
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4">
+          <div className="text-xs font-bold uppercase tracking-wider text-[var(--pm-text)]">Customer Wallet Top-Ups</div>
+          <div className="mt-2 text-sm text-[var(--pm-text-secondary)]">
+            Presets: {walletRules.presets.map(amount => `$${amount}`).join(" · ")}
+          </div>
+          <div className="mt-1 text-xs text-[var(--pm-text-muted)] mono">
+            Custom amount ${walletRules.customMinimum}–${walletRules.customMaximum} · Card payment · Available immediately after confirmation
+          </div>
+          <div className="mt-2 text-xs text-[var(--pm-text-muted)]">
+            Loyalty: Starter 0–499 pts · Gold 500–1,999 pts · Platinum 2,000+ pts
+          </div>
+        </div>
+        <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4">
+          <div className="text-xs font-bold uppercase tracking-wider text-[var(--pm-text)]">Performance Gift Cards</div>
+          <div className="mt-2 text-sm text-[var(--pm-text-secondary)]">
+            Values: {giftCardRules.denominations.map(amount => `$${amount}`).join(" · ")}
+          </div>
+          <div className="mt-1 text-xs text-[var(--pm-text-muted)] mono">
+            Never expires · All purchases · Physical card +${giftCardRules.physicalCardFee} · Non-refundable
+          </div>
+        </div>
+      </div>
+
       {/* Payment Integrity Section */}
-      <div className="border border-[#2A2A2A] bg-[#181818]">
-        <div className="px-4 py-3 border-b border-[#2A2A2A]">
-          <span className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider">Payment Integrity</span>
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+        <div className="px-4 py-3 border-b border-[var(--pm-border)]">
+          <span className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">Payment Integrity</span>
         </div>
         <div className="p-4 space-y-4">
           {/* Required Flow */}
@@ -115,11 +141,11 @@ export default function Wallet({ demoMode }: { demoMode?: boolean } = {}) {
               { label: "Payment Successful", color: "bg-green-500" },
               { label: "Payment Failed", color: "bg-red-500" },
               { label: "Credit Applied", color: "bg-green-500" },
-              { label: "Credit Not Applied", color: "bg-[#555]" },
+              { label: "Credit Not Applied", color: "bg-[var(--pm-text-muted)]" },
             ].map(s => (
               <div key={s.label} className="flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${s.color} flex-shrink-0`} />
-                <span className="text-xs text-[#AAAAAA] mono">{s.label}</span>
+                <span className="text-xs text-[var(--pm-text-muted)] mono">{s.label}</span>
               </div>
             ))}
           </div>
@@ -128,29 +154,29 @@ export default function Wallet({ demoMode }: { demoMode?: boolean } = {}) {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Voucher tiers */}
-        <div className="col-span-2 border border-[#2A2A2A] bg-[#181818]">
-          <div className="px-4 py-3 border-b border-[#2A2A2A]">
+        <div className="col-span-2 border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+          <div className="px-4 py-3 border-b border-[var(--pm-border)]">
             <span className="text-sm font-semibold tracking-wide">Voucher Redemption Tiers</span>
           </div>
           <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
             {tiers.map(t => (
-              <div key={t.points} className="border border-[#2A2A2A] p-4 hover:border-[#F5B300]/40 transition-colors">
-                <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider mb-1">{t.label}</div>
-                <div className="text-2xl font-extrabold mono text-[#F5B300]">${t.value}</div>
-                <div className="text-xs text-[#888] mono mt-1">{t.points.toLocaleString()} points</div>
-                {t.bonus && <div className="text-xs text-[#E85D04] mono mt-1 font-bold">{t.bonus}</div>}
+              <div key={t.points} className="border border-[var(--pm-border)] p-4 hover:border-[#F5B300]/40 transition-colors">
+                <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider mb-1">{t.label}</div>
+                <div className="text-2xl font-extrabold mono text-[var(--pm-accent-text)]">${t.value}</div>
+                <div className="text-xs text-[var(--pm-text-muted)] mono mt-1">{t.points.toLocaleString()} points</div>
+                {t.bonus && <div className="text-xs text-[var(--pm-secondary-text)] mono mt-1 font-bold">{t.bonus}</div>}
               </div>
             ))}
           </div>
           <div className="px-4 pb-4">
-            <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider mb-2">Earn Rates</div>
+            <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider mb-2">Earn Rates</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {earnRates.map(r => (
-                <div key={r.type} className="border border-[#2A2A2A] px-3 py-2 flex justify-between items-center">
+                <div key={r.type} className="border border-[var(--pm-border)] px-3 py-2 flex justify-between items-center">
                   <span className="text-sm">{r.type}</span>
                   <div className="text-right">
-                    <span className="mono text-[#F5B300] font-bold text-sm">{r.rate}</span>
-                    <span className="text-xs text-[#888] mono block">{r.note}</span>
+                    <span className="mono text-[var(--pm-accent-text)] font-bold text-sm">{r.rate}</span>
+                    <span className="text-xs text-[var(--pm-text-muted)] mono block">{r.note}</span>
                   </div>
                 </div>
               ))}
@@ -159,22 +185,22 @@ export default function Wallet({ demoMode }: { demoMode?: boolean } = {}) {
         </div>
 
         {/* Manual adjustment */}
-        <div className="border border-[#E85D04]/40 bg-[#181818]">
-          <div className="px-4 py-3 border-b border-[#2A2A2A] flex items-center justify-between">
+        <div className="border border-[#E85D04]/40 bg-[var(--pm-surface)]">
+          <div className="px-4 py-3 border-b border-[var(--pm-border)] flex items-center justify-between">
             <span className="text-sm font-semibold tracking-wide">Manual Admin Adjustment</span>
-            <span className="text-xs mono font-bold text-[#E85D04] bg-[#E85D04]/10 border border-[#E85D04]/30 px-2 py-0.5">NOT PAYMENT-BACKED</span>
+            <span className="text-xs mono font-bold text-[var(--pm-secondary-text)] bg-[#E85D04]/10 border border-[#E85D04]/30 px-2 py-0.5">NOT PAYMENT-BACKED</span>
           </div>
-          <div className="px-4 py-2.5 border-b border-[#2A2A2A] bg-[#1A0F00]">
-            <div className="text-xs text-[#E85D04] mono font-bold mb-0.5">⚠ Manual Adjustment — Not a Payment Record</div>
-            <div className="text-xs text-[#888]">This is an admin-initiated credit or points adjustment. It does <strong className="text-[#CCCCCC]">not</strong> represent a payment confirmation and must not be treated as payment-backed credit. A confirmed payment through Shopify is required for payment-backed credit.</div>
+          <div className="px-4 py-2.5 border-b bg-[var(--pm-warning-bg)]" style={{ borderColor: "var(--pm-warning-border)" }}>
+            <div className="text-xs mono font-bold mb-0.5" style={{ color: "var(--pm-warning-text)" }}>Manual Adjustment — Not a Payment Record</div>
+            <div className="text-xs" style={{ color: "var(--pm-warning-body)" }}>This is an admin-initiated credit or points adjustment. It does <strong>not</strong> represent a payment confirmation and must not be treated as payment-backed credit. A confirmed payment through Shopify is required for payment-backed credit.</div>
           </div>
           <form onSubmit={handleSubmit} className="p-4 space-y-3">
             <div>
-              <label className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider block mb-1">Customer</label>
+              <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Customer</label>
               <select
                 value={creditCustomer}
                 onChange={e => setCreditCustomer(e.target.value)}
-                className="w-full bg-[#0F0F0F] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300]"
+                className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300]"
                 required
               >
                 <option value="">Select customer…</option>
@@ -182,7 +208,7 @@ export default function Wallet({ demoMode }: { demoMode?: boolean } = {}) {
               </select>
             </div>
             <div>
-              <label className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider block mb-1">Type</label>
+              <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Type</label>
               <div className="flex gap-2">
                 {(["credit", "points"] as const).map(t => (
                   <button
@@ -192,7 +218,7 @@ export default function Wallet({ demoMode }: { demoMode?: boolean } = {}) {
                     className={`flex-1 py-2 text-xs font-bold mono transition-colors ${
                       creditType === t
                         ? "bg-[#F5B300] text-black"
-                        : "border border-[#2A2A2A] text-[#888] hover:border-[#F5B300]"
+                        : "border border-[var(--pm-border)] text-[var(--pm-text-muted)] hover:border-[#F5B300]"
                     }`}
                   >
                     {t === "credit" ? "$ Credit" : "Points"}
@@ -201,7 +227,7 @@ export default function Wallet({ demoMode }: { demoMode?: boolean } = {}) {
               </div>
             </div>
             <div>
-              <label className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider block mb-1">
+              <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">
                 Amount {creditType === "credit" ? "(SGD)" : "(pts)"}
               </label>
               <input
@@ -209,31 +235,31 @@ export default function Wallet({ demoMode }: { demoMode?: boolean } = {}) {
                 value={creditAmount}
                 onChange={e => setCreditAmount(e.target.value)}
                 placeholder={creditType === "credit" ? "0.00" : "0"}
-                className="w-full bg-[#0F0F0F] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-2 mono focus:outline-none focus:border-[#F5B300] placeholder:text-[#444]"
+                className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 mono focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]"
                 required
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider block mb-1">Reason <span className="text-red-400">*</span></label>
+              <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Reason <span className="text-red-400">*</span></label>
               <input
                 type="text"
                 value={creditNote}
                 onChange={e => setCreditNote(e.target.value)}
                 placeholder="Required — state reason for this manual adjustment…"
-                className="w-full bg-[#0F0F0F] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[#444]"
+                className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]"
                 required
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mono">
               <div>
-                <div className="text-[#AAAAAA] mb-0.5">Admin Identity</div>
-                <div className="text-[#CCCCCC] font-bold">Jerome Lim</div>
-                <div className="text-[#555]">Super Admin · PM-EMP-001</div>
+                <div className="text-[var(--pm-text-muted)] mb-0.5">Admin Identity</div>
+                <div className="text-[var(--pm-text-secondary)] font-bold">Jerome Lim</div>
+                <div className="text-[var(--pm-text-muted)]">Super Admin · PM-EMP-001</div>
               </div>
               <div>
-                <div className="text-[#AAAAAA] mb-0.5">Adjustment Type</div>
-                <div className="text-[#E85D04] font-bold">Manual Admin</div>
-                <div className="text-[#555]">Audit event will be logged</div>
+                <div className="text-[var(--pm-text-muted)] mb-0.5">Adjustment Type</div>
+                <div className="text-[var(--pm-secondary-text)] font-bold">Manual Admin</div>
+                <div className="text-[var(--pm-text-muted)]">Audit event will be logged</div>
               </div>
             </div>
             <button
@@ -250,27 +276,27 @@ export default function Wallet({ demoMode }: { demoMode?: boolean } = {}) {
       </div>
 
       {/* Top balances */}
-      <div className="border border-[#2A2A2A] bg-[#181818]">
-        <div className="px-4 py-3 border-b border-[#2A2A2A]">
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+        <div className="px-4 py-3 border-b border-[var(--pm-border)]">
           <span className="text-sm font-semibold tracking-wide">Top Wallet Balances</span>
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#2A2A2A]">
+            <tr className="border-b border-[var(--pm-border)]">
               {["Customer", "Status", "Wallet Balance", "Points", "Tier Eligibility"].map(h => (
-                <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[#FFFFFF] uppercase tracking-wider font-medium">{h}</th>
+                <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider font-medium">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {topBalances.map((c, i) => {
-              const tier = c.points >= 2000 ? "Gold" : c.points >= 1000 ? "Silver" : c.points >= 500 ? "Bronze" : "None";
-              const tierColor = tier === "Gold" ? "text-[#F5B300]" : tier === "Silver" ? "text-slate-300" : tier === "Bronze" ? "text-orange-400" : "text-[#888]";
+              const tier = c.points >= 2000 ? "Platinum" : c.points >= 500 ? "Gold" : "Starter";
+              const tierColor = tier === "Platinum" ? "text-slate-300" : tier === "Gold" ? "text-[var(--pm-accent-text)]" : "text-[var(--pm-text-muted)]";
               return (
-                <tr key={c.id} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
+                <tr key={c.id} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
                   <td className="px-4 py-2.5 font-medium">{c.name}</td>
                   <td className="px-4 py-2.5"><StatusBadge status={c.status} /></td>
-                  <td className="px-4 py-2.5 mono font-bold text-[#F5B300]">${c.walletBalance.toFixed(2)}</td>
+                  <td className="px-4 py-2.5 mono font-bold text-[var(--pm-accent-text)]">${c.walletBalance.toFixed(2)}</td>
                   <td className="px-4 py-2.5 mono">{c.points.toLocaleString()}</td>
                   <td className={`px-4 py-2.5 mono font-bold text-sm ${tierColor}`}>{tier}</td>
                 </tr>
@@ -280,9 +306,9 @@ export default function Wallet({ demoMode }: { demoMode?: boolean } = {}) {
         </table>
       </div>
       {/* Transaction Description Editor */}
-      <div className="border border-[#2A2A2A] bg-[#181818]">
-        <div className="px-4 py-3 border-b border-[#2A2A2A]">
-          <span className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider">Transaction Description Editor</span>
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+        <div className="px-4 py-3 border-b border-[var(--pm-border)]">
+          <span className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">Transaction Description Editor</span>
         </div>
         <div className="p-4 space-y-3">
           <div className="border border-yellow-800/30 bg-yellow-950/10 px-3 py-2 text-xs text-yellow-300 mono">
@@ -291,28 +317,28 @@ export default function Wallet({ demoMode }: { demoMode?: boolean } = {}) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#2A2A2A]">
+                <tr className="border-b border-[var(--pm-border)]">
                   {["TX ID", "Amount", "Current Description", "Status", "Date", ""].map(h => (
-                    <th key={h} className="px-3 py-2 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
+                    <th key={h} className="px-3 py-2 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {txData.map((tx, i) => (
-                  <tr key={tx.id} className={`border-b border-[#2A2A2A] ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
-                    <td className="px-3 py-2.5 mono text-xs text-[#F5B300]">{tx.id}</td>
-                    <td className={`px-3 py-2.5 mono text-xs font-bold ${tx.amount < 0 ? "text-red-400" : "text-[#E8E8E8]"}`}>
+                  <tr key={tx.id} className={`border-b border-[var(--pm-border)] ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
+                    <td className="px-3 py-2.5 mono text-xs text-[var(--pm-accent-text)]">{tx.id}</td>
+                    <td className={`px-3 py-2.5 mono text-xs font-bold ${tx.amount < 0 ? "text-red-400" : "text-[var(--pm-text-secondary)]"}`}>
                       {tx.amount < 0 ? `-$${Math.abs(tx.amount).toFixed(2)}` : `$${tx.amount.toFixed(2)}`}
                     </td>
-                    <td className="px-3 py-2.5 text-xs text-[#CCCCCC] max-w-[200px]">
+                    <td className="px-3 py-2.5 text-xs text-[var(--pm-text-secondary)] max-w-[200px]">
                       {editingTx === tx.id ? (
                         <div className="space-y-2">
-                          <div className="text-xs text-[#555] mono">Previous: {txDescriptions[tx.id]}</div>
+                          <div className="text-xs text-[var(--pm-text-muted)] mono">Previous: {txDescriptions[tx.id]}</div>
                           <textarea
                             rows={2}
                             value={editDesc}
                             onChange={e => setEditDesc(e.target.value)}
-                            className="w-full bg-[#0F0F0F] border border-[#F5B300]/40 text-[#E8E8E8] text-xs px-2 py-1.5 mono outline-none resize-none"
+                            className="w-full bg-[var(--pm-bg)] border border-[#F5B300]/40 text-[var(--pm-text-secondary)] text-xs px-2 py-1.5 mono outline-none resize-none"
                             autoFocus
                           />
                           <div className="flex gap-1.5">
@@ -331,7 +357,7 @@ export default function Wallet({ demoMode }: { demoMode?: boolean } = {}) {
                             </button>
                             <button
                               onClick={() => { setEditingTx(null); setEditDesc(""); }}
-                              className="border border-[#3A3A3A] text-[#888] text-xs px-3 py-1 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors"
+                              className="border border-[var(--pm-border-strong)] text-[var(--pm-text-muted)] text-xs px-3 py-1 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors"
                             >
                               Cancel
                             </button>
@@ -341,13 +367,13 @@ export default function Wallet({ demoMode }: { demoMode?: boolean } = {}) {
                         txDescriptions[tx.id]
                       )}
                     </td>
-                    <td className={`px-3 py-2.5 text-xs mono font-semibold ${statusColor[tx.status] ?? "text-[#888]"}`}>{tx.status}</td>
-                    <td className="px-3 py-2.5 mono text-xs text-[#888]">{tx.date}</td>
+                    <td className={`px-3 py-2.5 text-xs mono font-semibold ${statusColor[tx.status] ?? "text-[var(--pm-text-muted)]"}`}>{tx.status}</td>
+                    <td className="px-3 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{tx.date}</td>
                     <td className="px-3 py-2.5">
                       {editingTx !== tx.id && (
                         <button
                           onClick={() => { setEditingTx(tx.id); setEditDesc(txDescriptions[tx.id]); }}
-                          className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-1.5 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors whitespace-nowrap"
+                          className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-1.5 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors whitespace-nowrap"
                         >
                           Edit Description
                         </button>
@@ -361,13 +387,13 @@ export default function Wallet({ demoMode }: { demoMode?: boolean } = {}) {
 
           {/* Edit history log */}
           {descHistory.length > 0 && (
-            <div className="border border-[#2A2A2A] bg-[#0F0F0F] p-3 space-y-2">
-              <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider mb-1">Edit History</div>
+            <div className="border border-[var(--pm-border)] bg-[var(--pm-bg)] p-3 space-y-2">
+              <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider mb-1">Edit History</div>
               {descHistory.map((entry, i) => (
-                <div key={i} className="text-xs text-[#666] mono border-b border-[#1A1A1A] pb-1.5 last:border-0 last:pb-0">
-                  <span className="text-[#F5B300]">{entry.txId}</span> — Changed by{" "}
-                  <span className="text-[#CCCCCC]">{entry.changedBy}</span> · {entry.timestamp}
-                  <div className="mt-0.5 text-[#444]">"{entry.previousDesc}" → "<span className="text-[#888]">{entry.newDesc}</span>"</div>
+                <div key={i} className="text-xs text-[var(--pm-text-muted)] mono border-b border-[var(--pm-border-soft)] pb-1.5 last:border-0 last:pb-0">
+                  <span className="text-[var(--pm-accent-text)]">{entry.txId}</span> — Changed by{" "}
+                  <span className="text-[var(--pm-text-secondary)]">{entry.changedBy}</span> · {entry.timestamp}
+                  <div className="mt-0.5 text-[var(--pm-text-muted)]">"{entry.previousDesc}" → "<span className="text-[var(--pm-text-muted)]">{entry.newDesc}</span>"</div>
                 </div>
               ))}
             </div>

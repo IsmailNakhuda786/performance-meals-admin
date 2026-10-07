@@ -13,7 +13,7 @@ const tickets = [
 const priorityColor: Record<string, string> = {
   High: "bg-red-950 text-red-400",
   Medium: "bg-orange-950 text-orange-400",
-  Low: "bg-[#2A2A2A] text-[#888]",
+  Low: "bg-[var(--pm-surface-muted)] text-[var(--pm-text-muted)]",
 };
 
 const ticketStatusColor: Record<string, string> = {
@@ -97,10 +97,10 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
           { label: "Resolved Today", value: "2", sub: "closed tickets", accent: "#22C55E" },
           { label: "Avg Response Time", value: "18m", sub: "today", accent: undefined },
         ].map(k => (
-          <div key={k.label} className="border border-[#2A2A2A] bg-[#181818] p-4">
-            <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-widest mb-2">{k.label}</div>
-            <div className="text-3xl font-extrabold mono" style={{ color: k.accent ?? "#E8E8E8" }}>{k.value}</div>
-            <div className="text-xs text-[#888] mt-1 mono">{k.sub}</div>
+          <div key={k.label} className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4">
+            <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-widest mb-2">{k.label}</div>
+            <div className="text-3xl font-extrabold mono" style={{ color: k.accent ?? "var(--pm-text-secondary)" }}>{k.value}</div>
+            <div className="text-xs text-[var(--pm-text-muted)] mt-1 mono">{k.sub}</div>
           </div>
         ))}
       </div>
@@ -115,22 +115,22 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
               placeholder="Search by name, email, or phone…"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full bg-[#181818] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-3 focus:outline-none focus:border-[#F5B300] placeholder:text-[#444]"
+              className="w-full bg-[var(--pm-surface)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-3 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]"
             />
           </div>
 
           {searchResult.length > 0 && (
-            <div className="border border-[#2A2A2A] bg-[#181818] divide-y divide-[#1F1F1F]">
+            <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] divide-y divide-[#1F1F1F]">
               {searchResult.map(c => (
                 <div
                   key={c.id}
-                  className="px-4 py-3 cursor-pointer hover:bg-[#1F1F1F] transition-colors"
+                  className="px-4 py-3 cursor-pointer hover:bg-[var(--pm-surface-subtle)] transition-colors"
                   onClick={() => { setSelectedCustomer(c); setSearch(""); setActiveAction(null); }}
                 >
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="font-semibold text-sm">{c.name}</div>
-                      <div className="text-xs text-[#888] mono">{c.email} · {c.phone}</div>
+                      <div className="text-xs text-[var(--pm-text-muted)] mono">{c.email} · {c.phone}</div>
                     </div>
                     <StatusBadge status={c.status} />
                   </div>
@@ -140,24 +140,24 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
           )}
 
           {selectedCustomer && (
-            <div className="border border-[#2A2A2A] bg-[#181818] space-y-0">
+            <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] space-y-0">
               {/* Customer header */}
-              <div className="px-4 py-4 border-b border-[#2A2A2A]">
+              <div className="px-4 py-4 border-b border-[var(--pm-border)]">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-extrabold text-base">{selectedCustomer.name}</div>
-                    <div className="text-xs text-[#888] mono mt-0.5">{selectedCustomer.id} · {selectedCustomer.email}</div>
+                    <div className="text-xs text-[var(--pm-text-muted)] mono mt-0.5">{selectedCustomer.id} · {selectedCustomer.email}</div>
                   </div>
                   <StatusBadge status={selectedCustomer.status} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
                   {[
                     { label: "LTV", value: `$${selectedCustomer.ltv.toFixed(0)}`, color: "#F5B300" },
-                    { label: "Wallet", value: `$${selectedCustomer.walletBalance.toFixed(2)}`, color: "#E8E8E8" },
-                    { label: "Points", value: String(selectedCustomer.points), color: "#E8E8E8" },
+                    { label: "Wallet", value: `$${selectedCustomer.walletBalance.toFixed(2)}`, color: "var(--pm-text-secondary)" },
+                    { label: "Points", value: String(selectedCustomer.points), color: "var(--pm-text-secondary)" },
                   ].map(s => (
-                    <div key={s.label} className="border border-[#2A2A2A] p-2 text-center">
-                      <div className="text-xs text-[#555]">{s.label}</div>
+                    <div key={s.label} className="border border-[var(--pm-border)] p-2 text-center">
+                      <div className="text-xs text-[var(--pm-text-muted)]">{s.label}</div>
                       <div className="font-bold mono text-sm" style={{ color: s.color }}>{s.value}</div>
                     </div>
                   ))}
@@ -165,28 +165,28 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
               </div>
 
               {/* Quick info */}
-              <div className="px-4 py-3 border-b border-[#2A2A2A] text-xs space-y-1">
+              <div className="px-4 py-3 border-b border-[var(--pm-border)] text-xs space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-[#888]">Plan</span>
+                  <span className="text-[var(--pm-text-muted)]">Plan</span>
                   <span className="font-medium">{selectedCustomer.planType}{selectedCustomer.goal ? ` · ${selectedCustomer.goal}` : ""}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#888]">Address</span>
+                  <span className="text-[var(--pm-text-muted)]">Address</span>
                   <span className="text-right max-w-[200px] truncate">{selectedCustomer.address}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#888]">Next Billing</span>
+                  <span className="text-[var(--pm-text-muted)]">Next Billing</span>
                   <span className="mono">{selectedCustomer.nextBilling}</span>
                 </div>
               </div>
 
               {/* Recent orders */}
-              <div className="px-4 py-3 border-b border-[#2A2A2A]">
-                <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider mb-2">Recent Orders</div>
+              <div className="px-4 py-3 border-b border-[var(--pm-border)]">
+                <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider mb-2">Recent Orders</div>
                 {getCustomerOrders(selectedCustomer.name).slice(0, 2).map(o => (
-                  <div key={o.id} className="flex justify-between text-xs py-1.5 border-b border-[#1A1A1A]">
-                    <span className="mono text-[#F5B300]">{o.id}</span>
-                    <span className="text-[#888]">{o.meals} meals · ${o.total.toFixed(2)}</span>
+                  <div key={o.id} className="flex justify-between text-xs py-1.5 border-b border-[var(--pm-border-soft)]">
+                    <span className="mono text-[var(--pm-accent-text)]">{o.id}</span>
+                    <span className="text-[var(--pm-text-muted)]">{o.meals} meals · ${o.total.toFixed(2)}</span>
                     <StatusBadge status={o.status} />
                   </div>
                 ))}
@@ -197,25 +197,25 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
                 const hasSub = getCustomerSubs(selectedCustomer.id).length > 0;
                 const isMP = hasSub || selectedCustomer.planType === "Meal Plan";
                 return (
-                  <div className={`px-4 py-2 border-b border-[#2A2A2A] flex items-center gap-2`}>
+                  <div className={`px-4 py-2 border-b border-[var(--pm-border)] flex items-center gap-2`}>
                     <div className={`w-1.5 h-1.5 ${isMP ? "bg-[#F5B300]" : "bg-[#E85D04]"}`} />
                     <span className="text-xs font-extrabold mono tracking-widest" style={{ color: isMP ? "#F5B300" : "#E85D04" }}>
                       {isMP ? "MEAL PLAN CUSTOMER" : "READY SERIES CUSTOMER"}
                     </span>
-                    <span className="text-xs text-[#555] ml-1">{isMP ? "Subscription-based" : "Order-based"}</span>
+                    <span className="text-xs text-[var(--pm-text-muted)] ml-1">{isMP ? "Subscription-based" : "Order-based"}</span>
                   </div>
                 );
               })()}
 
               {/* Actions */}
               <div className="px-4 py-3">
-                <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider mb-2">Support Actions</div>
+                <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider mb-2">Support Actions</div>
                 {/* Shared actions */}
-                <div className="text-[10px] text-[#AAAAAA] uppercase tracking-wider mb-1.5 mono">Common</div>
+                <div className="text-[10px] text-[var(--pm-text-muted)] uppercase tracking-wider mb-1.5 mono">Common</div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
                   {["Update Name", "Update Phone", "Update Address", "Reset Password", "View Order", "Add Note"].map(action => (
                     <button key={action} onClick={() => setActiveAction(action)}
-                      className="text-xs py-2 px-2 font-medium mono border border-[#2A2A2A] text-[#888] hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+                      className="text-xs py-2 px-2 font-medium mono border border-[var(--pm-border)] text-[var(--pm-text-muted)] hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
                       {action}
                     </button>
                   ))}
@@ -223,11 +223,11 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
                 {/* MP-specific */}
                 {(getCustomerSubs(selectedCustomer.id).length > 0 || selectedCustomer.planType === "Meal Plan") && (
                   <>
-                    <div className="text-[10px] text-[#F5B300] uppercase tracking-wider mb-1.5 mono">Meal Plan Only</div>
+                    <div className="text-[10px] text-[var(--pm-accent-text)] uppercase tracking-wider mb-1.5 mono">Meal Plan Only</div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
                       {["Pause Plan", "Resume Plan", "Meal Swap", "Billing Inquiry"].map(action => (
                         <button key={action} onClick={() => setActiveAction(action)}
-                          className="text-xs py-2 px-2 font-medium mono border border-[#F5B300]/40 text-[#F5B300] hover:bg-[#F5B300]/10 transition-colors">
+                          className="text-xs py-2 px-2 font-medium mono border border-[#F5B300]/40 text-[var(--pm-accent-text)] hover:bg-[#F5B300]/10 transition-colors">
                           {action}
                         </button>
                       ))}
@@ -237,11 +237,11 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
                 {/* RS-specific */}
                 {selectedCustomer.planType !== "Meal Plan" && (
                   <>
-                    <div className="text-[10px] text-[#E85D04] uppercase tracking-wider mb-1.5 mono">Ready Series Only</div>
+                    <div className="text-[10px] text-[var(--pm-secondary-text)] uppercase tracking-wider mb-1.5 mono">Ready Series Only</div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
                       {["Order Issue", "Bundle Issue", "Delivery Issue", "Refund Request"].map(action => (
                         <button key={action} onClick={() => setActiveAction(action)}
-                          className="text-xs py-2 px-2 font-medium mono border border-[#E85D04]/40 text-[#E85D04] hover:bg-[#E85D04]/10 transition-colors">
+                          className="text-xs py-2 px-2 font-medium mono border border-[#E85D04]/40 text-[var(--pm-secondary-text)] hover:bg-[#E85D04]/10 transition-colors">
                           {action}
                         </button>
                       ))}
@@ -253,7 +253,7 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
                     <button
                       key={action}
                       onClick={() => setActiveAction(action)}
-                      className="text-xs py-2 px-2 font-medium mono border border-[#2A2A2A] text-[#E8E8E8] hover:border-[#F5B300] hover:text-[#F5B300] transition-colors"
+                      className="text-xs py-2 px-2 font-medium mono border border-[var(--pm-border)] text-[var(--pm-text-secondary)] hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors"
                     >
                       {action}
                     </button>
@@ -263,9 +263,9 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
                   <div className="mt-2 space-y-2">
                     <div className="border border-[#F5B300]/30 bg-[#F5B300]/5 px-3 py-2.5">
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-xs font-bold mono text-[#F5B300]">Action: {activeAction}</div>
+                        <div className="text-xs font-bold mono text-[var(--pm-accent-text)]">Action: {activeAction}</div>
                         <button onClick={() => { setActiveAction(null); setPropagating(false); setPropagationDone(false); }}
-                          className="text-xs text-[#555] hover:text-[#888]">✕</button>
+                          className="text-xs text-[var(--pm-text-muted)] hover:text-[var(--pm-text-muted)]">✕</button>
                       </div>
                       {!propagating && !propagationDone && (
                         <div className="space-y-2">
@@ -273,8 +273,8 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               {["Current Meal", "New Meal"].map(label => (
                                 <div key={label}>
-                                  <div className="text-[10px] text-[#AAAAAA] uppercase tracking-wider mb-1">{label}</div>
-                                  <select className="w-full bg-[#0F0F0F] border border-[#2A2A2A] text-[#E8E8E8] text-xs px-2 py-1.5 focus:outline-none focus:border-[#F5B300]">
+                                  <div className="text-[10px] text-[var(--pm-text-muted)] uppercase tracking-wider mb-1">{label}</div>
+                                  <select className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-xs px-2 py-1.5 focus:outline-none focus:border-[#F5B300]">
                                     <option>Grilled Chicken & Rice (CUT)</option>
                                     <option>Salmon Teriyaki & Quinoa (BUILD)</option>
                                     <option>Sweet Potato & Chicken (MAINTAIN)</option>
@@ -286,25 +286,25 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
                           )}
                           {(activeAction === "Update Address") && (
                             <input type="text" defaultValue={selectedCustomer?.address} placeholder="New delivery address…"
-                              className="w-full bg-[#0F0F0F] border border-[#2A2A2A] text-[#E8E8E8] text-xs px-2 py-1.5 focus:outline-none focus:border-[#F5B300]" />
+                              className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-xs px-2 py-1.5 focus:outline-none focus:border-[#F5B300]" />
                           )}
                           {(activeAction === "Pause Plan") && (
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-[#888]">Duration (full weeks only):</span>
-                              <select className="bg-[#0F0F0F] border border-[#2A2A2A] text-[#E8E8E8] text-xs px-2 py-1 focus:outline-none focus:border-[#F5B300]">
+                              <span className="text-xs text-[var(--pm-text-muted)]">Duration (full weeks only):</span>
+                              <select className="bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-xs px-2 py-1 focus:outline-none focus:border-[#F5B300]">
                                 {[1, 2, 3, 4].map(w => <option key={w} value={w}>{w} week{w > 1 ? "s" : ""}</option>)}
                               </select>
                             </div>
                           )}
                           {propagationSteps[activeAction] && (
                             <div>
-                              <div className="text-[10px] text-[#AAAAAA] uppercase tracking-wider mb-1.5 mt-2">Downstream Impact Preview</div>
+                              <div className="text-[10px] text-[var(--pm-text-muted)] uppercase tracking-wider mb-1.5 mt-2">Downstream Impact Preview</div>
                               <div className="space-y-1">
                                 {propagationSteps[activeAction].map((s, i) => (
                                   <div key={i} className="flex items-start gap-2 text-[10px]">
-                                    <span className="text-[#333] mono shrink-0">{i + 1}.</span>
+                                    <span className="text-[var(--pm-text-muted)] mono shrink-0">{i + 1}.</span>
                                     <span className="font-bold shrink-0" style={{ color: systemColors[s.system] ?? "#888" }}>{s.step}</span>
-                                    <span className="text-[#555]">— {s.detail}</span>
+                                    <span className="text-[var(--pm-text-muted)]">— {s.detail}</span>
                                   </div>
                                 ))}
                               </div>
@@ -317,7 +317,7 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
                               Apply Change
                             </button>
                             <button onClick={() => { setActiveAction(null); setPropagating(false); setPropagationDone(false); }}
-                              className="border border-[#2A2A2A] text-[#888] py-1.5 px-3 text-xs mono hover:text-[#E8E8E8] transition-colors">
+                              className="border border-[var(--pm-border)] text-[var(--pm-text-muted)] py-1.5 px-3 text-xs mono hover:text-[var(--pm-text-secondary)] transition-colors">
                               Cancel
                             </button>
                           </div>
@@ -326,10 +326,10 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
 
                       {propagating && !propagationDone && (
                         <div className="space-y-1 py-1">
-                          <div className="text-xs text-[#F5B300] mono animate-pulse">Propagating changes…</div>
+                          <div className="text-xs text-[var(--pm-accent-text)] mono animate-pulse">Propagating changes…</div>
                           {propagationSteps[activeAction]?.map((s, i) => (
-                            <div key={i} className="flex items-center gap-2 text-[10px] text-[#555]">
-                              <span className="w-3 h-3 border border-[#555] animate-spin" />
+                            <div key={i} className="flex items-center gap-2 text-[10px] text-[var(--pm-text-muted)]">
+                              <span className="w-3 h-3 border border-[var(--pm-border-strong)] animate-spin" />
                               <span>{s.step}</span>
                             </div>
                           ))}
@@ -343,14 +343,14 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
                             <div key={i} className="flex items-center gap-2 text-[10px]">
                               <span className="text-green-400 font-bold shrink-0">✓</span>
                               <span className="font-bold shrink-0" style={{ color: systemColors[s.system] ?? "#888" }}>{s.step}</span>
-                              <span className="text-[#555]">— {s.detail}</span>
+                              <span className="text-[var(--pm-text-muted)]">— {s.detail}</span>
                             </div>
                           ))}
-                          <div className="text-[10px] text-[#555] mono mt-1 border border-[#2A2A2A] bg-[#0F0F0F] px-2 py-1.5">
+                          <div className="text-[10px] text-[var(--pm-text-muted)] mono mt-1 border border-[var(--pm-border)] bg-[var(--pm-bg)] px-2 py-1.5">
                             ⊟ Audit entry created · {new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} · {activeAction} · {selectedCustomer?.name}
                           </div>
                           <button onClick={() => { setActiveAction(null); setPropagating(false); setPropagationDone(false); }}
-                            className="text-xs text-[#888] mono hover:text-[#E8E8E8] underline mt-1">
+                            className="text-xs text-[var(--pm-text-muted)] mono hover:text-[var(--pm-text-secondary)] underline mt-1">
                             Close
                           </button>
                         </div>
@@ -371,19 +371,19 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
               + New Ticket
             </button>
           </div>
-          <div className="border border-[#2A2A2A] bg-[#181818] divide-y divide-[#1F1F1F]">
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] divide-y divide-[#1F1F1F]">
             {tickets.map(t => (
-              <div key={t.id} className="px-4 py-3 hover:bg-[#1F1F1F] transition-colors cursor-pointer">
+              <div key={t.id} className="px-4 py-3 hover:bg-[var(--pm-surface-subtle)] transition-colors cursor-pointer">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs mono text-[#F5B300] font-bold">{t.id}</span>
+                      <span className="text-xs mono text-[var(--pm-accent-text)] font-bold">{t.id}</span>
                       <span className={`text-xs mono px-1.5 py-0.5 font-bold ${priorityColor[t.priority]}`}>{t.priority}</span>
                       <span className={`text-xs mono px-1.5 py-0.5 font-bold ${ticketStatusColor[t.status]}`}>{t.status}</span>
                     </div>
                     <div className="font-medium text-sm">{t.customer}</div>
-                    <div className="text-xs text-[#888] mt-0.5">{t.issue}</div>
-                    <div className="text-xs text-[#555] mono mt-1">{t.created} · {t.assigned}</div>
+                    <div className="text-xs text-[var(--pm-text-muted)] mt-0.5">{t.issue}</div>
+                    <div className="text-xs text-[var(--pm-text-muted)] mono mt-1">{t.created} · {t.assigned}</div>
                   </div>
                 </div>
               </div>

@@ -4,43 +4,51 @@
 @import 'tailwindcss';
 
 :root {
-  --pm-bg: #F4F5F7;
+  --pm-bg: #F7F5F0;
   --pm-surface: #FFFFFF;
-  --pm-surface-subtle: #F8F9FB;
-  --pm-surface-muted: #EEF0F3;
-  --pm-active: #FFF6DC;
-  --pm-border-soft: #E7E9ED;
-  --pm-border: #D9DDE3;
-  --pm-border-strong: #C8CDD5;
-  --pm-text: #111827;
-  --pm-text-secondary: #1F2937;
-  --pm-text-muted: #374151;
-  --pm-accent-text: #B77900;
+  --pm-surface-subtle: #FAF9F6;
+  --pm-surface-muted: #F0EDE8;
+  --pm-active: #FFF4C2;
+  --pm-border-soft: #ECE8E0;
+  --pm-border: #E5E2DA;
+  --pm-border-strong: #D0CCC4;
+  --pm-text: #1A1A1A;
+  --pm-text-secondary: #333333;
+  --pm-text-muted: #5F5A52;
+  --pm-accent-text: #9A6500;
   --pm-secondary-text: #C2410C;
-  --pm-card-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --pm-warning-bg: #FFF4ED;
+  --pm-warning-border: #F7B27A;
+  --pm-warning-text: #9C2A10;
+  --pm-warning-body: #4A2A20;
+  --pm-card-shadow: 0 1px 0 rgba(17, 17, 17, 0.04), 0 8px 24px rgba(17, 17, 17, 0.035);
 }
 
 .pm-light-shell[data-theme='dark'],
 .pm-auth-shell[data-theme='dark'] {
-  --pm-bg: #0D0D0D;
-  --pm-surface: #161616;
-  --pm-surface-subtle: #1C1C1C;
+  --pm-bg: #111111;
+  --pm-surface: #1A1A1A;
+  --pm-surface-subtle: #202020;
   --pm-surface-muted: #1A1A1A;
   --pm-active: #161616;
-  --pm-border-soft: #1E1E1E;
-  --pm-border: #222222;
-  --pm-border-strong: #2E2E2E;
+  --pm-border-soft: #262626;
+  --pm-border: #303030;
+  --pm-border-strong: #444444;
   --pm-text: #EFEFEF;
   --pm-text-secondary: #E8E8E8;
   --pm-text-muted: #AAAAAA;
   --pm-accent-text: #F5B300;
   --pm-secondary-text: #E85D04;
-  --pm-card-shadow: none;
+  --pm-warning-bg: #1A0F00;
+  --pm-warning-border: #5A2A0A;
+  --pm-warning-text: #F28C45;
+  --pm-warning-body: #D7B9A5;
+  --pm-card-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
 .pm-light-shell[data-theme='light'],
 .pm-auth-shell[data-theme='light'] {
-  --pm-accent-text: #B77900;
+  --pm-accent-text: #9A6500;
   --pm-secondary-text: #C2410C;
   font-weight: 500;
 }
@@ -71,6 +79,177 @@
 
 .pm-light-shell[data-theme='light'] table td {
   font-weight: 500;
+}
+
+/* Accessible semantic states for legacy operational modules in Light mode. */
+.pm-light-shell[data-theme='light'] .bg-green-950,
+.pm-light-shell[data-theme='light'] .bg-green-900,
+.pm-light-shell[data-theme='light'] .bg-green-800,
+.pm-light-shell[data-theme='light'] .bg-green-950\/10,
+.pm-light-shell[data-theme='light'] .bg-green-950\/20,
+.pm-light-shell[data-theme='light'] .bg-green-950\/30,
+.pm-light-shell[data-theme='light'] .bg-green-950\/40 {
+  background-color: #ECFDF3;
+}
+
+.pm-light-shell[data-theme='light'] .bg-red-950,
+.pm-light-shell[data-theme='light'] .bg-red-900,
+.pm-light-shell[data-theme='light'] .bg-red-800,
+.pm-light-shell[data-theme='light'] .bg-red-950\/10,
+.pm-light-shell[data-theme='light'] .bg-red-950\/20,
+.pm-light-shell[data-theme='light'] .bg-red-950\/30,
+.pm-light-shell[data-theme='light'] .bg-red-950\/40 {
+  background-color: #FEF3F2;
+}
+
+.pm-light-shell[data-theme='light'] .bg-yellow-950,
+.pm-light-shell[data-theme='light'] .bg-yellow-900,
+.pm-light-shell[data-theme='light'] .bg-yellow-800,
+.pm-light-shell[data-theme='light'] .bg-yellow-950\/10,
+.pm-light-shell[data-theme='light'] .bg-yellow-950\/20,
+.pm-light-shell[data-theme='light'] .bg-yellow-950\/30,
+.pm-light-shell[data-theme='light'] .bg-yellow-950\/40 {
+  background-color: #FFFAEB;
+}
+
+.pm-light-shell[data-theme='light'] .bg-orange-950,
+.pm-light-shell[data-theme='light'] .bg-orange-900,
+.pm-light-shell[data-theme='light'] .bg-orange-800,
+.pm-light-shell[data-theme='light'] .bg-orange-950\/10,
+.pm-light-shell[data-theme='light'] .bg-orange-950\/20,
+.pm-light-shell[data-theme='light'] .bg-orange-950\/30,
+.pm-light-shell[data-theme='light'] .bg-orange-950\/40 {
+  background-color: #FFF4ED;
+}
+
+.pm-light-shell[data-theme='light'] .bg-blue-950,
+.pm-light-shell[data-theme='light'] .bg-blue-900,
+.pm-light-shell[data-theme='light'] .bg-blue-800,
+.pm-light-shell[data-theme='light'] .bg-blue-950\/10,
+.pm-light-shell[data-theme='light'] .bg-blue-950\/20,
+.pm-light-shell[data-theme='light'] .bg-blue-950\/30,
+.pm-light-shell[data-theme='light'] .bg-blue-950\/40 {
+  background-color: #EFF8FF;
+}
+
+.pm-light-shell[data-theme='light'] .bg-purple-950,
+.pm-light-shell[data-theme='light'] .bg-purple-900,
+.pm-light-shell[data-theme='light'] .bg-purple-800,
+.pm-light-shell[data-theme='light'] .bg-purple-950\/10,
+.pm-light-shell[data-theme='light'] .bg-purple-950\/20,
+.pm-light-shell[data-theme='light'] .bg-purple-950\/30,
+.pm-light-shell[data-theme='light'] .bg-purple-950\/40 {
+  background-color: #F4F3FF;
+}
+
+.pm-light-shell[data-theme='light'] .bg-neutral-800 {
+  background-color: #F2F4F7;
+}
+
+.pm-light-shell[data-theme='light'] .text-green-400,
+.pm-light-shell[data-theme='light'] .text-green-300 {
+  color: #067647;
+}
+
+.pm-light-shell[data-theme='light'] .text-red-400,
+.pm-light-shell[data-theme='light'] .text-red-300 {
+  color: #B42318;
+}
+
+.pm-light-shell[data-theme='light'] .text-yellow-400,
+.pm-light-shell[data-theme='light'] .text-yellow-300 {
+  color: #B54708;
+}
+
+.pm-light-shell[data-theme='light'] .text-orange-400,
+.pm-light-shell[data-theme='light'] .text-orange-300 {
+  color: #C4320A;
+}
+
+.pm-light-shell[data-theme='light'] .text-blue-400,
+.pm-light-shell[data-theme='light'] .text-blue-300 {
+  color: #175CD3;
+}
+
+.pm-light-shell[data-theme='light'] .text-purple-400,
+.pm-light-shell[data-theme='light'] .text-purple-300 {
+  color: #6938EF;
+}
+
+.pm-light-shell[data-theme='light'] .text-neutral-400 {
+  color: #344054;
+}
+
+.pm-light-shell[data-theme='light'] .border-green-800 {
+  border-color: #ABEFC6;
+}
+
+.pm-light-shell[data-theme='light'] .border-red-800 {
+  border-color: #FECDCA;
+}
+
+.pm-light-shell[data-theme='light'] .border-yellow-800,
+.pm-light-shell[data-theme='light'] .border-orange-800 {
+  border-color: #FEDF89;
+}
+
+.pm-light-shell[data-theme='light'] .border-blue-800,
+.pm-light-shell[data-theme='light'] .border-purple-800 {
+  border-color: #B2DDFF;
+}
+
+.pm-light-shell[data-theme='light'] .hover\:bg-green-800:hover,
+.pm-light-shell[data-theme='light'] .hover\:bg-green-900:hover {
+  background-color: #D1FADF;
+}
+
+.pm-light-shell[data-theme='light'] .hover\:bg-red-950:hover,
+.pm-light-shell[data-theme='light'] .hover\:bg-red-900:hover {
+  background-color: #FEE4E2;
+}
+
+/* Legacy inline KPI colors: retain brand hue while meeting text contrast on white. */
+.pm-light-shell[data-theme='light'] [style*='color: rgb(245, 179, 0)'] {
+  color: var(--pm-accent-text) !important;
+}
+
+.pm-light-shell[data-theme='light'] [style*='color: rgb(232, 93, 4)'] {
+  color: var(--pm-secondary-text) !important;
+}
+
+.pm-light-shell[data-theme='light'] [style*='color: rgb(34, 197, 94)'] {
+  color: #067647 !important;
+}
+
+.pm-light-shell[data-theme='light'] [style*='color: rgb(239, 68, 68)'] {
+  color: #B42318 !important;
+}
+
+.pm-light-shell[data-theme='light'] [style*='color: rgb(59, 130, 246)'],
+.pm-light-shell[data-theme='light'] [style*='color: rgb(24, 119, 242)'] {
+  color: #175CD3 !important;
+}
+
+.pm-light-shell[data-theme='light'] [style*='color: rgb(168, 85, 247)'],
+.pm-light-shell[data-theme='light'] [style*='color: rgb(139, 92, 246)'] {
+  color: #6938EF !important;
+}
+
+.pm-light-shell[data-theme='light'] [style*='color: rgb(6, 182, 212)'] {
+  color: #0E7490 !important;
+}
+
+.pm-light-shell[data-theme='light'] .bg-green-600,
+.pm-light-shell[data-theme='light'] .bg-green-700 {
+  background-color: #067647;
+}
+
+.pm-light-shell[data-theme='light'] .hover\:bg-green-600:hover {
+  background-color: #05603A;
+}
+
+.pm-light-shell[data-theme='light'] .bg-red-600 {
+  background-color: #B42318;
 }
 
 @theme inline {
@@ -122,7 +301,7 @@ html, body, #root {
 .pm-stat-card {
   background: var(--pm-surface);
   border: 1px solid var(--pm-border);
-  border-radius: 12px;
+  border-radius: 2px;
   box-shadow: var(--pm-card-shadow);
   overflow: hidden;
   position: relative;
@@ -131,11 +310,19 @@ html, body, #root {
   content: '';
   position: absolute;
   inset: 0 0 auto 0;
-  height: 2px;
-  background: linear-gradient(90deg, #F5B300 0%, transparent 60%);
+  height: 3px;
+  background: #F5B300;
 }
 .pm-stat-card-orange::before {
-  background: linear-gradient(90deg, #E85D04 0%, transparent 60%);
+  background: #E85D04;
+}
+
+.pm-light-shell[data-stream='meal-plans'] .pm-stat-card::before {
+  background: #E85D04;
+}
+
+.pm-light-shell[data-stream='other-sales'] .pm-stat-card::before {
+  background: var(--pm-text);
 }
 
 /* Section heading style */
@@ -148,9 +335,9 @@ html, body, #root {
   color: var(--pm-text-secondary);
 }
 
-/* Global button shape — soft rounded, never sharp rectangles */
+/* Compact commerce controls, matching the storefront's crisp geometry. */
 button {
-  border-radius: 6px;
+  border-radius: 3px;
 }
 
 /* Primary CTA button */
@@ -163,7 +350,7 @@ button {
   font-size: 12px;
   letter-spacing: 0.04em;
   padding: 7px 16px;
-  border-radius: 8px;
+  border-radius: 3px;
   border: none;
   cursor: pointer;
   transition: background 0.18s ease, opacity 0.18s ease;
@@ -183,7 +370,7 @@ button {
   font-size: 12px;
   letter-spacing: 0.03em;
   padding: 7px 16px;
-  border-radius: 8px;
+  border-radius: 3px;
   border: 1px solid #2E2E2E;
   cursor: pointer;
   transition: border-color 0.18s, color 0.18s, background 0.18s;
@@ -201,7 +388,7 @@ button {
   font-weight: 600;
   font-size: 12px;
   padding: 7px 16px;
-  border-radius: 8px;
+  border-radius: 3px;
   border: 1px solid rgba(239,68,68,0.35);
   cursor: pointer;
   transition: background 0.18s, color 0.18s;
@@ -229,9 +416,42 @@ th { color: var(--pm-text-muted); }
   box-shadow: var(--pm-card-shadow);
 }
 
+.pm-admin-sidebar {
+  --pm-surface: #151515;
+  --pm-surface-subtle: #202020;
+  --pm-surface-muted: #262626;
+  --pm-active: #2A230E;
+  --pm-border-soft: #242424;
+  --pm-border: #303030;
+  --pm-border-strong: #444444;
+  --pm-text: #F8F7F4;
+  --pm-text-secondary: #D7D3CB;
+  --pm-text-muted: #A9A39A;
+  border-top: 4px solid #F5B300;
+  box-shadow: 8px 0 30px rgba(17, 17, 17, 0.08);
+}
+
+.pm-admin-header {
+  border-top: 4px solid #F5B300;
+}
+
+.pm-admin-main {
+  background-color: var(--pm-bg);
+  background-image:
+    linear-gradient(rgba(26, 26, 26, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26, 26, 26, 0.018) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.pm-light-shell[data-theme='dark'] .pm-admin-main {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+}
+
 .dashboard-pilot > div:not(.grid),
 .dashboard-pilot .grid > div {
-  border-radius: 12px;
+  border-radius: 2px;
   box-shadow: var(--pm-card-shadow);
   overflow: hidden;
 }

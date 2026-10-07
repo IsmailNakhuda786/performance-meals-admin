@@ -32,7 +32,7 @@ const channelColor: Record<string, string> = {
   Organic: "#888888",
 };
 
-export default function Marketing({ demoMode }: { demoMode?: boolean } = {}) {
+export default function Marketing() {
   const totalRevenue = channels.reduce((a, c) => a + c.revenue, 0);
   const totalSpend = channels.reduce((a, c) => a + c.spend, 0);
   const totalNewCustomers = channels.reduce((a, c) => a + c.newCustomers, 0);
@@ -43,10 +43,10 @@ export default function Marketing({ demoMode }: { demoMode?: boolean } = {}) {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-extrabold">Marketing & Attribution</h2>
         <div className="flex gap-2">
-          <button className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+          <button className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
             Export CSV
           </button>
-          <button className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+          <button className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
             Shopify Analytics ↗
           </button>
         </div>
@@ -60,18 +60,18 @@ export default function Marketing({ demoMode }: { demoMode?: boolean } = {}) {
           { label: "Blended ROAS", value: `${blendedROAS}×`, sub: "across all channels", accent: "#22C55E" },
           { label: "New Customers", value: String(totalNewCustomers), sub: "acquired this month", accent: undefined },
         ].map(k => (
-          <div key={k.label} className="border border-[#2A2A2A] bg-[#181818] p-4">
-            <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-widest mb-2">{k.label}</div>
-            <div className="text-3xl font-extrabold mono" style={{ color: k.accent ?? "#E8E8E8" }}>{k.value}</div>
-            <div className="text-xs text-[#888] mt-1 mono">{k.sub}</div>
+          <div key={k.label} className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4">
+            <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-widest mb-2">{k.label}</div>
+            <div className="text-3xl font-extrabold mono" style={{ color: k.accent ?? "var(--pm-text-secondary)" }}>{k.value}</div>
+            <div className="text-xs text-[var(--pm-text-muted)] mt-1 mono">{k.sub}</div>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         {/* Channel breakdown */}
-        <div className="border border-[#2A2A2A] bg-[#181818]">
-          <div className="px-4 py-3 border-b border-[#2A2A2A]">
+        <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+          <div className="px-4 py-3 border-b border-[var(--pm-border)]">
             <span className="text-sm font-semibold tracking-wide">Revenue by Channel</span>
           </div>
           <div className="p-4 space-y-3">
@@ -82,11 +82,11 @@ export default function Marketing({ demoMode }: { demoMode?: boolean } = {}) {
                   <div className="flex justify-between text-sm mb-1.5">
                     <span className="font-medium">{c.name}</span>
                     <div className="flex items-center gap-3">
-                      <span className="mono text-[#888] text-xs">${c.revenue.toLocaleString()}</span>
+                      <span className="mono text-[var(--pm-text-muted)] text-xs">${c.revenue.toLocaleString()}</span>
                       <span className="mono font-bold text-xs" style={{ color: channelColor[c.name] ?? "#888" }}>{pct}%</span>
                     </div>
                   </div>
-                  <div className="h-2 bg-[#2A2A2A]">
+                  <div className="h-2 bg-[var(--pm-surface-muted)]">
                     <div className="h-2" style={{ width: `${pct}%`, background: channelColor[c.name] ?? "#888" }} />
                   </div>
                 </div>
@@ -96,18 +96,18 @@ export default function Marketing({ demoMode }: { demoMode?: boolean } = {}) {
         </div>
 
         {/* Weekly acquisition chart */}
-        <div className="border border-[#2A2A2A] bg-[#181818]">
-          <div className="px-4 py-3 border-b border-[#2A2A2A]">
+        <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+          <div className="px-4 py-3 border-b border-[var(--pm-border)]">
             <span className="text-sm font-semibold tracking-wide">New Customer Acquisition — By Week</span>
           </div>
           <div className="p-4 h-52">
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={weeklyAcquisition} barCategoryGap="20%" barGap={1}>
-                <XAxis dataKey="week" tick={{ fill: "#888", fontSize: 10, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "#888", fontSize: 10, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} width={24} />
+                <XAxis dataKey="week" tick={{ fill: "var(--pm-text-muted)", fontSize: 10, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "var(--pm-text-muted)", fontSize: 10, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} width={24} />
                 <Tooltip
-                  contentStyle={{ background: "#181818", border: "1px solid #2A2A2A", borderRadius: 0, fontFamily: "JetBrains Mono", fontSize: 11 }}
-                  labelStyle={{ color: "#888" }}
+                  contentStyle={{ background: "var(--pm-surface)", border: "1px solid var(--pm-border)", borderRadius: 0, fontFamily: "JetBrains Mono", fontSize: 11 }}
+                  labelStyle={{ color: "var(--pm-text-muted)" }}
                 />
                 <Bar dataKey="meta" stackId="a" fill="#1877F2" radius={0} name="Meta" />
                 <Bar dataKey="google" stackId="a" fill="#34A853" radius={0} name="Google" />
@@ -120,28 +120,28 @@ export default function Marketing({ demoMode }: { demoMode?: boolean } = {}) {
       </div>
 
       {/* Channel performance table */}
-      <div className="border border-[#2A2A2A] bg-[#181818]">
-        <div className="px-4 py-3 border-b border-[#2A2A2A]">
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+        <div className="px-4 py-3 border-b border-[var(--pm-border)]">
           <span className="text-sm font-semibold tracking-wide">Channel Performance — This Month</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#2A2A2A]">
+              <tr className="border-b border-[var(--pm-border)]">
                 {["Channel", "Spend", "Revenue", "ROAS", "Conversions", "New Customers", "CAC"].map(h => (
-                  <th key={h} className="px-4 py-2 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium">{h}</th>
+                  <th key={h} className="px-4 py-2 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {channels.map((c, i) => (
-                <tr key={c.name} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
+                <tr key={c.name} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
                   <td className="px-4 py-2.5 font-medium flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full" style={{ background: channelColor[c.name] ?? "#888" }} />
                     {c.name}
                   </td>
-                  <td className="px-4 py-2.5 mono text-[#888]">{c.spend > 0 ? `$${c.spend}` : "—"}</td>
-                  <td className="px-4 py-2.5 mono text-[#F5B300] font-bold">${c.revenue.toLocaleString()}</td>
+                  <td className="px-4 py-2.5 mono text-[var(--pm-text-muted)]">{c.spend > 0 ? `$${c.spend}` : "—"}</td>
+                  <td className="px-4 py-2.5 mono text-[var(--pm-accent-text)] font-bold">${c.revenue.toLocaleString()}</td>
                   <td className="px-4 py-2.5 mono font-bold text-green-400">{c.roas > 0 ? `${c.roas}×` : "—"}</td>
                   <td className="px-4 py-2.5 mono text-center">{c.conversions}</td>
                   <td className="px-4 py-2.5 mono text-center">{c.newCustomers}</td>
@@ -154,8 +154,8 @@ export default function Marketing({ demoMode }: { demoMode?: boolean } = {}) {
       </div>
 
       {/* Active campaigns */}
-      <div className="border border-[#2A2A2A] bg-[#181818]">
-        <div className="px-4 py-3 border-b border-[#2A2A2A] flex items-center justify-between">
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+        <div className="px-4 py-3 border-b border-[var(--pm-border)] flex items-center justify-between">
           <span className="text-sm font-semibold tracking-wide">Campaigns</span>
           <button className="bg-[#F5B300] text-black text-xs font-bold px-3 py-1.5 mono hover:bg-[#C99200] transition-colors">
             + New Campaign
@@ -164,9 +164,9 @@ export default function Marketing({ demoMode }: { demoMode?: boolean } = {}) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#2A2A2A]">
+              <tr className="border-b border-[var(--pm-border)]">
                 {["ID", "Campaign", "Channel", "Budget", "Spent", "Conversions", "Status"].map(h => (
-                  <th key={h} className="px-4 py-2 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium">{h}</th>
+                  <th key={h} className="px-4 py-2 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -174,8 +174,8 @@ export default function Marketing({ demoMode }: { demoMode?: boolean } = {}) {
               {campaigns.map((c, i) => {
                 const pct = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
                 return (
-                  <tr key={c.id} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
-                    <td className="px-4 py-2.5 mono text-xs text-[#F5B300]">{c.id}</td>
+                  <tr key={c.id} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
+                    <td className="px-4 py-2.5 mono text-xs text-[var(--pm-accent-text)]">{c.id}</td>
                     <td className="px-4 py-2.5 font-medium">{c.name}</td>
                     <td className="px-4 py-2.5">
                       <span className="text-xs font-bold" style={{ color: channelColor[c.channel] ?? "#888" }}>{c.channel}</span>
@@ -184,16 +184,16 @@ export default function Marketing({ demoMode }: { demoMode?: boolean } = {}) {
                     <td className="px-4 py-2.5">
                       {c.budget > 0 ? (
                         <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-16 bg-[#2A2A2A]">
+                          <div className="h-1.5 w-16 bg-[var(--pm-surface-muted)]">
                             <div className="h-1.5 bg-[#F5B300]" style={{ width: `${pct}%` }} />
                           </div>
-                          <span className="mono text-xs text-[#888]">${c.spent} ({pct}%)</span>
+                          <span className="mono text-xs text-[var(--pm-text-muted)]">${c.spent} ({pct}%)</span>
                         </div>
-                      ) : <span className="text-[#555] mono">—</span>}
+                      ) : <span className="text-[var(--pm-text-muted)] mono">—</span>}
                     </td>
                     <td className="px-4 py-2.5 mono text-center font-bold text-green-400">{c.conversions}</td>
                     <td className="px-4 py-2.5">
-                      <span className={`text-xs mono px-2 py-0.5 font-bold ${c.status === "Active" ? "bg-green-950 text-green-400" : "bg-[#2A2A2A] text-[#888]"}`}>
+                      <span className={`text-xs mono px-2 py-0.5 font-bold ${c.status === "Active" ? "bg-green-950 text-green-400" : "bg-[var(--pm-surface-muted)] text-[var(--pm-text-muted)]"}`}>
                         {c.status}
                       </span>
                     </td>

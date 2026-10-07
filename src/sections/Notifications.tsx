@@ -26,7 +26,7 @@ const notifications: Notification[] = [
   { id: "N-034", type: "menu-reminder", message: "Weekly meal selection reminder sent to 5 MP subscribers", channel: "Email", ts: "13 Sep 09:00", read: true, severity: "info" },
   { id: "N-033", type: "system", message: "Kitchen Queue sync completed — 12 production items loaded", channel: "Admin", ts: "13 Sep 07:00", read: true, severity: "info" },
   { id: "N-032", type: "new-subscriber", message: "New subscriber: Raj Nair — 12-Week BUILD Plan · $630.00", customer: "Raj Nair", channel: "Admin", ts: "13 Sep 12:45", read: false, severity: "info" },
-  { id: "N-031", type: "new-subscriber", message: "New Box Sub: Priya K — 10-Meal Box · $144.00", customer: "Priya K", channel: "Email", ts: "13 Sep 11:10", read: true, severity: "info" },
+  { id: "N-031", type: "new-subscriber", message: "New Ready Sub: Priya K — 10-Meal Box · $144.00", customer: "Priya K", channel: "Email", ts: "13 Sep 11:10", read: true, severity: "info" },
   { id: "N-030", type: "refund-request", message: "Refund requested: Jason Yeo — ORD-2407 · $68.00 · Delivery failure", customer: "Jason Yeo", channel: "Admin", ts: "14 Sep 11:25", read: false, severity: "warning" },
   { id: "N-029", type: "refund-request", message: "Refund requested: Marcus Tan — SUB-001 · $210.00 · Cancellation dispute", customer: "Marcus Tan", channel: "Admin", ts: "13 Sep 15:50", read: true, severity: "warning" },
 ];
@@ -34,7 +34,7 @@ const notifications: Notification[] = [
 const severityStyle: Record<string, string> = {
   critical: "text-red-400 bg-red-950/40 border-red-800/30",
   warning: "text-yellow-400 bg-yellow-950/30 border-yellow-800/30",
-  info: "text-[#888] bg-[#181818] border-[#2A2A2A]",
+  info: "text-[var(--pm-text-muted)] bg-[var(--pm-surface)] border-[var(--pm-border)]",
 };
 
 const typeLabels: Record<AlertType, string> = {
@@ -55,7 +55,7 @@ const channelIcon: Record<Channel, string> = {
 
 const typeFilters: (AlertType | "all")[] = ["all", "failed-payment", "refund-request", "new-subscriber", "inventory", "delivery-failure", "menu-reminder", "system"];
 
-export default function Notifications({ demoMode }: { demoMode?: boolean } = {}) {
+export default function Notifications() {
   const [typeFilter, setTypeFilter] = useState<AlertType | "all">("all");
   const [channelFilter, setChannelFilter] = useState<Channel | "all">("all");
   const [unreadOnly, setUnreadOnly] = useState(false);
@@ -83,10 +83,10 @@ export default function Notifications({ demoMode }: { demoMode?: boolean } = {})
           )}
         </div>
         <div className="flex gap-2">
-          <button onClick={markAllRead} className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+          <button onClick={markAllRead} className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
             Mark All Read
           </button>
-          <button className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">
+          <button className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
             Configure Alerts
           </button>
         </div>
@@ -98,10 +98,10 @@ export default function Notifications({ demoMode }: { demoMode?: boolean } = {})
           const count = items.filter(n => n.channel === ch && !n.read).length;
           const total = items.filter(n => n.channel === ch).length;
           return (
-            <div key={ch} className="border border-[#2A2A2A] bg-[#181818] p-4 flex items-center gap-4">
-              <div className="text-2xl text-[#888]">{channelIcon[ch]}</div>
+            <div key={ch} className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4 flex items-center gap-4">
+              <div className="text-2xl text-[var(--pm-text-muted)]">{channelIcon[ch]}</div>
               <div>
-                <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider">{ch}</div>
+                <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">{ch}</div>
                 <div className="font-extrabold mono text-xl">{total}</div>
                 {count > 0 && <div className="text-xs text-red-400 mono">{count} unread</div>}
               </div>
@@ -115,20 +115,20 @@ export default function Notifications({ demoMode }: { demoMode?: boolean } = {})
         <div className="flex gap-1 flex-wrap">
           {typeFilters.map(t => (
             <button key={t} onClick={() => setTypeFilter(t)}
-              className={`text-xs px-3 py-1.5 mono border transition-colors ${typeFilter === t ? "border-[#F5B300] text-[#F5B300] bg-[#F5B300]/10" : "border-[#2A2A2A] text-[#888] hover:text-[#E8E8E8]"}`}>
+              className={`text-xs px-3 py-1.5 mono border transition-colors ${typeFilter === t ? "border-[#F5B300] text-[var(--pm-accent-text)] bg-[#F5B300]/10" : "border-[var(--pm-border)] text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)]"}`}>
               {t === "all" ? "All" : typeLabels[t]}
             </button>
           ))}
         </div>
         <div className="ml-auto flex gap-3 items-center">
           <select value={channelFilter} onChange={e => setChannelFilter(e.target.value as Channel | "all")}
-            className="bg-[#181818] border border-[#2A2A2A] text-[#E8E8E8] text-xs px-3 py-1.5 mono focus:outline-none focus:border-[#F5B300]">
+            className="bg-[var(--pm-surface)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-xs px-3 py-1.5 mono focus:outline-none focus:border-[#F5B300]">
             <option value="all">All Channels</option>
             <option>Email</option>
             <option>WhatsApp</option>
             <option>Admin</option>
           </select>
-          <label className="flex items-center gap-2 text-xs text-[#AAAAAA] cursor-pointer select-none">
+          <label className="flex items-center gap-2 text-xs text-[var(--pm-text-muted)] cursor-pointer select-none">
             <PillToggle checked={unreadOnly} onChange={setUnreadOnly} />
             Unread only
           </label>
@@ -138,7 +138,7 @@ export default function Notifications({ demoMode }: { demoMode?: boolean } = {})
       {/* Notification list */}
       <div className="space-y-2">
         {filtered.length === 0 && (
-          <div className="border border-[#2A2A2A] bg-[#181818] p-8 text-center text-[#888] text-sm">No notifications match your filters.</div>
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-8 text-center text-[var(--pm-text-muted)] text-sm">No notifications match your filters.</div>
         )}
         {filtered.map(n => (
           <div key={n.id} className={`border px-4 py-3 flex items-start gap-4 transition-all ${n.read ? "opacity-60" : ""} ${severityStyle[n.severity]}`}>
@@ -147,36 +147,36 @@ export default function Notifications({ demoMode }: { demoMode?: boolean } = {})
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="text-xs font-bold mono uppercase">{typeLabels[n.type]}</span>
-                <span className="text-xs text-[#555] mono">{n.id}</span>
-                {n.customer && <span className="text-xs text-[#888]">— {n.customer}</span>}
+                <span className="text-xs text-[var(--pm-text-muted)] mono">{n.id}</span>
+                {n.customer && <span className="text-xs text-[var(--pm-text-muted)]">— {n.customer}</span>}
               </div>
               <div className="text-sm">{n.message}</div>
             </div>
-            <div className="flex items-center gap-3 flex-shrink-0 text-xs mono text-[#555]">
+            <div className="flex items-center gap-3 flex-shrink-0 text-xs mono text-[var(--pm-text-muted)]">
               <span>{channelIcon[n.channel]} {n.channel}</span>
               <span>{n.ts}</span>
-              <button onClick={() => dismiss(n.id)} className="text-[#555] hover:text-red-400 transition-colors">×</button>
+              <button onClick={() => dismiss(n.id)} className="text-[var(--pm-text-muted)] hover:text-red-400 transition-colors">×</button>
             </div>
           </div>
         ))}
       </div>
 
       {/* Alert config panel */}
-      <div className="border border-[#2A2A2A] bg-[#181818]">
-        <div className="px-4 py-3 border-b border-[#2A2A2A]">
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+        <div className="px-4 py-3 border-b border-[var(--pm-border)]">
           <span className="text-sm font-semibold">Alert Configuration</span>
         </div>
         <div className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-[#2A2A2A]">
-            <div className="bg-[#181818] px-4 py-2 text-xs text-[#AAAAAA] uppercase tracking-wider font-medium">Alert Type</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-[var(--pm-surface-muted)]">
+            <div className="bg-[var(--pm-surface)] px-4 py-2 text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">Alert Type</div>
             {(["Email", "WhatsApp", "Admin"] as Channel[]).map(ch => (
-              <div key={ch} className="bg-[#181818] px-4 py-2 text-xs text-[#AAAAAA] uppercase tracking-wider font-medium text-center">{ch}</div>
+              <div key={ch} className="bg-[var(--pm-surface)] px-4 py-2 text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium text-center">{ch}</div>
             ))}
             {Object.entries(typeLabels).map(([key, label]) => (
               <Fragment key={key}>
-                <div className="bg-[#181818] px-4 py-2 text-sm">{label}</div>
+                <div className="bg-[var(--pm-surface)] px-4 py-2 text-sm">{label}</div>
                 {(["Email", "WhatsApp", "Admin"] as Channel[]).map(ch => (
-                  <div key={`${key}-${ch}`} className="bg-[#181818] px-4 py-2 flex justify-center">
+                  <div key={`${key}-${ch}`} className="bg-[var(--pm-surface)] px-4 py-2 flex justify-center">
                     <input type="checkbox" defaultChecked={key !== "system" || ch === "Admin"} className="w-3 h-3 accent-yellow-500 cursor-pointer" />
                   </div>
                 ))}

@@ -34,10 +34,10 @@ const stages: { id: WorkflowStage; label: string; role: string; desc: string }[]
 
 const goalColor: Record<string, string> = { CUT: "#EF4444", BUILD: "#22C55E", MAINTAIN: "#F5B300" };
 const statusStyle: Record<MealStatus, string> = {
-  draft: "text-[#888] bg-[#2A2A2A]",
+  draft: "text-[var(--pm-text-muted)] bg-[var(--pm-surface-muted)]",
   approved: "text-green-400 bg-green-950/30",
   published: "text-blue-400 bg-blue-950/30",
-  locked: "text-[#F5B300] bg-yellow-950/30",
+  locked: "text-[var(--pm-accent-text)] bg-yellow-950/30",
 };
 
 export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) {
@@ -56,16 +56,16 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-extrabold">Menu Planning Center</h2>
-          <div className="text-xs text-[#888] mono mt-0.5">{`Week of ${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} — Meal Plans only`}</div>
+          <div className="text-xs text-[var(--pm-text-muted)] mono mt-0.5">{`Week of ${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} — Meal Plans only`}</div>
         </div>
         <div className="flex gap-2">
-          <button className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">Export PDF</button>
-          <button className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">Export Kitchen List</button>
+          <button className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">Export PDF</button>
+          <button className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">Export Kitchen List</button>
         </div>
       </div>
 
       {/* Workflow stages */}
-      <div className="border border-[#2A2A2A] bg-[#181818] p-4">
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4">
         <div className="flex items-center gap-0">
           {stages.map((s, i) => {
             const isPast = i < stageIndex;
@@ -79,35 +79,35 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
                       ? "border-[#F5B300] bg-[#F5B300]/10"
                       : isPast
                       ? "border-green-700 bg-green-950/20"
-                      : "border-transparent hover:bg-[#1A1A1A]"
+                      : "border-transparent hover:bg-[var(--pm-surface-muted)]"
                   }`}
                 >
-                  <div className={`text-xs font-bold mono mb-0.5 ${isCurrent ? "text-[#F5B300]" : isPast ? "text-green-400" : "text-[#555]"}`}>
+                  <div className={`text-xs font-bold mono mb-0.5 ${isCurrent ? "text-[var(--pm-accent-text)]" : isPast ? "text-green-400" : "text-[var(--pm-text-muted)]"}`}>
                     {isPast ? "✓" : `0${i + 1}`}
                   </div>
-                  <div className={`text-xs font-medium ${isCurrent ? "text-[#E8E8E8]" : isPast ? "text-green-400" : "text-[#555]"}`}>{s.label}</div>
-                  <div className="text-xs text-[#555] mono mt-0.5 hidden sm:block">{s.role}</div>
+                  <div className={`text-xs font-medium ${isCurrent ? "text-[var(--pm-text-secondary)]" : isPast ? "text-green-400" : "text-[var(--pm-text-muted)]"}`}>{s.label}</div>
+                  <div className="text-xs text-[var(--pm-text-muted)] mono mt-0.5 hidden sm:block">{s.role}</div>
                 </button>
-                {i < stages.length - 1 && <div className={`w-px h-8 flex-shrink-0 ${isPast ? "bg-green-700" : "bg-[#2A2A2A]"}`} />}
+                {i < stages.length - 1 && <div className={`w-px h-8 flex-shrink-0 ${isPast ? "bg-green-700" : "bg-[var(--pm-surface-muted)]"}`} />}
               </div>
             );
           })}
         </div>
-        <div className="mt-3 px-1 text-xs text-[#888]">
-          <span className="text-[#F5B300] font-semibold">{stages[stageIndex].label}:</span> {stages[stageIndex].desc}
+        <div className="mt-3 px-1 text-xs text-[var(--pm-text-muted)]">
+          <span className="text-[var(--pm-accent-text)] font-semibold">{stages[stageIndex].label}:</span> {stages[stageIndex].desc}
         </div>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Meals This Week", value: weekMeals.length, color: "#E8E8E8" },
+          { label: "Meals This Week", value: weekMeals.length, color: "var(--pm-text-secondary)" },
           { label: "Approved", value: approvedCount, color: "#22C55E" },
           { label: "Drafts Remaining", value: draftCount, color: draftCount > 0 ? "#F5B300" : "#22C55E" },
           { label: "Status", value: canAdvance ? "Ready" : "Pending", color: canAdvance ? "#22C55E" : "#F5B300" },
         ].map(k => (
-          <div key={k.label} className="border border-[#2A2A2A] bg-[#181818] p-4">
-            <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-widest mb-2">{k.label}</div>
+          <div key={k.label} className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4">
+            <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-widest mb-2">{k.label}</div>
             <div className="text-2xl font-extrabold mono" style={{ color: k.color }}>{k.value}</div>
           </div>
         ))}
@@ -116,33 +116,33 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
       {/* Create / Approve stage: meal list + editor */}
       {(activeStage === "create" || activeStage === "approve") && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="col-span-3 border border-[#2A2A2A] bg-[#181818]">
-            <div className="px-4 py-3 border-b border-[#2A2A2A] flex items-center justify-between">
+          <div className="col-span-3 border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+            <div className="px-4 py-3 border-b border-[var(--pm-border)] flex items-center justify-between">
               <span className="text-sm font-semibold">Week Menu — {weekMeals.length} meals</span>
               {activeStage === "create" && (
-                <button onClick={() => setShowAddMeal(true)} className="text-xs border border-[#F5B300]/40 text-[#F5B300] px-3 py-1 mono hover:bg-[#F5B300]/10 transition-colors">+ Add Meal</button>
+                <button onClick={() => setShowAddMeal(true)} className="text-xs border border-[#F5B300]/40 text-[var(--pm-accent-text)] px-3 py-1 mono hover:bg-[#F5B300]/10 transition-colors">+ Add Meal</button>
               )}
             </div>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#2A2A2A]">
+                <tr className="border-b border-[var(--pm-border)]">
                   {["Meal", "Goal", "Cal", "Pro", "Carb", "Fat", "Status", ""].map(h => (
-                    <th key={h} className="px-3 py-2 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium">{h}</th>
+                    <th key={h} className="px-3 py-2 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {weekMeals.map((m, i) => (
                   <tr key={m.id} onClick={() => setSelectedMeal(m)}
-                    className={`border-b border-[#2A2A2A] cursor-pointer transition-colors ${selectedMeal?.id === m.id ? "bg-[#1F1F1F]" : i % 2 === 0 ? "hover:bg-[#1A1A1A]" : "bg-[#141414] hover:bg-[#1A1A1A]"}`}>
+                    className={`border-b border-[var(--pm-border)] cursor-pointer transition-colors ${selectedMeal?.id === m.id ? "bg-[var(--pm-surface-subtle)]" : i % 2 === 0 ? "hover:bg-[var(--pm-surface-muted)]" : "bg-[var(--pm-surface-subtle)] hover:bg-[var(--pm-surface-muted)]"}`}>
                     <td className="px-3 py-2.5 font-medium text-xs">{m.name}</td>
                     <td className="px-3 py-2.5">
                       <span className="text-xs mono font-bold" style={{ color: goalColor[m.goal] }}>{m.goal}</span>
                     </td>
                     <td className="px-3 py-2.5 mono text-xs">{m.calories}</td>
-                    <td className="px-3 py-2.5 mono text-xs text-[#888]">{m.protein}g</td>
-                    <td className="px-3 py-2.5 mono text-xs text-[#888]">{m.carbs}g</td>
-                    <td className="px-3 py-2.5 mono text-xs text-[#888]">{m.fat}g</td>
+                    <td className="px-3 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{m.protein}g</td>
+                    <td className="px-3 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{m.carbs}g</td>
+                    <td className="px-3 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{m.fat}g</td>
                     <td className="px-3 py-2.5">
                       <span className={`text-xs mono px-1.5 py-0.5 font-bold ${statusStyle[m.status]}`}>{m.status}</span>
                     </td>
@@ -157,9 +157,9 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
             </table>
           </div>
 
-          <div className="col-span-2 border border-[#2A2A2A] bg-[#181818]">
+          <div className="col-span-2 border border-[var(--pm-border)] bg-[var(--pm-surface)]">
             {!selectedMeal ? (
-              <div className="flex items-center justify-center h-full text-[#555] text-sm">Select a meal to view details</div>
+              <div className="flex items-center justify-center h-full text-[var(--pm-text-muted)] text-sm">Select a meal to view details</div>
             ) : (
               <div className="p-4 space-y-4">
                 <div className="flex items-start justify-between">
@@ -178,15 +178,15 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
                     ["Prep Time", selectedMeal.prep],
                     ["Allergens", selectedMeal.allergens],
                   ].map(([label, val]) => (
-                    <div key={label} className="bg-[#0F0F0F] border border-[#2A2A2A] px-3 py-2">
-                      <div className="text-xs text-[#AAAAAA] uppercase tracking-wider">{label}</div>
+                    <div key={label} className="bg-[var(--pm-bg)] border border-[var(--pm-border)] px-3 py-2">
+                      <div className="text-xs text-[var(--pm-text-muted)] uppercase tracking-wider">{label}</div>
                       <div className="text-sm mono font-semibold mt-0.5">{val}</div>
                     </div>
                   ))}
                 </div>
                 {activeStage === "create" && (
                   <div className="flex gap-2">
-                    <button className="flex-1 border border-[#2A2A2A] text-[#888] text-xs py-2 mono hover:text-[#E8E8E8] transition-colors">Edit</button>
+                    <button className="flex-1 border border-[var(--pm-border)] text-[var(--pm-text-muted)] text-xs py-2 mono hover:text-[var(--pm-text-secondary)] transition-colors">Edit</button>
                     <button className="flex-1 border border-red-800/40 text-red-400 text-xs py-2 mono hover:bg-red-950 transition-colors">Remove</button>
                   </div>
                 )}
@@ -204,7 +204,7 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
 
       {/* Publish stage */}
       {activeStage === "publish" && (
-        <div className="border border-[#2A2A2A] bg-[#181818] p-6 space-y-4">
+        <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-6 space-y-4">
           <div className="text-sm font-semibold">Publish to Shopify Storefront</div>
           {!canAdvance ? (
             <div className="border border-yellow-800/30 bg-yellow-950/10 px-4 py-3 text-xs text-yellow-300 mono">
@@ -225,7 +225,7 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
               </div>
             ))}
           </div>
-          <button disabled={!canAdvance} className={`px-6 py-2.5 text-sm font-bold mono transition-colors ${canAdvance ? "bg-[#F5B300] text-black hover:bg-[#C99200]" : "bg-[#2A2A2A] text-[#555] cursor-not-allowed"}`}>
+          <button disabled={!canAdvance} className={`px-6 py-2.5 text-sm font-bold mono transition-colors ${canAdvance ? "bg-[#F5B300] text-black hover:bg-[#C99200]" : "bg-[var(--pm-surface-muted)] text-[var(--pm-text-muted)] cursor-not-allowed"}`}>
             Publish Menu to Portal
           </button>
         </div>
@@ -237,15 +237,15 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
           <div className="border border-yellow-800/30 bg-yellow-950/10 px-4 py-2.5 text-xs text-yellow-300 mono">
             Customer review window closes Thursday 12:00pm. Subscribers select or swap meals via portal.
           </div>
-          <div className="border border-[#2A2A2A] bg-[#181818]">
-            <div className="px-4 py-3 border-b border-[#2A2A2A]">
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+            <div className="px-4 py-3 border-b border-[var(--pm-border)]">
               <span className="text-sm font-semibold">Subscriber Selections — Current Week</span>
             </div>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#2A2A2A]">
+                <tr className="border-b border-[var(--pm-border)]">
                   {["Subscriber", "Plan", "Goal", "Meals Selected", "Swaps", "Status"].map(h => (
-                    <th key={h} className="px-4 py-2 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium">{h}</th>
+                    <th key={h} className="px-4 py-2 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -257,12 +257,12 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
                   { name: "Serene Tay", plan: "8-week", goal: "CUT", meals: 5, swaps: 0, done: false },
                   { name: "Jason Yeo", plan: "4-week", goal: "BUILD", meals: 5, swaps: 0, done: false },
                 ].map((r, i) => (
-                  <tr key={r.name} className={`border-b border-[#2A2A2A] ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
+                  <tr key={r.name} className={`border-b border-[var(--pm-border)] ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
                     <td className="px-4 py-2.5 font-medium">{r.name}</td>
-                    <td className="px-4 py-2.5 text-xs text-[#888]">{r.plan}</td>
+                    <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{r.plan}</td>
                     <td className="px-4 py-2.5"><span className="text-xs mono font-bold" style={{ color: goalColor[r.goal] }}>{r.goal}</span></td>
                     <td className="px-4 py-2.5 mono text-xs">{r.meals} / 5</td>
-                    <td className="px-4 py-2.5 mono text-xs text-[#888]">{r.swaps}</td>
+                    <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{r.swaps}</td>
                     <td className="px-4 py-2.5">
                       <span className={`text-xs mono px-2 py-0.5 font-bold ${r.done ? "text-green-400 bg-green-950/30" : "text-yellow-400 bg-yellow-950/30"}`}>
                         {r.done ? "Confirmed" : "Pending"}
@@ -286,16 +286,16 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
             {["CUT", "BUILD", "MAINTAIN"].map(goal => {
               const goalMeals = weekMeals.filter(m => m.goal === goal);
               return (
-                <div key={goal} className="border border-[#2A2A2A] bg-[#181818]">
-                  <div className="px-4 py-3 border-b border-[#2A2A2A] flex items-center justify-between">
+                <div key={goal} className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+                  <div className="px-4 py-3 border-b border-[var(--pm-border)] flex items-center justify-between">
                     <span className="text-sm font-bold mono" style={{ color: goalColor[goal] }}>{goal}</span>
-                    <span className="text-xs text-[#888] mono">{goalMeals.length} meals</span>
+                    <span className="text-xs text-[var(--pm-text-muted)] mono">{goalMeals.length} meals</span>
                   </div>
-                  <div className="divide-y divide-[#1A1A1A]">
+                  <div className="divide-y divide-[var(--pm-border-soft)]">
                     {goalMeals.map(m => (
                       <div key={m.id} className="px-4 py-3 text-xs">
                         <div className="font-medium">{m.name}</div>
-                        <div className="text-[#888] mono mt-0.5">{m.calories} kcal · {m.protein}g protein · Prep {m.prep}</div>
+                        <div className="text-[var(--pm-text-muted)] mono mt-0.5">{m.calories} kcal · {m.protein}g protein · Prep {m.prep}</div>
                       </div>
                     ))}
                   </div>
@@ -305,8 +305,8 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
           </div>
           <div className="flex gap-3">
             <button className="bg-[#F5B300] text-black text-xs font-bold px-6 py-2.5 mono hover:bg-[#C99200] transition-colors">Export Kitchen PDF</button>
-            <button className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-6 py-2.5 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">Export CSV</button>
-            <button className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-6 py-2.5 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">Send to Kitchen Queue</button>
+            <button className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-6 py-2.5 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">Export CSV</button>
+            <button className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-6 py-2.5 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">Send to Kitchen Queue</button>
           </div>
         </div>
       )}
@@ -314,39 +314,39 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
       {/* Add Meal Modal */}
       {showAddMeal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-          <div className="bg-[#181818] border border-[#2A2A2A] w-full max-w-[480px]">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#2A2A2A]">
-              <span className="font-bold text-[#F5B300] mono">Add Meal</span>
-              <button onClick={() => setShowAddMeal(false)} className="text-[#888] hover:text-[#E8E8E8] text-xl">×</button>
+          <div className="bg-[var(--pm-surface)] border border-[var(--pm-border)] w-full max-w-[480px]">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--pm-border)]">
+              <span className="font-bold text-[var(--pm-accent-text)] mono">Add Meal</span>
+              <button onClick={() => setShowAddMeal(false)} className="text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)] text-xl">×</button>
             </div>
             <div className="p-4 space-y-3">
               <div>
-                <label className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider block mb-1">Meal Name</label>
-                <input type="text" placeholder="e.g. Grilled Chicken with Quinoa" className="w-full bg-[#0F0F0F] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[#444]" />
+                <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Meal Name</label>
+                <input type="text" placeholder="e.g. Grilled Chicken with Quinoa" className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider block mb-1">Goal</label>
-                  <select className="w-full bg-[#0F0F0F] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300]">
+                  <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Goal</label>
+                  <select className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300]">
                     <option>CUT</option><option>BUILD</option><option>MAINTAIN</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider block mb-1">Calories</label>
-                  <input type="number" placeholder="500" className="w-full bg-[#0F0F0F] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[#444]" />
+                  <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Calories</label>
+                  <input type="number" placeholder="500" className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]" />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider block mb-1">Protein (g)</label>
-                  <input type="number" placeholder="40" className="w-full bg-[#0F0F0F] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[#444]" />
+                  <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Protein (g)</label>
+                  <input type="number" placeholder="40" className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]" />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider block mb-1">Carbs (g)</label>
-                  <input type="number" placeholder="45" className="w-full bg-[#0F0F0F] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[#444]" />
+                  <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Carbs (g)</label>
+                  <input type="number" placeholder="45" className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]" />
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider block mb-1">Allergens</label>
-                <input type="text" placeholder="e.g. Gluten, Soy" className="w-full bg-[#0F0F0F] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[#444]" />
+                <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Allergens</label>
+                <input type="text" placeholder="e.g. Gluten, Soy" className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]" />
               </div>
               <button onClick={() => setShowAddMeal(false)} className="w-full bg-[#F5B300] text-black py-2 text-sm font-bold mono hover:bg-[#C99200] transition-colors">
                 Save as Draft

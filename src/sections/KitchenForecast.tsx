@@ -35,12 +35,12 @@ const ingredients = [
 
 const packaging = [
   { name: "Meal Containers (600ml)", forecast7: 104, forecast14: 208, forecast30: 447, stock: 450, low: false },
-  { name: "Box Sub Bags", forecast7: 46, forecast14: 92, forecast30: 198, stock: 32, low: true },
+  { name: "Ready Sub Bags", forecast7: 46, forecast14: 92, forecast30: 198, stock: 32, low: true },
   { name: "Ice Packs", forecast7: 230, forecast14: 460, forecast30: 987, stock: 88, low: true },
   { name: "Delivery Labels", forecast7: 104, forecast14: 208, forecast30: 447, stock: 380, low: false },
 ];
 
-export default function KitchenForecast({ demoMode }: { demoMode?: boolean } = {}) {
+export default function KitchenForecast() {
   const [period, setPeriod] = useState<ForecastPeriod>("7d");
   const data = period === "7d" ? mealForecast7 : mealForecast14;
   const periodKey = period === "7d" ? "forecast7" : period === "14d" ? "forecast14" : "forecast30";
@@ -50,12 +50,12 @@ export default function KitchenForecast({ demoMode }: { demoMode?: boolean } = {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-extrabold">Kitchen Forecasting</h2>
-          <div className="text-xs text-[#888] mono mt-0.5">Production demand prediction by business unit</div>
+          <div className="text-xs text-[var(--pm-text-muted)] mono mt-0.5">Production demand prediction by business unit</div>
         </div>
-        <div className="flex border border-[#2A2A2A]">
+        <div className="flex border border-[var(--pm-border)]">
           {(["7d", "14d", "30d"] as ForecastPeriod[]).map(p => (
             <button key={p} onClick={() => setPeriod(p)}
-              className={`px-4 py-2 text-xs mono font-bold transition-colors ${period === p ? "bg-[#F5B300] text-black" : "text-[#888] hover:text-[#E8E8E8]"}`}>
+              className={`px-4 py-2 text-xs mono font-bold transition-colors ${period === p ? "bg-[#F5B300] text-black" : "text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)]"}`}>
               {p === "7d" ? "7 Days" : p === "14d" ? "14 Days" : "30 Days"}
             </button>
           ))}
@@ -69,30 +69,30 @@ export default function KitchenForecast({ demoMode }: { demoMode?: boolean } = {
           { label: "Ingredient Alerts", value: ingredients.filter(i => i.low).length, color: "#EF4444" },
           { label: "Packaging Alerts", value: packaging.filter(p => p.low).length, color: "#E85D04" },
         ].map(k => (
-          <div key={k.label} className="border border-[#2A2A2A] bg-[#181818] p-4">
-            <div className="text-xs font-bold text-[#FFFFFF] uppercase tracking-widest mb-2">{k.label}</div>
+          <div key={k.label} className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4">
+            <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-widest mb-2">{k.label}</div>
             <div className="text-3xl font-extrabold mono" style={{ color: k.color }}>{k.value}</div>
-            <div className="text-xs text-[#888] mono mt-1">Next {period}</div>
+            <div className="text-xs text-[var(--pm-text-muted)] mono mt-1">Next {period}</div>
           </div>
         ))}
       </div>
 
       {/* Production chart */}
       {period !== "30d" && (
-        <div className="border border-[#2A2A2A] bg-[#181818]">
-          <div className="px-4 py-3 border-b border-[#2A2A2A] flex items-center justify-between">
+        <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+          <div className="px-4 py-3 border-b border-[var(--pm-border)] flex items-center justify-between">
             <span className="text-sm font-semibold">Daily Production Forecast — Next {period === "7d" ? "7" : "14"} Days</span>
             <div className="flex gap-3 text-xs mono">
-              <span className="text-[#F5B300]">■ Meal Plans</span>
-              <span className="text-[#E85D04]">■ Ready Series</span>
+              <span className="text-[var(--pm-accent-text)]">■ Meal Plans</span>
+              <span className="text-[var(--pm-secondary-text)]">■ Ready Series</span>
             </div>
           </div>
           <div className="p-4 h-48">
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={data} barCategoryGap="25%" barGap={2}>
-                <XAxis dataKey="day" tick={{ fill: "#888", fontSize: 10, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "#888", fontSize: 10, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} width={24} />
-                <Tooltip contentStyle={{ background: "#181818", border: "1px solid #2A2A2A", borderRadius: 0, fontFamily: "JetBrains Mono", fontSize: 11 }}
+                <XAxis dataKey="day" tick={{ fill: "var(--pm-text-muted)", fontSize: 10, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "var(--pm-text-muted)", fontSize: 10, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} width={24} />
+                <Tooltip contentStyle={{ background: "var(--pm-surface)", border: "1px solid var(--pm-border)", borderRadius: 0, fontFamily: "JetBrains Mono", fontSize: 11 }}
                   formatter={(v, name) => [`${Number(v ?? 0)} meals`, name === "mp" ? "Meal Plans" : "Ready Series"]} />
                 <Bar dataKey="mp" fill="#F5B300" radius={0} name="mp" />
                 <Bar dataKey="rs" fill="#E85D04" radius={0} name="rs" />
@@ -104,18 +104,18 @@ export default function KitchenForecast({ demoMode }: { demoMode?: boolean } = {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Ingredient forecast */}
-        <div className="border border-[#2A2A2A] bg-[#181818]">
-          <div className="px-4 py-3 border-b border-[#2A2A2A] flex items-center justify-between">
+        <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+          <div className="px-4 py-3 border-b border-[var(--pm-border)] flex items-center justify-between">
             <span className="text-sm font-semibold">Ingredient Requirements</span>
-            <button className="text-xs border border-[#2A2A2A] text-[#888] px-3 py-1 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">Export</button>
+            <button className="text-xs border border-[var(--pm-border)] text-[var(--pm-text-muted)] px-3 py-1 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">Export</button>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#2A2A2A]">
-                <th className="px-4 py-2 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium">Ingredient</th>
-                <th className="px-4 py-2 text-right text-xs text-[#AAAAAA] uppercase tracking-wider font-medium">Required</th>
-                <th className="px-4 py-2 text-right text-xs text-[#AAAAAA] uppercase tracking-wider font-medium">In Stock</th>
-                <th className="px-4 py-2 text-right text-xs text-[#AAAAAA] uppercase tracking-wider font-medium">Status</th>
+              <tr className="border-b border-[var(--pm-border)]">
+                <th className="px-4 py-2 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">Ingredient</th>
+                <th className="px-4 py-2 text-right text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">Required</th>
+                <th className="px-4 py-2 text-right text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">In Stock</th>
+                <th className="px-4 py-2 text-right text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -123,9 +123,9 @@ export default function KitchenForecast({ demoMode }: { demoMode?: boolean } = {
                 const required = ing[periodKey as keyof typeof ing] as number;
                 const deficit = required - ing.stock;
                 return (
-                  <tr key={ing.name} className={`border-b border-[#2A2A2A] ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
+                  <tr key={ing.name} className={`border-b border-[var(--pm-border)] ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
                     <td className="px-4 py-2.5 font-medium">{ing.name}</td>
-                    <td className="px-4 py-2.5 mono text-right text-[#E8E8E8]">{required} {ing.unit}</td>
+                    <td className="px-4 py-2.5 mono text-right text-[var(--pm-text-secondary)]">{required} {ing.unit}</td>
                     <td className="px-4 py-2.5 mono text-right" style={{ color: ing.low ? "#EF4444" : "#22C55E" }}>{ing.stock} {ing.unit}</td>
                     <td className="px-4 py-2.5 text-right">
                       {deficit > 0 ? (
@@ -142,18 +142,18 @@ export default function KitchenForecast({ demoMode }: { demoMode?: boolean } = {
         </div>
 
         {/* Packaging forecast */}
-        <div className="border border-[#2A2A2A] bg-[#181818]">
-          <div className="px-4 py-3 border-b border-[#2A2A2A] flex items-center justify-between">
+        <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+          <div className="px-4 py-3 border-b border-[var(--pm-border)] flex items-center justify-between">
             <span className="text-sm font-semibold">Packaging Requirements</span>
-            <button className="text-xs border border-[#2A2A2A] text-[#888] px-3 py-1 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">Export</button>
+            <button className="text-xs border border-[var(--pm-border)] text-[var(--pm-text-muted)] px-3 py-1 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">Export</button>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#2A2A2A]">
-                <th className="px-4 py-2 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium">Item</th>
-                <th className="px-4 py-2 text-right text-xs text-[#AAAAAA] uppercase tracking-wider font-medium">Required</th>
-                <th className="px-4 py-2 text-right text-xs text-[#AAAAAA] uppercase tracking-wider font-medium">In Stock</th>
-                <th className="px-4 py-2 text-right text-xs text-[#AAAAAA] uppercase tracking-wider font-medium">Status</th>
+              <tr className="border-b border-[var(--pm-border)]">
+                <th className="px-4 py-2 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">Item</th>
+                <th className="px-4 py-2 text-right text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">Required</th>
+                <th className="px-4 py-2 text-right text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">In Stock</th>
+                <th className="px-4 py-2 text-right text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -161,7 +161,7 @@ export default function KitchenForecast({ demoMode }: { demoMode?: boolean } = {
                 const required = pkg[periodKey as keyof typeof pkg] as number;
                 const deficit = required - pkg.stock;
                 return (
-                  <tr key={pkg.name} className={`border-b border-[#2A2A2A] ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
+                  <tr key={pkg.name} className={`border-b border-[var(--pm-border)] ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
                     <td className="px-4 py-2.5 font-medium text-sm">{pkg.name}</td>
                     <td className="px-4 py-2.5 mono text-right">{required}</td>
                     <td className="px-4 py-2.5 mono text-right" style={{ color: pkg.low ? "#EF4444" : "#22C55E" }}>{pkg.stock}</td>

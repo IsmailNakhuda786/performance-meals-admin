@@ -71,7 +71,7 @@ const mealStatusColor: Record<string, string> = {
   scheduled:         "#3B82F6",
 };
 
-export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: boolean } = {}) {
+export default function SubscriberProfile() {
   const [selectedId, setSelectedId] = useState<string>(mpSubs[0]?.id ?? "");
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -91,7 +91,7 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
   const goalBorderColor = sub?.goal ? (goalColor[sub.goal] ?? "#F5B300") : "#F5B300";
 
   if (!sub) return (
-    <div className="p-8 text-center text-[#555]">No Meal Plan subscribers found.</div>
+    <div className="p-8 text-center text-[var(--pm-text-muted)]">No Meal Plan subscribers found.</div>
   );
 
   return (
@@ -99,7 +99,7 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
 
       {/* ── Customer selector bar ─────────────────────────────────── */}
       <div className="flex items-center gap-3">
-        <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: "0.16em", color: "#555" }}>
+        <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: "0.16em", color: "var(--pm-text-muted)" }}>
           VIEWING SUBSCRIBER
         </span>
 
@@ -108,40 +108,40 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
           <button
             onClick={() => { setSearchOpen(o => !o); setSearch(""); }}
             className="w-full flex items-center justify-between gap-2 px-3 py-2 border transition-colors text-left"
-            style={{ background: "#111", border: `1px solid ${goalBorderColor}44`, borderLeft: `3px solid ${goalBorderColor}` }}
+            style={{ background: "var(--pm-surface)", border: `1px solid ${goalBorderColor}44`, borderLeft: `3px solid ${goalBorderColor}` }}
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-6 h-6 flex items-center justify-center text-black text-xs font-extrabold flex-shrink-0"
                 style={{ background: goalBorderColor, fontFamily: "'Outfit', sans-serif" }}>
                 {sub.customerName.split(" ").map(n => n[0]).join("")}
               </div>
-              <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13, color: "#EFEFEF" }} className="truncate">
+              <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13, color: "var(--pm-text)" }} className="truncate">
                 {sub.customerName}
               </span>
-              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "#555" }}>
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "var(--pm-text-muted)" }}>
                 {sub.id}
               </span>
             </div>
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="flex-shrink-0" style={{ color: "#555" }}>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="flex-shrink-0" style={{ color: "var(--pm-text-muted)" }}>
               <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
 
           {searchOpen && (
-            <div className="absolute top-full left-0 z-50 w-full shadow-2xl" style={{ background: "#111", border: "1px solid #2A2A2A", minWidth: 280 }}>
-              <div className="p-2 border-b border-[#1E1E1E]">
+            <div className="absolute top-full left-0 z-50 w-full shadow-2xl" style={{ background: "var(--pm-surface)", border: "1px solid var(--pm-border)", minWidth: 280 }}>
+              <div className="p-2 border-b border-[var(--pm-border-soft)]">
                 <input
                   autoFocus
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Search subscriber..."
-                  className="w-full bg-[#1A1A1A] border border-[#2A2A2A] px-3 py-1.5 text-xs text-[#EFEFEF] outline-none placeholder:text-[#444]"
+                  className="w-full bg-[var(--pm-surface-muted)] border border-[var(--pm-border)] px-3 py-1.5 text-xs text-[var(--pm-text)] outline-none placeholder:text-[var(--pm-text-muted)]"
                   style={{ fontFamily: "'Inter', sans-serif" }}
                 />
               </div>
               <div className="max-h-64 overflow-y-auto">
                 {filteredSubs.length === 0 && (
-                  <div className="px-3 py-3 text-xs text-[#555]">No results</div>
+                  <div className="px-3 py-3 text-xs text-[var(--pm-text-muted)]">No results</div>
                 )}
                 {filteredSubs.map(s => {
                   const active = s.id === selectedId;
@@ -150,16 +150,16 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
                     <button
                       key={s.id}
                       onClick={() => { setSelectedId(s.id); setSearchOpen(false); setActiveTab("overview"); }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[#1A1A1A]"
-                      style={{ background: active ? "#1A1A1A" : "transparent" }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[var(--pm-surface-muted)]"
+                      style={{ background: active ? "var(--pm-surface-muted)" : "transparent" }}
                     >
                       <div className="w-7 h-7 flex items-center justify-center text-black text-xs font-extrabold flex-shrink-0"
                         style={{ background: gc, fontFamily: "'Outfit', sans-serif" }}>
                         {s.customerName.split(" ").map(n => n[0]).join("")}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 500, fontSize: 12, color: "#EFEFEF" }}>{s.customerName}</div>
-                        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9.5, color: "#555", marginTop: 1 }}>
+                        <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 500, fontSize: 12, color: "var(--pm-text)" }}>{s.customerName}</div>
+                        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9.5, color: "var(--pm-text-muted)", marginTop: 1 }}>
                           {s.id} · {s.planWeek} · {s.mealsPerWeek} meals/wk
                         </div>
                       </div>
@@ -171,8 +171,8 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
                   );
                 })}
               </div>
-              <div className="px-3 py-2 border-t border-[#1E1E1E]">
-                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 9.5, color: "#444" }}>
+              <div className="px-3 py-2 border-t border-[var(--pm-border-soft)]">
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 9.5, color: "var(--pm-text-muted)" }}>
                   {mpSubs.length} meal plan subscribers total
                 </span>
               </div>
@@ -190,26 +190,26 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
           </span>
         )}
         <div className="flex-1" />
-        <button className="text-xs mono px-3 py-1.5 transition-colors" style={{ border: "1px solid #2A2A2A", color: "#666" }}>
+        <button className="text-xs mono px-3 py-1.5 transition-colors" style={{ border: "1px solid var(--pm-border)", color: "var(--pm-text-muted)" }}>
           Edit Profile
         </button>
       </div>
 
       {/* Contact strip */}
       {cust && (
-        <div className="flex items-center gap-5 px-4 py-2.5" style={{ background: "#111", border: "1px solid #1E1E1E" }}>
-          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "#888" }}>{cust.email}</span>
-          <span style={{ color: "#2A2A2A" }}>·</span>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "#888" }}>{cust.phone}</span>
-          <span style={{ color: "#2A2A2A" }}>·</span>
-          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "#666" }}>{cust.address}</span>
-          <span style={{ color: "#2A2A2A" }}>·</span>
-          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "#555" }}>Joined {cust.joinDate}</span>
+        <div className="flex items-center gap-5 px-4 py-2.5" style={{ background: "var(--pm-surface)", border: "1px solid var(--pm-border-soft)" }}>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "var(--pm-text-muted)" }}>{cust.email}</span>
+          <span style={{ color: "var(--pm-text-subtle)" }}>·</span>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "var(--pm-text-muted)" }}>{cust.phone}</span>
+          <span style={{ color: "var(--pm-text-subtle)" }}>·</span>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "var(--pm-text-muted)" }}>{cust.address}</span>
+          <span style={{ color: "var(--pm-text-subtle)" }}>·</span>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "var(--pm-text-muted)" }}>Joined {cust.joinDate}</span>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-[#1E1E1E]">
+      <div className="flex border-b border-[var(--pm-border-soft)]">
         {tabConfig.map(t => (
           <button
             key={t.id}
@@ -217,7 +217,7 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
             className="flex items-center gap-1.5 px-4 py-2.5 text-xs mono border-b-2 transition-colors"
             style={activeTab === t.id
               ? { borderBottomColor: "#F5B300", color: "#F5B300" }
-              : { borderBottomColor: "transparent", color: "#555" }
+              : { borderBottomColor: "transparent", color: "var(--pm-text-muted)" }
             }
           >
             <span>{t.icon}</span>
@@ -239,32 +239,32 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
                 { label: "Next Billing",   value: sub.nextBilling },
                 { label: "Menu Confirmed", value: sub.menuConfirmed ? "✓ Yes" : "✗ No" },
               ].map(f => (
-                <div key={f.label} className="p-3" style={{ background: "#111", border: "1px solid #1E1E1E" }}>
+                <div key={f.label} className="p-3" style={{ background: "var(--pm-surface)", border: "1px solid var(--pm-border-soft)" }}>
                   <div className="pm-section-heading mb-1">{f.label}</div>
-                  <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13, color: "#EFEFEF" }}>{f.value}</div>
+                  <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13, color: "var(--pm-text)" }}>{f.value}</div>
                 </div>
               ))}
             </div>
 
             {cust && (
-              <div className="p-4" style={{ background: "#111", border: "1px solid #1E1E1E" }}>
+              <div className="p-4" style={{ background: "var(--pm-surface)", border: "1px solid var(--pm-border-soft)" }}>
                 <div className="pm-section-heading mb-2">Delivery Address</div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "#EFEFEF" }}>{cust.address}</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "var(--pm-text)" }}>{cust.address}</div>
               </div>
             )}
 
             {sub.weeksRemaining > 0 && (
-              <div className="p-4" style={{ background: "#111", border: "1px solid #1E1E1E" }}>
+              <div className="p-4" style={{ background: "var(--pm-surface)", border: "1px solid var(--pm-border-soft)" }}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="pm-section-heading">Plan Progress</div>
-                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "#888" }}>{sub.planWeek}</span>
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "var(--pm-text-muted)" }}>{sub.planWeek}</span>
                 </div>
-                <div className="w-full h-1.5 mb-2" style={{ background: "#222" }}>
+                <div className="w-full h-1.5 mb-2" style={{ background: "var(--pm-surface-muted)" }}>
                   <div className="h-1.5 transition-all" style={{ width: `${Math.round((1 - sub.weeksRemaining / 12) * 100)}%`, background: goalBorderColor }} />
                 </div>
                 <div className="flex justify-between">
-                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9.5, color: "#555" }}>{12 - sub.weeksRemaining} weeks done</span>
-                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9.5, color: "#555" }}>{sub.weeksRemaining} remaining</span>
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9.5, color: "var(--pm-text-muted)" }}>{12 - sub.weeksRemaining} weeks done</span>
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9.5, color: "var(--pm-text-muted)" }}>{sub.weeksRemaining} remaining</span>
                 </div>
               </div>
             )}
@@ -272,19 +272,19 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
 
           {cust && (
             <div className="space-y-3">
-              <div className="p-4" style={{ background: "#111", border: `1px solid ${goalBorderColor}33` }}>
+              <div className="p-4" style={{ background: "var(--pm-surface)", border: `1px solid ${goalBorderColor}33` }}>
                 <div className="pm-section-heading mb-3">Lifetime Value</div>
                 <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 28, color: "#F5B300" }}>${cust.ltv.toFixed(2)}</div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: "#555", marginTop: 4 }}>SGD · all invoices</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: "var(--pm-text-muted)", marginTop: 4 }}>SGD · all invoices</div>
               </div>
-              <div className="p-4" style={{ background: "#111", border: "1px solid #1E1E1E" }}>
+              <div className="p-4" style={{ background: "var(--pm-surface)", border: "1px solid var(--pm-border-soft)" }}>
                 <div className="pm-section-heading mb-3">Wallet & Rewards</div>
-                <div className="flex items-center justify-between py-1.5 border-b border-[#1A1A1A]">
-                  <span style={{ fontSize: 11, color: "#888" }}>Balance</span>
+                <div className="flex items-center justify-between py-1.5 border-b border-[var(--pm-border-soft)]">
+                  <span style={{ fontSize: 11, color: "var(--pm-text-muted)" }}>Balance</span>
                   <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: 13, color: "#22C55E" }}>${cust.walletBalance.toFixed(2)}</span>
                 </div>
                 <div className="flex items-center justify-between py-1.5">
-                  <span style={{ fontSize: 11, color: "#888" }}>Points</span>
+                  <span style={{ fontSize: 11, color: "var(--pm-text-muted)" }}>Points</span>
                   <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: 13, color: "#F5B300" }}>{cust.points} pts</span>
                 </div>
               </div>
@@ -303,19 +303,19 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
               { label: "Meals / Week", value: `${sub.mealsPerWeek}` },
               { label: "Status",       value: sub.status },
             ].map(f => (
-              <div key={f.label} className="p-4" style={{ background: "#111", border: "1px solid #1E1E1E" }}>
+              <div key={f.label} className="p-4" style={{ background: "var(--pm-surface)", border: "1px solid var(--pm-border-soft)" }}>
                 <div className="pm-section-heading mb-1">{f.label}</div>
-                <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 15, color: "#EFEFEF" }}>{f.value}</div>
+                <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 15, color: "var(--pm-text)" }}>{f.value}</div>
               </div>
             ))}
           </div>
-          <div className="p-4" style={{ background: "#111", border: "1px solid #1E1E1E" }}>
+          <div className="p-4" style={{ background: "var(--pm-surface)", border: "1px solid var(--pm-border-soft)" }}>
             <div className="pm-section-heading mb-3">Weekly Schedule</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
               {["Mon", "Tue", "Wed", "Thu", "Fri"].map(day => (
-                <div key={day} className="p-3 text-center" style={{ border: "1px solid #1E1E1E" }}>
-                  <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: 10, color: "#555", marginBottom: 6 }}>{day}</div>
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "#888" }}>1 meal</div>
+                <div key={day} className="p-3 text-center" style={{ border: "1px solid var(--pm-border-soft)" }}>
+                  <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: 10, color: "var(--pm-text-muted)", marginBottom: 6 }}>{day}</div>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "var(--pm-text-muted)" }}>1 meal</div>
                   <div style={{ fontSize: 10, color: "#22C55E", marginTop: 4 }}>Active</div>
                 </div>
               ))}
@@ -326,13 +326,13 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
 
       {/* Tab: Meals */}
       {activeTab === "meals" && (
-        <div style={{ border: "1px solid #1E1E1E" }}>
+        <div style={{ border: "1px solid var(--pm-border-soft)" }}>
           {meals.length === 0 ? (
-            <div className="p-8 text-center text-[#555] text-sm mono">No meal history available for this subscriber.</div>
+            <div className="p-8 text-center text-[var(--pm-text-muted)] text-sm mono">No meal history available for this subscriber.</div>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ borderBottom: "1px solid #1E1E1E" }}>
+                <tr style={{ borderBottom: "1px solid var(--pm-border-soft)" }}>
                   {["Week", "Day", "Meal", "Kcal", "Protein", "Carbs", "Fat", "Status"].map(h => (
                     <th key={h} className="pm-section-heading px-4 py-2.5 text-left whitespace-nowrap">{h}</th>
                   ))}
@@ -340,14 +340,14 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
               </thead>
               <tbody>
                 {meals.map((m, i) => (
-                  <tr key={`${m.week}-${m.day}`} className="hover:bg-[#141414] transition-colors" style={{ borderBottom: "1px solid #1A1A1A", background: i % 2 !== 0 ? "#111" : "transparent" }}>
-                    <td className="px-4 py-2.5 mono text-xs text-[#555]">W{m.week}</td>
-                    <td className="px-4 py-2.5 mono text-xs text-[#888]">{m.day}</td>
+                  <tr key={`${m.week}-${m.day}`} className="hover:bg-[var(--pm-surface-subtle)] transition-colors" style={{ borderBottom: "1px solid var(--pm-border-soft)", background: i % 2 !== 0 ? "var(--pm-surface-subtle)" : "transparent" }}>
+                    <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">W{m.week}</td>
+                    <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{m.day}</td>
                     <td className="px-4 py-2.5" style={{ fontFamily: "'Inter', sans-serif", fontSize: 12 }}>{m.meal}</td>
                     <td className="px-4 py-2.5 mono text-xs">{m.kcal}</td>
                     <td className="px-4 py-2.5 mono text-xs text-green-400">{m.protein}g</td>
                     <td className="px-4 py-2.5 mono text-xs text-blue-400">{m.carbs}g</td>
-                    <td className="px-4 py-2.5 mono text-xs text-[#888]">{m.fat}g</td>
+                    <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{m.fat}g</td>
                     <td className="px-4 py-2.5">
                       <span className="text-xs mono font-bold capitalize" style={{ color: mealStatusColor[m.status] ?? "#888" }}>
                         {m.status.replace("-", " ")}
@@ -364,12 +364,12 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
       {/* Tab: Billing */}
       {activeTab === "billing" && (
         <div className="space-y-4">
-          <div className="px-4 py-2.5 text-xs mono" style={{ background: "#1A1500", border: "1px solid #3D3000", color: "#F5B300" }}>
+          <div className="px-4 py-2.5 text-xs mono" style={{ background: "var(--pm-warning-bg)", border: "1px solid var(--pm-warning-border)", color: "var(--pm-warning-text)" }}>
             ℹ Billing is processed via Shopify. This view is read-only. To issue a refund, use Refund Management.
           </div>
-          <table className="w-full text-sm" style={{ border: "1px solid #1E1E1E" }}>
+          <table className="w-full text-sm" style={{ border: "1px solid var(--pm-border-soft)" }}>
             <thead>
-              <tr style={{ borderBottom: "1px solid #1E1E1E" }}>
+              <tr style={{ borderBottom: "1px solid var(--pm-border-soft)" }}>
                 {["Invoice", "Date", "Amount", "Cycle", "Status"].map(h => (
                   <th key={h} className="pm-section-heading px-4 py-2.5 text-left whitespace-nowrap">{h}</th>
                 ))}
@@ -377,11 +377,11 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
             </thead>
             <tbody>
               {billing.map((b, i) => (
-                <tr key={b.id} className="hover:bg-[#141414] transition-colors" style={{ borderBottom: "1px solid #1A1A1A", background: i % 2 !== 0 ? "#111" : "transparent" }}>
-                  <td className="px-4 py-2.5 mono text-xs text-[#F5B300]">{b.id}</td>
-                  <td className="px-4 py-2.5 mono text-xs text-[#888]">{b.date}</td>
-                  <td className="px-4 py-2.5 mono font-bold text-[#EFEFEF]">${b.amount.toFixed(2)}</td>
-                  <td className="px-4 py-2.5 text-xs text-[#888]">{b.cycle}</td>
+                <tr key={b.id} className="hover:bg-[var(--pm-surface-subtle)] transition-colors" style={{ borderBottom: "1px solid var(--pm-border-soft)", background: i % 2 !== 0 ? "var(--pm-surface-subtle)" : "transparent" }}>
+                  <td className="px-4 py-2.5 mono text-xs text-[var(--pm-accent-text)]">{b.id}</td>
+                  <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{b.date}</td>
+                  <td className="px-4 py-2.5 mono font-bold text-[var(--pm-text)]">${b.amount.toFixed(2)}</td>
+                  <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{b.cycle}</td>
                   <td className="px-4 py-2.5">
                     <span className="text-xs mono font-bold" style={{ color: b.status === "paid" ? "#22C55E" : "#F5B300" }}>
                       {b.status.toUpperCase()}
@@ -398,17 +398,17 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
       {activeTab === "pauses" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#555" }}>Pause history for {sub.customerName}</span>
+            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "var(--pm-text-muted)" }}>Pause history for {sub.customerName}</span>
             <button className="text-xs font-bold px-4 py-2 mono transition-colors" style={{ background: "#F5B300", color: "#000" }}>
               + New Pause
             </button>
           </div>
           {sub.pauseStart ? (
-            <div className="p-4" style={{ border: "1px solid #2A2A2A", background: "#111" }}>
+            <div className="p-4" style={{ border: "1px solid var(--pm-border)", background: "var(--pm-surface)" }}>
               <div className="flex items-center justify-between">
                 <div>
-                  <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13, color: "#EFEFEF" }}>Active Pause</div>
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "#888", marginTop: 4 }}>
+                  <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13, color: "var(--pm-text)" }}>Active Pause</div>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "var(--pm-text-muted)", marginTop: 4 }}>
                     {sub.pauseStart} → {sub.pauseEnd}
                   </div>
                 </div>
@@ -419,11 +419,11 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
               )}
             </div>
           ) : (
-            <div className="p-8 text-center" style={{ border: "1px solid #1E1E1E", color: "#555", fontFamily: "'Inter', sans-serif", fontSize: 13 }}>
+            <div className="p-8 text-center" style={{ border: "1px solid var(--pm-border-soft)", color: "var(--pm-text-muted)", fontFamily: "'Inter', sans-serif", fontSize: 13 }}>
               No pauses on record for {sub.customerName}.
             </div>
           )}
-          <div className="px-4 py-2.5" style={{ border: "1px solid #1E1E1E", color: "#444", fontFamily: "'Inter', sans-serif", fontSize: 11 }}>
+          <div className="px-4 py-2.5" style={{ border: "1px solid var(--pm-border-soft)", color: "var(--pm-text-muted)", fontFamily: "'Inter', sans-serif", fontSize: 11 }}>
             Business rule: Pauses must be in full weeks — 1 · 2 · 3 · 4 weeks max. Billing deferred by exact pause duration.
           </div>
         </div>
@@ -432,15 +432,15 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
       {/* Tab: Notes */}
       {activeTab === "notes" && (
         <div className="space-y-4">
-          <div className="p-4 space-y-2" style={{ border: "1px solid #1E1E1E", background: "#111" }}>
+          <div className="p-4 space-y-2" style={{ border: "1px solid var(--pm-border-soft)", background: "var(--pm-surface)" }}>
             <div className="pm-section-heading mb-3">Internal Note</div>
             <textarea
               value={noteText}
               onChange={e => setNoteText(e.target.value)}
               placeholder={`Add a note about ${sub.customerName}...`}
               rows={3}
-              className="w-full bg-[#0D0D0D] text-[#EFEFEF] text-sm px-3 py-2 outline-none resize-none placeholder:text-[#333]"
-              style={{ border: "1px solid #2A2A2A", fontFamily: "'Inter', sans-serif" }}
+              className="w-full bg-[var(--pm-bg)] text-[var(--pm-text)] text-sm px-3 py-2 outline-none resize-none placeholder:text-[var(--pm-text-muted)]"
+              style={{ border: "1px solid var(--pm-border)", fontFamily: "'Inter', sans-serif" }}
             />
             <div className="flex justify-end">
               <button
@@ -453,7 +453,7 @@ export default function SubscriberProfile({ demoMode: _demoMode }: { demoMode?: 
               </button>
             </div>
           </div>
-          <div className="p-4 text-sm text-center" style={{ border: "1px solid #1E1E1E", color: "#555" }}>
+          <div className="p-4 text-sm text-center" style={{ border: "1px solid var(--pm-border-soft)", color: "var(--pm-text-muted)" }}>
             No notes yet for {sub.customerName}.
           </div>
         </div>

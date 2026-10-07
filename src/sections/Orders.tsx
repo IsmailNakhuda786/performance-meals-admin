@@ -6,7 +6,7 @@ import { downloadCSV, downloadExcel, printHtml, nowStr, nowTime } from "../utils
 
 const statuses: OrderStatus[] = ["Confirmed", "Packing", "Packed", "Out for Delivery", "Delivered", "Pending", "Cancelled"];
 const mpTypes: PlanType[] = ["Meal Plan"];
-const rsTypes: PlanType[] = ["Box Subscription", "Ready-to-Go"];
+const rsTypes: PlanType[] = ["Ready Series Subscription", "Ready Series A-la-carte", "Ready Series Bundle"];
 
 type Order = typeof orders[0];
 
@@ -25,7 +25,7 @@ function slipHtml(o: Order) {
 <div class="footer">Printed: ${nowStr()} ${nowTime()} · Performance Meals Admin v3</div>`;
 }
 
-export default function Orders({ stream, demoMode }: { stream: BusinessStream; demoMode?: boolean }) {
+export default function Orders({ stream }: { stream: BusinessStream }) {
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [typeFilter, setTypeFilter] = useState<string>("All");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -87,19 +87,19 @@ export default function Orders({ stream, demoMode }: { stream: BusinessStream; d
     {refundModal && (
       <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={handleRefundClose}>
         <div
-          className="bg-[#181818] border border-[#2A2A2A] w-full max-w-md"
+          className="bg-[var(--pm-surface)] border border-[var(--pm-border)] w-full max-w-md"
           onClick={e => e.stopPropagation()}
         >
-          <div className="border-b border-[#2A2A2A] px-5 py-3 flex items-center justify-between">
+          <div className="border-b border-[var(--pm-border)] px-5 py-3 flex items-center justify-between">
             <span className="text-sm font-bold mono" style={{ color: "#E85D04" }}>Refund → Shopify Admin</span>
-            <button onClick={handleRefundClose} className="text-[#888] hover:text-[#E8E8E8] text-lg leading-none">×</button>
+            <button onClick={handleRefundClose} className="text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)] text-lg leading-none">×</button>
           </div>
           <div className="px-5 py-4 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mono">
-              <span className="text-[#888]">Order ID</span><span style={{ color: "#E85D04" }}>{refundModal.id}</span>
-              <span className="text-[#888]">Customer</span><span className="text-[#E8E8E8]">{refundModal.customer}</span>
-              <span className="text-[#888]">Amount</span><span className="text-[#E8E8E8] font-bold">${refundModal.total.toFixed(2)}</span>
-              <span className="text-[#888]">Status</span><span className="text-[#E8E8E8]">{refundModal.status}</span>
+              <span className="text-[var(--pm-text-muted)]">Order ID</span><span style={{ color: "#E85D04" }}>{refundModal.id}</span>
+              <span className="text-[var(--pm-text-muted)]">Customer</span><span className="text-[var(--pm-text-secondary)]">{refundModal.customer}</span>
+              <span className="text-[var(--pm-text-muted)]">Amount</span><span className="text-[var(--pm-text-secondary)] font-bold">${refundModal.total.toFixed(2)}</span>
+              <span className="text-[var(--pm-text-muted)]">Status</span><span className="text-[var(--pm-text-secondary)]">{refundModal.status}</span>
             </div>
             <div className="border border-yellow-600/50 bg-yellow-950/30 px-3 py-2 text-xs text-yellow-300">
               This portal records the refund decision. The actual refund is processed in Shopify Admin.
@@ -107,13 +107,13 @@ export default function Orders({ stream, demoMode }: { stream: BusinessStream; d
             {!refundConfirmed ? (
               <>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider">Reason <span className="text-[#E85D04]">*</span></label>
+                  <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">Reason <span className="text-[var(--pm-secondary-text)]">*</span></label>
                   <textarea
                     value={refundReason}
                     onChange={e => setRefundReason(e.target.value)}
                     rows={3}
                     placeholder="Describe the reason for this refund…"
-                    className="w-full bg-[#0F0F0F] border border-[#2A2A2A] text-[#E8E8E8] text-xs px-3 py-2 mono focus:outline-none focus:border-[#E85D04] resize-none"
+                    className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono focus:outline-none focus:border-[#E85D04] resize-none"
                   />
                 </div>
                 <div className="flex gap-2 pt-1">
@@ -125,7 +125,7 @@ export default function Orders({ stream, demoMode }: { stream: BusinessStream; d
                   >
                     Record Decision & Open Shopify ↗
                   </button>
-                  <button onClick={handleRefundClose} className="text-xs border border-[#2A2A2A] text-[#888] px-4 py-2 mono hover:border-[#E8E8E8] hover:text-[#E8E8E8] transition-colors">
+                  <button onClick={handleRefundClose} className="text-xs border border-[var(--pm-border)] text-[var(--pm-text-muted)] px-4 py-2 mono hover:border-[#E8E8E8] hover:text-[var(--pm-text-secondary)] transition-colors">
                     Cancel
                   </button>
                 </div>
@@ -152,77 +152,77 @@ export default function Orders({ stream, demoMode }: { stream: BusinessStream; d
               Print {selected.size} Slip{selected.size > 1 ? "s" : ""}
             </button>
           )}
-          <button onClick={() => downloadCSV(`orders-${nowStr()}.csv`, exportRows(filtered))} className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">CSV ↓</button>
-          <button onClick={() => downloadExcel(`orders-${nowStr()}.xls`, exportRows(filtered))} className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">Excel ↓</button>
-          <button onClick={() => printHtml("Orders Export — Performance Meals", `<h1>Orders Export</h1><div class="meta">${filtered.length} orders · ${nowStr()} ${nowTime()}</div><table><tr>${["Order ID","Customer","Plan Type","Meals","Total","Delivery Window","Status"].map(h=>`<th>${h}</th>`).join("")}</tr>${filtered.map(o=>`<tr><td>${o.id}</td><td>${o.customer}</td><td>${o.planType}</td><td>${o.meals}</td><td>$${o.total.toFixed(2)}</td><td>${o.deliveryWindow}</td><td>${o.status}</td></tr>`).join("")}</table><div class="footer">Exported: ${nowStr()} ${nowTime()} · Performance Meals Admin v3</div>`)} className="border border-[#3A3A3A] text-[#CCCCCC] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors">PDF ↓</button>
+          <button onClick={() => downloadCSV(`orders-${nowStr()}.csv`, exportRows(filtered))} className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">CSV ↓</button>
+          <button onClick={() => downloadExcel(`orders-${nowStr()}.xls`, exportRows(filtered))} className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">Excel ↓</button>
+          <button onClick={() => printHtml("Orders Export — Performance Meals", `<h1>Orders Export</h1><div class="meta">${filtered.length} orders · ${nowStr()} ${nowTime()}</div><table><tr>${["Order ID","Customer","Plan Type","Meals","Total","Delivery Window","Status"].map(h=>`<th>${h}</th>`).join("")}</tr>${filtered.map(o=>`<tr><td>${o.id}</td><td>${o.customer}</td><td>${o.planType}</td><td>${o.meals}</td><td>$${o.total.toFixed(2)}</td><td>${o.deliveryWindow}</td><td>${o.status}</td></tr>`).join("")}</table><div class="footer">Exported: ${nowStr()} ${nowTime()} · Performance Meals Admin v3</div>`)} className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">PDF ↓</button>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider">Status</span>
+          <span className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">Status</span>
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="bg-[#181818] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-1.5 mono focus:outline-none focus:border-[#F5B300]"
+            className="bg-[var(--pm-surface)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-1.5 mono focus:outline-none focus:border-[#F5B300]"
           >
             <option value="All">All</option>
             {statuses.map(s => <option key={s}>{s}</option>)}
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-[#FFFFFF] uppercase tracking-wider">Type</span>
+          <span className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">Type</span>
           <select
             value={typeFilter}
             onChange={e => setTypeFilter(e.target.value)}
-            className="bg-[#181818] border border-[#2A2A2A] text-[#E8E8E8] text-sm px-3 py-1.5 mono focus:outline-none focus:border-[#F5B300]"
+            className="bg-[var(--pm-surface)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-1.5 mono focus:outline-none focus:border-[#F5B300]"
           >
             <option value="All">All</option>
             {types.map(t => <option key={t}>{t}</option>)}
           </select>
         </div>
-        <div className="ml-auto text-xs text-[#888] mono self-center">{filtered.length} orders</div>
+        <div className="ml-auto text-xs text-[var(--pm-text-muted)] mono self-center">{filtered.length} orders</div>
       </div>
 
-      <div className="border border-[#2A2A2A] bg-[#181818] overflow-x-auto">
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#2A2A2A]">
+            <tr className="border-b border-[var(--pm-border)]">
               <th className="px-4 py-2 w-8">
                 <input type="checkbox" checked={selected.size === filtered.length && filtered.length > 0} onChange={toggleAll}
                   className="accent-[#F5B300]" />
               </th>
-              {["Order ID", "Customer", "Plan Type", "Meals", "Total", "Delivery Window", "Status", "Action"].map(h => (
-                <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[#FFFFFF] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
+              {["Order ID", "Customer", "Product / Package", "Meals", "Total", "Delivery Window", "Status", "Action"].map(h => (
+                <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {filtered.map((o, i) => (
-              <tr key={o.id} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] transition-colors ${i % 2 === 0 ? "" : "bg-[#141414]"}`}>
+              <tr key={o.id} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] transition-colors ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
                 <td className="px-4 py-2.5">
                   <input type="checkbox" checked={selected.has(o.id)} onChange={() => toggle(o.id)} className="accent-[#F5B300]" />
                 </td>
                 <td className="px-4 py-2.5 mono text-xs" style={{ color: accent }}>{o.id}</td>
                 <td className="px-4 py-2.5 font-medium">{o.customer}</td>
-                <td className="px-4 py-2.5 text-xs text-[#888]">
-                  {o.planType}
-                  {o.goal && <span className="ml-1 text-[#E85D04] font-bold">{o.goal}</span>}
+                <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">
+                  {o.productName ?? o.planType}
+                  {o.goal && <span className="ml-1 text-[var(--pm-secondary-text)] font-bold">{o.goal}</span>}
                 </td>
                 <td className="px-4 py-2.5 mono text-center">{o.meals}</td>
                 <td className="px-4 py-2.5 mono font-bold" style={{ color: accent }}>${o.total.toFixed(2)}</td>
-                <td className="px-4 py-2.5 mono text-xs text-[#888]">{o.deliveryWindow}</td>
+                <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{o.deliveryWindow}</td>
                 <td className="px-4 py-2.5"><StatusBadge status={o.status} /></td>
                 <td className="px-4 py-2.5">
                   <div className="flex gap-1">
-                    <button onClick={() => handlePrintSlip(o)} className="text-xs border border-[#2A2A2A] px-2 py-1 text-[#888] hover:border-[#F5B300] hover:text-[#F5B300] transition-colors mono">
+                    <button onClick={() => handlePrintSlip(o)} className="text-xs border border-[var(--pm-border)] px-2 py-1 text-[var(--pm-text-muted)] hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors mono">
                       Print Slip
                     </button>
                     {o.status === "Delivered" && (
                       <button onClick={() => { setRefundModal(o); setRefundReason(""); setRefundConfirmed(false); }}
                         title="Refund is processed in Shopify Admin — this records the request only"
-                        className="text-xs border border-[#2A2A2A] px-2 py-1 text-[#888] hover:border-[#E85D04] hover:text-[#E85D04] transition-colors mono">
+                        className="text-xs border border-[var(--pm-border)] px-2 py-1 text-[var(--pm-text-muted)] hover:border-[#E85D04] hover:text-[var(--pm-secondary-text)] transition-colors mono">
                         Refund → Shopify ↗
                       </button>
                     )}

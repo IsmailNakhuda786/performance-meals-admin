@@ -49,10 +49,10 @@ interface ManifestRow {
 const manifestData: { rs: ManifestRow[]; mp: ManifestRow[] } = {
   rs: [
     { orderId: "RS-0201", customer: "Wei Jie Lim", address: "Blk 204 Tampines St 21 #08-11", contact: "+65 9123 4567", window: "10:00–12:00", pickupTime: "08:30", dispatchPoint: "Tampines Hub", type: "RS Subscription", rider: "Ahmad Farid", route: "NE Batch A", notes: "Leave at door", status: "Ready to Dispatch" },
-    { orderId: "RS-0202", customer: "Jade Koh", address: "12 Woodlands Ave 5 #03-22", contact: "+65 9234 5678", window: "10:00–12:00", pickupTime: "08:30", dispatchPoint: "Woodlands DC", type: "Ready-to-Go", rider: "Benny Lim", route: "North Batch A", notes: "Call on arrival", status: "Ready to Dispatch" },
+    { orderId: "RS-0202", customer: "Jade Koh", address: "12 Woodlands Ave 5 #03-22", contact: "+65 9234 5678", window: "10:00–12:00", pickupTime: "08:30", dispatchPoint: "Woodlands DC", type: "Ready Series A-la-carte", rider: "Benny Lim", route: "North Batch A", notes: "Call on arrival", status: "Ready to Dispatch" },
     { orderId: "RS-0203", customer: "Darren Ong", address: "88 Bukit Timah Rd #11-04", contact: "+65 9345 6789", window: "14:00–16:00", pickupTime: "12:30", dispatchPoint: "Buona Vista Hub", type: "RS Subscription", rider: "Ahmad Farid", route: "Central Batch B", notes: "—", status: "Packing" },
     { orderId: "RS-0204", customer: "Jason Yeo", address: "Blk 44 Geylang Bahru #06-08", contact: "+65 9456 7890", window: "14:00–16:00", pickupTime: "12:30", dispatchPoint: "Toa Payoh Hub", type: "RS Subscription", rider: "Benny Lim", route: "East Batch B", notes: "Fragile — handle with care", status: "Ready to Dispatch", changed: true },
-    { orderId: "RS-0205", customer: "Priya K", address: "3 Orchard Blvd #12-02", contact: "+65 9567 8901", window: "10:00–12:00", pickupTime: "08:30", dispatchPoint: "Toa Payoh Hub", type: "Ready-to-Go", rider: "Ahmad Farid", route: "Central Batch A", notes: "—", status: "Ready to Dispatch" },
+    { orderId: "RS-0205", customer: "Priya K", address: "3 Orchard Blvd #12-02", contact: "+65 9567 8901", window: "10:00–12:00", pickupTime: "08:30", dispatchPoint: "Toa Payoh Hub", type: "Ready Series A-la-carte", rider: "Ahmad Farid", route: "Central Batch A", notes: "—", status: "Ready to Dispatch" },
   ],
   mp: [
     { orderId: "MP-0601", customer: "Marcus Tan", address: "Blk 113 Bishan St 12 #05-14", contact: "+65 9111 2222", window: "10:00–12:00", pickupTime: "08:30", dispatchPoint: "Toa Payoh Hub", type: "Low Carb Regular", rider: "Benny Lim", route: "Central Batch A", notes: "No nuts", status: "Ready to Dispatch" },
@@ -200,23 +200,23 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
       return (
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#2A2A2A]">
+            <tr className="border-b border-[var(--pm-border)]">
               {["Meal Name", "Quantity", "Packaging Type", "Production Notes"].map(h => (
-                <th key={h} className="px-4 py-2.5 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium">{h}</th>
+                <th key={h} className="px-4 py-2.5 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={r.meal} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] ${i % 2 ? "bg-[#141414]" : ""}`}>
+              <tr key={r.meal} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] ${i % 2 ? "bg-[var(--pm-surface-subtle)]" : ""}`}>
                 <td className="px-4 py-2.5 font-medium">{r.meal}</td>
-                <td className="px-4 py-2.5 mono font-bold text-[#E8E8E8]">{r.qty}</td>
-                <td className="px-4 py-2.5 text-xs text-[#888]">{r.packaging}</td>
-                <td className="px-4 py-2.5 text-xs text-[#888] italic">{r.notes}</td>
+                <td className="px-4 py-2.5 mono font-bold text-[var(--pm-text-secondary)]">{r.qty}</td>
+                <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{r.packaging}</td>
+                <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)] italic">{r.notes}</td>
               </tr>
             ))}
-            <tr className="border-t-2 border-[#2A2A2A] bg-[#0F0F0F]">
-              <td className="px-4 py-2.5 font-bold text-xs uppercase tracking-wider text-[#555]">TOTAL</td>
+            <tr className="border-t-2 border-[var(--pm-border)] bg-[var(--pm-bg)]">
+              <td className="px-4 py-2.5 font-bold text-xs uppercase tracking-wider text-[var(--pm-text-muted)]">TOTAL</td>
               <td className="px-4 py-2.5 mono font-extrabold" style={{ color: accent }}>{rows.reduce((a, r) => a + r.qty, 0)}</td>
               <td colSpan={2} />
             </tr>
@@ -230,23 +230,23 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
       return (
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#2A2A2A]">
+            <tr className="border-b border-[var(--pm-border)]">
               {["Meal Name", "Quantity", "Packaging Type", "Labels Required"].map(h => (
-                <th key={h} className="px-4 py-2.5 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium">{h}</th>
+                <th key={h} className="px-4 py-2.5 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={r.meal} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] ${i % 2 ? "bg-[#141414]" : ""}`}>
+              <tr key={r.meal} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] ${i % 2 ? "bg-[var(--pm-surface-subtle)]" : ""}`}>
                 <td className="px-4 py-2.5 font-medium">{r.meal}</td>
-                <td className="px-4 py-2.5 mono font-bold text-[#E8E8E8]">{r.qty}</td>
-                <td className="px-4 py-2.5 text-xs text-[#888]">{r.packaging}</td>
-                <td className="px-4 py-2.5 mono text-[#E8E8E8]">{r.labels}</td>
+                <td className="px-4 py-2.5 mono font-bold text-[var(--pm-text-secondary)]">{r.qty}</td>
+                <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{r.packaging}</td>
+                <td className="px-4 py-2.5 mono text-[var(--pm-text-secondary)]">{r.labels}</td>
               </tr>
             ))}
-            <tr className="border-t-2 border-[#2A2A2A] bg-[#0F0F0F]">
-              <td className="px-4 py-2.5 font-bold text-xs uppercase tracking-wider text-[#555]">TOTAL</td>
+            <tr className="border-t-2 border-[var(--pm-border)] bg-[var(--pm-bg)]">
+              <td className="px-4 py-2.5 font-bold text-xs uppercase tracking-wider text-[var(--pm-text-muted)]">TOTAL</td>
               <td className="px-4 py-2.5 mono font-extrabold" style={{ color: accent }}>{rows.reduce((a, r) => a + r.qty, 0)}</td>
               <td />
               <td className="px-4 py-2.5 mono font-extrabold" style={{ color: accent }}>{rows.reduce((a, r) => a + r.labels, 0)}</td>
@@ -269,55 +269,55 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2 text-xs">
                   <div className="border border-orange-700/30 p-2">
-                    <div className="text-[#AAAAAA] uppercase tracking-wider mb-1 text-[10px]">Previous Version</div>
-                    <div className="mono text-[#888]">RS-0204 · Jason Yeo</div>
-                    <div className="text-[#555]">Address: Blk 44 Geylang Bahru #06-08</div>
-                    <div className="text-[#555]">Notes: —</div>
+                    <div className="text-[var(--pm-text-muted)] uppercase tracking-wider mb-1 text-[10px]">Previous Version</div>
+                    <div className="mono text-[var(--pm-text-muted)]">RS-0204 · Jason Yeo</div>
+                    <div className="text-[var(--pm-text-muted)]">Address: Blk 44 Geylang Bahru #06-08</div>
+                    <div className="text-[var(--pm-text-muted)]">Notes: —</div>
                   </div>
                   <div className="border border-orange-700/30 p-2">
-                    <div className="text-[#AAAAAA] uppercase tracking-wider mb-1 text-[10px]">Updated Version</div>
-                    <div className="mono text-[#E8E8E8]">RS-0204 · Jason Yeo</div>
+                    <div className="text-[var(--pm-text-muted)] uppercase tracking-wider mb-1 text-[10px]">Updated Version</div>
+                    <div className="mono text-[var(--pm-text-secondary)]">RS-0204 · Jason Yeo</div>
                     <div className="text-orange-300">Address: Blk 44 Geylang Bahru #06-08 ← unchanged</div>
                     <div className="text-orange-300">Notes: Fragile — handle with care ← added</div>
                   </div>
                 </div>
-                <div className="flex gap-4 mt-2 text-[10px] text-[#555] mono">
-                  <span>Changed by: <span className="text-[#888]">Sarah Tan (Support)</span></span>
+                <div className="flex gap-4 mt-2 text-[10px] text-[var(--pm-text-muted)] mono">
+                  <span>Changed by: <span className="text-[var(--pm-text-muted)]">Sarah Tan (Support)</span></span>
                   <span>·</span>
-                  <span>Timestamp: <span className="text-[#888]">{dateStr} 09:14</span></span>
+                  <span>Timestamp: <span className="text-[var(--pm-text-muted)]">{dateStr} 09:14</span></span>
                   <span>·</span>
                   <span className="text-orange-400">DO regeneration required</span>
                 </div>
               </div>
-              <button onClick={() => setChangeControlOpen(false)} className="text-[#555] hover:text-[#888] text-lg ml-4">×</button>
+              <button onClick={() => setChangeControlOpen(false)} className="text-[var(--pm-text-muted)] hover:text-[var(--pm-text-muted)] text-lg ml-4">×</button>
             </div>
           </div>
         )}
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#2A2A2A]">
+            <tr className="border-b border-[var(--pm-border)]">
               {["Order ID", "Customer", "Address", "Contact", "Window", "Pickup", "Dispatch Point", "Rider", "Route", "Product / Plan", "Notes", "Status"].map(h => (
-                <th key={h} className="px-3 py-2.5 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
+                <th key={h} className="px-3 py-2.5 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={r.orderId} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] ${r.changed ? "bg-orange-950/10" : i % 2 ? "bg-[#141414]" : ""}`}>
+              <tr key={r.orderId} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] ${r.changed ? "bg-orange-950/10" : i % 2 ? "bg-[var(--pm-surface-subtle)]" : ""}`}>
                 <td className="px-3 py-2.5 mono text-xs">
                   <span style={{ color: accent }}>{r.orderId}</span>
                   {r.changed && <span className="ml-1 text-[9px] bg-orange-900/60 text-orange-400 px-1 py-0.5 font-bold">CHANGED</span>}
                 </td>
                 <td className="px-3 py-2.5 font-medium text-xs whitespace-nowrap">{r.customer}</td>
-                <td className="px-3 py-2.5 text-xs text-[#888] max-w-[140px] truncate">{r.address}</td>
-                <td className="px-3 py-2.5 mono text-xs text-[#888] whitespace-nowrap">{r.contact}</td>
+                <td className="px-3 py-2.5 text-xs text-[var(--pm-text-muted)] max-w-[140px] truncate">{r.address}</td>
+                <td className="px-3 py-2.5 mono text-xs text-[var(--pm-text-muted)] whitespace-nowrap">{r.contact}</td>
                 <td className="px-3 py-2.5 mono text-xs whitespace-nowrap" style={{ color: accent }}>{r.window}</td>
-                <td className="px-3 py-2.5 mono text-xs text-[#888] whitespace-nowrap">{r.pickupTime}</td>
-                <td className="px-3 py-2.5 text-xs text-[#888] whitespace-nowrap">{r.dispatchPoint}</td>
-                <td className="px-3 py-2.5 text-xs text-[#888] whitespace-nowrap">{r.rider}</td>
-                <td className="px-3 py-2.5 text-xs text-[#888] whitespace-nowrap">{r.route}</td>
-                <td className="px-3 py-2.5 text-xs text-[#888] max-w-[120px] truncate">{r.type}</td>
-                <td className="px-3 py-2.5 text-xs text-[#888] italic max-w-[120px] truncate">{r.notes}</td>
+                <td className="px-3 py-2.5 mono text-xs text-[var(--pm-text-muted)] whitespace-nowrap">{r.pickupTime}</td>
+                <td className="px-3 py-2.5 text-xs text-[var(--pm-text-muted)] whitespace-nowrap">{r.dispatchPoint}</td>
+                <td className="px-3 py-2.5 text-xs text-[var(--pm-text-muted)] whitespace-nowrap">{r.rider}</td>
+                <td className="px-3 py-2.5 text-xs text-[var(--pm-text-muted)] whitespace-nowrap">{r.route}</td>
+                <td className="px-3 py-2.5 text-xs text-[var(--pm-text-muted)] max-w-[120px] truncate">{r.type}</td>
+                <td className="px-3 py-2.5 text-xs text-[var(--pm-text-muted)] italic max-w-[120px] truncate">{r.notes}</td>
                 <td className="px-3 py-2.5 text-xs whitespace-nowrap">
                   <span className={`mono text-xs px-2 py-0.5 font-bold ${
                     r.status === "Ready to Dispatch" ? "bg-green-950/40 text-green-400" : "bg-yellow-950/40 text-yellow-400"
@@ -336,15 +336,15 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-extrabold">Delivery Order Export Center</h2>
-          <div className="text-xs text-[#555] mono mt-0.5">
-            DO Ref: <span className="text-[#888]">{refId}</span> &nbsp;·&nbsp; {dateStr}
+          <div className="text-xs text-[var(--pm-text-muted)] mono mt-0.5">
+            DO Ref: <span className="text-[var(--pm-text-muted)]">{refId}</span> &nbsp;·&nbsp; {dateStr}
           </div>
         </div>
-        <div className="flex gap-1 border border-[#2A2A2A]">
+        <div className="flex gap-1 border border-[var(--pm-border)]">
           {(["generate", "history"] as ExportTab[]).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-4 py-2 text-xs font-bold mono uppercase tracking-wider transition-colors ${
-                tab === t ? "bg-[#F5B300] text-black" : "text-[#888] hover:text-[#E8E8E8]"
+                tab === t ? "bg-[#F5B300] text-black" : "text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)]"
               }`}>
               {t === "generate" ? "Generate DO" : "Export History"}
             </button>
@@ -358,12 +358,12 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {exportTypes.map(e => (
               <button key={e.id} onClick={() => setExportType(e.id)}
-                className={`border p-4 text-left transition-colors ${exportType === e.id ? "border-[#F5B300] bg-[#F5B300]/5" : "border-[#2A2A2A] bg-[#181818] hover:border-[#555]"}`}>
+                className={`border p-4 text-left transition-colors ${exportType === e.id ? "border-[#F5B300] bg-[#F5B300]/5" : "border-[var(--pm-border)] bg-[var(--pm-surface)] hover:border-[var(--pm-border-strong)]"}`}>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-lg" style={{ color: exportType === e.id ? "#F5B300" : "#888" }}>{e.icon}</span>
-                  <span className={`text-sm font-bold ${exportType === e.id ? "text-[#F5B300]" : "text-[#E8E8E8]"}`}>{e.label}</span>
+                  <span className={`text-sm font-bold ${exportType === e.id ? "text-[var(--pm-accent-text)]" : "text-[var(--pm-text-secondary)]"}`}>{e.label}</span>
                 </div>
-                <div className="text-xs text-[#555]">{e.desc}</div>
+                <div className="text-xs text-[var(--pm-text-muted)]">{e.desc}</div>
               </button>
             ))}
           </div>
@@ -371,14 +371,14 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
           {/* Controls row */}
           <div className="flex items-center gap-3 flex-wrap">
             {/* BU selector — strict separation */}
-            <div className="flex gap-0 border border-[#2A2A2A]">
+            <div className="flex gap-0 border border-[var(--pm-border)]">
               <button onClick={() => setStreamSel("MP")}
-                className={`px-4 py-2 text-xs font-extrabold mono uppercase tracking-widest transition-colors ${streamSel === "MP" ? "bg-[#F5B300] text-black" : "text-[#888] hover:text-[#E8E8E8]"}`}>
+                className={`px-4 py-2 text-xs font-extrabold mono uppercase tracking-widest transition-colors ${streamSel === "MP" ? "bg-[#F5B300] text-black" : "text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)]"}`}>
                 Meal Plans
               </button>
-              <div className="w-px bg-[#2A2A2A]" />
+              <div className="w-px bg-[var(--pm-surface-muted)]" />
               <button onClick={() => setStreamSel("RS")}
-                className={`px-4 py-2 text-xs font-extrabold mono uppercase tracking-widest transition-colors ${streamSel === "RS" ? "bg-[#E85D04] text-black" : "text-[#888] hover:text-[#E8E8E8]"}`}>
+                className={`px-4 py-2 text-xs font-extrabold mono uppercase tracking-widest transition-colors ${streamSel === "RS" ? "bg-[#E85D04] text-black" : "text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)]"}`}>
                 Ready Series
               </button>
             </div>
@@ -387,7 +387,7 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
             <select
               value={selectedWindow}
               onChange={e => setSelectedWindow(e.target.value)}
-              className="bg-[#181818] border border-[#2A2A2A] text-[#888] text-xs px-3 py-2 mono focus:outline-none focus:border-[#F5B300]"
+              className="bg-[var(--pm-surface)] border border-[var(--pm-border)] text-[var(--pm-text-muted)] text-xs px-3 py-2 mono focus:outline-none focus:border-[#F5B300]"
             >
               {deliveryWindows.map(w => <option key={w}>{w}</option>)}
             </select>
@@ -395,7 +395,7 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
             <div className="ml-auto flex gap-2">
               {exportType === "manifest" && (
                 <button onClick={handlePrint}
-                  className="border border-[#2A2A2A] text-xs px-4 py-2 mono font-bold transition-colors hover:border-[#E8E8E8] hover:text-[#E8E8E8] text-[#888]">
+                  className="border border-[var(--pm-border)] text-xs px-4 py-2 mono font-bold transition-colors hover:border-[#E8E8E8] hover:text-[var(--pm-text-secondary)] text-[var(--pm-text-muted)]">
                   ⎙ PRINT
                 </button>
               )}
@@ -411,11 +411,11 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
 
           {/* Preview label */}
           <div className="flex items-center gap-3">
-            <div className="text-xs mono text-[#555] uppercase tracking-widest">Preview —</div>
+            <div className="text-xs mono text-[var(--pm-text-muted)] uppercase tracking-widest">Preview —</div>
             <div className="text-xs mono font-bold" style={{ color: accent }}>
               {exportTypes.find(e => e.id === exportType)?.label} · {streamSel}
             </div>
-            <div className="text-xs mono text-[#555]">{dateStr}</div>
+            <div className="text-xs mono text-[var(--pm-text-muted)]">{dateStr}</div>
             {exported && (
               <div className="text-xs mono text-green-400 border border-green-800/40 bg-green-950/10 px-2 py-0.5">
                 ✓ Export logged to Audit Trail
@@ -424,18 +424,18 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
           </div>
 
           {/* Table preview */}
-          <div className="border border-[#2A2A2A] bg-[#181818] overflow-x-auto">
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] overflow-x-auto">
             {renderTable()}
           </div>
 
           {/* Export summary footer */}
-          <div className="border border-[#2A2A2A] bg-[#181818] px-4 py-3 flex items-center justify-between">
-            <div className="text-xs text-[#888]">
-              <span className="font-bold text-[#E8E8E8]">{getRows().length}</span> records ·{" "}
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] px-4 py-3 flex items-center justify-between">
+            <div className="text-xs text-[var(--pm-text-muted)]">
+              <span className="font-bold text-[var(--pm-text-secondary)]">{getRows().length}</span> records ·{" "}
               <span className="font-bold" style={{ color: accent }}>{streamSel === "MP" ? "Meal Plans" : "Ready Series"}</span> ·{" "}
               {exportTypes.find(e => e.id === exportType)?.label}
             </div>
-            <div className="text-xs mono text-[#555]">
+            <div className="text-xs mono text-[var(--pm-text-muted)]">
               Ref: {refId} · Authorized staff only
             </div>
           </div>
@@ -444,42 +444,42 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
 
       {tab === "history" && (
         <div className="space-y-4">
-          <div className="text-xs text-[#555] mono">
+          <div className="text-xs text-[var(--pm-text-muted)] mono">
             All exports are audited. Reprints and re-downloads are logged with user and timestamp.
           </div>
-          <div className="border border-[#2A2A2A] bg-[#181818] overflow-x-auto">
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#2A2A2A]">
+                <tr className="border-b border-[var(--pm-border)]">
                   {["Export ID", "Business Unit", "Export Type", "Date", "Generated By", "Format", "Records", "Actions"].map(h => (
-                    <th key={h} className="px-4 py-2.5 text-left text-xs text-[#AAAAAA] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
+                    <th key={h} className="px-4 py-2.5 text-left text-xs text-[var(--pm-text-muted)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {exportHistory.map((entry, i) => (
-                  <tr key={entry.id} className={`border-b border-[#2A2A2A] hover:bg-[#1F1F1F] ${i % 2 ? "bg-[#141414]" : ""}`}>
-                    <td className="px-4 py-2.5 mono text-xs text-[#F5B300]">{entry.id}</td>
+                  <tr key={entry.id} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] ${i % 2 ? "bg-[var(--pm-surface-subtle)]" : ""}`}>
+                    <td className="px-4 py-2.5 mono text-xs text-[var(--pm-accent-text)]">{entry.id}</td>
                     <td className="px-4 py-2.5">
                       <span className="text-xs font-bold mono px-2 py-0.5"
                         style={{ color: entry.bu === "Meal Plans" ? "#F5B300" : "#E85D04", borderColor: (entry.bu === "Meal Plans" ? "#F5B300" : "#E85D04") + "40", border: "1px solid" }}>
                         {entry.bu === "Meal Plans" ? "MP" : "RS"}
                       </span>
-                      <span className="ml-2 text-xs text-[#888]">{entry.bu}</span>
+                      <span className="ml-2 text-xs text-[var(--pm-text-muted)]">{entry.bu}</span>
                     </td>
-                    <td className="px-4 py-2.5 text-xs text-[#888]">{entry.type}</td>
-                    <td className="px-4 py-2.5 mono text-xs text-[#888] whitespace-nowrap">{entry.date}</td>
-                    <td className="px-4 py-2.5 text-xs text-[#E8E8E8]">{entry.by}</td>
+                    <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{entry.type}</td>
+                    <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)] whitespace-nowrap">{entry.date}</td>
+                    <td className="px-4 py-2.5 text-xs text-[var(--pm-text-secondary)]">{entry.by}</td>
                     <td className="px-4 py-2.5">
-                      <span className="text-xs mono font-bold border border-[#2A2A2A] px-2 py-0.5 text-[#888]">{entry.format}</span>
+                      <span className="text-xs mono font-bold border border-[var(--pm-border)] px-2 py-0.5 text-[var(--pm-text-muted)]">{entry.format}</span>
                     </td>
-                    <td className="px-4 py-2.5 mono text-xs text-[#E8E8E8] text-center">{entry.count}</td>
+                    <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-secondary)] text-center">{entry.count}</td>
                     <td className="px-4 py-2.5">
                       <div className="flex gap-1.5">
                         {["View", "Print Again", "Download Again"].map(action => (
                           <button key={action}
                             onClick={() => setHistoryAction({ entry, action })}
-                            className="text-xs border border-[#2A2A2A] text-[#555] px-2 py-1 mono hover:border-[#F5B300] hover:text-[#F5B300] transition-colors whitespace-nowrap">
+                            className="text-xs border border-[var(--pm-border)] text-[var(--pm-text-muted)] px-2 py-1 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors whitespace-nowrap">
                             {action}
                           </button>
                         ))}
@@ -490,7 +490,7 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
               </tbody>
             </table>
           </div>
-          <div className="text-xs text-[#555] mono border border-[#2A2A2A] bg-[#181818] px-4 py-2">
+          <div className="text-xs text-[var(--pm-text-muted)] mono border border-[var(--pm-border)] bg-[var(--pm-surface)] px-4 py-2">
             ⊟ Every reprint and re-download is recorded in the Audit Log with user, timestamp, and export reference.
           </div>
         </div>
@@ -499,13 +499,13 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
       {/* Download confirmation modal */}
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-          <div className="bg-[#181818] border border-[#2A2A2A] w-[400px]">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#2A2A2A]">
+          <div className="bg-[var(--pm-surface)] border border-[var(--pm-border)] w-[400px]">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--pm-border)]">
               <span className="font-bold mono" style={{ color: accent }}>Confirm Export — {confirmModal.format}</span>
-              <button onClick={() => setConfirmModal(null)} className="text-[#888] hover:text-[#E8E8E8] text-xl">×</button>
+              <button onClick={() => setConfirmModal(null)} className="text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)] text-xl">×</button>
             </div>
             <div className="p-4 space-y-3">
-              <div className="border border-[#2A2A2A] bg-[#0F0F0F] p-3 space-y-1.5 text-xs">
+              <div className="border border-[var(--pm-border)] bg-[var(--pm-bg)] p-3 space-y-1.5 text-xs">
                 {[
                   ["Business Unit", streamSel === "MP" ? "Meal Plans" : "Ready Series"],
                   ["Export Type", exportTypes.find(e => e.id === exportType)?.label ?? ""],
@@ -515,12 +515,12 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
                   ["Ref", refId],
                 ].map(([k, v]) => (
                   <div key={k} className="flex justify-between">
-                    <span className="text-[#AAAAAA] uppercase tracking-wider">{k}</span>
-                    <span className="mono text-[#E8E8E8]">{v}</span>
+                    <span className="text-[var(--pm-text-muted)] uppercase tracking-wider">{k}</span>
+                    <span className="mono text-[var(--pm-text-secondary)]">{v}</span>
                   </div>
                 ))}
               </div>
-              <div className="text-xs text-[#888] border border-[#2A2A2A] px-3 py-2 bg-[#0F0F0F]">
+              <div className="text-xs text-[var(--pm-text-muted)] border border-[var(--pm-border)] px-3 py-2 bg-[var(--pm-bg)]">
                 This export will be logged to the Audit Trail with your user ID, timestamp, and record count.
               </div>
               <div className="flex gap-2">
@@ -530,7 +530,7 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
                   Confirm & Download
                 </button>
                 <button onClick={() => setConfirmModal(null)}
-                  className="flex-1 border border-[#2A2A2A] text-[#888] py-2 text-sm mono hover:text-[#E8E8E8] transition-colors">
+                  className="flex-1 border border-[var(--pm-border)] text-[var(--pm-text-muted)] py-2 text-sm mono hover:text-[var(--pm-text-secondary)] transition-colors">
                   Cancel
                 </button>
               </div>
@@ -542,13 +542,13 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
       {/* History action modal */}
       {historyAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-          <div className="bg-[#181818] border border-[#2A2A2A] w-[380px]">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#2A2A2A]">
-              <span className="font-bold text-[#F5B300] mono">{historyAction.action} — {historyAction.entry.id}</span>
-              <button onClick={() => setHistoryAction(null)} className="text-[#888] hover:text-[#E8E8E8] text-xl">×</button>
+          <div className="bg-[var(--pm-surface)] border border-[var(--pm-border)] w-[380px]">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--pm-border)]">
+              <span className="font-bold text-[var(--pm-accent-text)] mono">{historyAction.action} — {historyAction.entry.id}</span>
+              <button onClick={() => setHistoryAction(null)} className="text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)] text-xl">×</button>
             </div>
             <div className="p-4 space-y-3">
-              <div className="border border-[#2A2A2A] bg-[#0F0F0F] p-3 text-xs space-y-1.5">
+              <div className="border border-[var(--pm-border)] bg-[var(--pm-bg)] p-3 text-xs space-y-1.5">
                 {[
                   ["Export ID", historyAction.entry.id],
                   ["Business Unit", historyAction.entry.bu],
@@ -559,8 +559,8 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
                   ["Records", String(historyAction.entry.count)],
                 ].map(([k, v]) => (
                   <div key={k} className="flex justify-between">
-                    <span className="text-[#AAAAAA] uppercase tracking-wider">{k}</span>
-                    <span className="mono text-[#888]">{v}</span>
+                    <span className="text-[var(--pm-text-muted)] uppercase tracking-wider">{k}</span>
+                    <span className="mono text-[var(--pm-text-muted)]">{v}</span>
                   </div>
                 ))}
               </div>
@@ -578,7 +578,7 @@ export default function ExportCenter({ stream, demoMode }: { stream: BusinessStr
                   {historyAction.action}
                 </button>
                 <button onClick={() => setHistoryAction(null)}
-                  className="flex-1 border border-[#2A2A2A] text-[#888] py-2 text-sm mono hover:text-[#E8E8E8] transition-colors">
+                  className="flex-1 border border-[var(--pm-border)] text-[var(--pm-text-muted)] py-2 text-sm mono hover:text-[var(--pm-text-secondary)] transition-colors">
                   Cancel
                 </button>
               </div>
