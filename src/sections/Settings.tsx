@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { UserAccount } from "../accessControl";
 
 type SettingsTab = "profile" | "security" | "notifications" | "my-access" | "permission-requests" | "escalation-requests" | "team" | "system";
 
@@ -13,7 +14,7 @@ const settingsTabs: { id: SettingsTab; label: string; icon: string; adminOnly?: 
   { id: "system", label: "System Settings", icon: "⚙", adminOnly: true },
 ];
 
-const currentUser = {
+const defaultUser = {
   name: "Jerome Lim",
   title: "Operations Director",
   department: "Operations",
@@ -80,7 +81,22 @@ const priorityStyle: Record<string, string> = {
   low: "text-[#555] bg-[#1A1A1A] border border-[#2A2A2A]",
 };
 
-export default function Settings({ demoMode, initialTab }: { demoMode?: boolean; initialTab?: string } = {}) {
+export default function Settings({ demoMode, initialTab, user }: { demoMode?: boolean; initialTab?: string; user?: UserAccount } = {}) {
+  const currentUser = user ? {
+    name: user.name,
+    title: user.role,
+    department: user.department,
+    role: user.role,
+    email: user.email,
+    phone: "Not provided",
+    employeeId: user.id,
+    about: `${user.role} in the ${user.department} department.`,
+    initials: user.name.split(" ").map(part => part[0]).join("").slice(0, 2).toUpperCase(),
+    accessGrantedBy: "Super Admin",
+    lastPermissionChange: "Current session",
+    permittedModules: user.permissions,
+  } : defaultUser;
+  const isSuperAdmin = currentUser.role === "Super Admin";
   const [activeTab, setActiveTab] = useState<SettingsTab>((initialTab as SettingsTab) ?? "profile");
   const [name, setName] = useState(currentUser.name);
   const [title, setTitle] = useState(currentUser.title);
@@ -131,7 +147,7 @@ export default function Settings({ demoMode, initialTab }: { demoMode?: boolean;
 
       {/* Tab navigation */}
       <div className="flex border-b border-[#2A2A2A] overflow-x-auto">
-        {settingsTabs.map(t => (
+        {settingsTabs.filter(t => !t.adminOnly || isSuperAdmin).map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
             className={`flex items-center gap-1.5 px-4 py-2.5 text-xs mono border-b-2 whitespace-nowrap transition-colors ${activeTab === t.id ? "border-[#F5B300] text-[#F5B300]" : "border-transparent text-[#BBBBBB] hover:text-[#FFFFFF]"}`}>
             <span>{t.icon}</span>

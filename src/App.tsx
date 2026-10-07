@@ -1,5 +1,4 @@
-import { useState, useRef } from "react";
-import PDFExport from "./PDFExport";
+import { useState } from "react";
 import Dashboard from "./sections/Dashboard";
 import Orders from "./sections/Orders";
 import Delivery from "./sections/Delivery";
@@ -39,11 +38,13 @@ import FailedDeliveries from "./sections/FailedDeliveries";
 import Fulfillment from "./sections/Fulfillment";
 import PauseManagement from "./sections/PauseManagement";
 import BillingCycles from "./sections/BillingCycles";
-import DepartmentLogin from "./sections/DepartmentLogin";
 import SubscriberProfile from "./sections/SubscriberProfile";
 import Settings from "./sections/Settings";
+import LoginPage from "./components/LoginPage";
+import { initialUsers, type UserAccount } from "./accessControl";
 
 export type BusinessStream = "meal-plans" | "ready-series";
+export type Theme = "light" | "dark";
 
 /* ── Brand logo components ─────────────────────────────────────────────── */
 
@@ -61,7 +62,7 @@ function PerformanceMealsLogo({ collapsed }: { collapsed: boolean }) {
     <div className="flex items-center gap-2.5 min-w-0">
       <PMLogoMark size={28} />
       <div className="min-w-0">
-        <div className="leading-none" style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: "0.12em", color: "#FFFFFF" }}>
+        <div className="leading-none" style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: "0.12em", color: "var(--pm-text)" }}>
           PERFORMANCE
         </div>
         <div className="mt-0.5" style={{ height: 1, background: "#F5B300", width: "100%" }} />
@@ -78,7 +79,7 @@ function MealPlanBadge() {
     <div className="flex items-center gap-1.5">
       <div style={{ width: 3, height: 22, background: "#E85D04", flexShrink: 0 }} />
       <div>
-        <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 11, color: "#E8E8E8", letterSpacing: "0.04em", lineHeight: 1 }}>
+        <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 11, color: "var(--pm-text)", letterSpacing: "0.04em", lineHeight: 1 }}>
           MEAL PLAN
         </div>
         <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 500, fontSize: 8.5, color: "#E85D04", letterSpacing: "0.14em", marginTop: 2 }}>
@@ -96,7 +97,7 @@ function ReadySeriesBadge() {
         <circle cx="9" cy="9" r="9" fill="#F5B300" />
       </svg>
       <div>
-        <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 11, color: "#E8E8E8", letterSpacing: "0.04em", lineHeight: 1 }}>
+        <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 11, color: "var(--pm-text)", letterSpacing: "0.04em", lineHeight: 1 }}>
           READY-SERIES
         </div>
         <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 500, fontSize: 8.5, color: "#F5B300", letterSpacing: "0.14em", marginTop: 2 }}>
@@ -121,7 +122,7 @@ type Section =
   | "business-rules" | "whatsapp"
   | "operations-center" | "production-forecast" | "production-board" | "export-center"
   | "failed-deliveries" | "fulfillment" | "pause-management" | "billing-cycles"
-  | "department-login" | "subscriber-profile"
+  | "subscriber-profile"
   | "settings";
 
 interface NavItem {
@@ -132,12 +133,10 @@ interface NavItem {
   deferred?: boolean;
 }
 
-// Sections hidden from active nav per Phase D deferred scope.
-// CODE IS PRESERVED — sections remain reachable via direct setSection() calls.
+// Sections retained for roadmap reference but hidden from active navigation.
 const DEFERRED_HIDDEN: Section[] = [
   "procurement", "packaging", "rider-app", "business-rules",
   "executive", "business-intel", "customer-success", "marketing",
-  "department-login",
 ];
 
 const navGroups: { group: string; items: NavItem[] }[] = [
@@ -256,7 +255,6 @@ const sectionTitles: Record<Section, string> = {
   "fulfillment": "Subscription Fulfillment Engine",
   "pause-management": "Pause Management Center",
   "billing-cycles": "Billing Cycle Center",
-  "department-login": "Department Login",
   "subscriber-profile": "Subscriber Profile",
   settings: "Settings",
 };
@@ -282,13 +280,12 @@ function checkNearCutoff(): boolean {
 }
 
 export default function App() {
-  const [signedOut, setSignedOut] = useState(false);
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
-  const [showForgot, setShowForgot] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState("");
-  const [forgotSent, setForgotSent] = useState(false);
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window === "undefined") return "light";
+    return window.localStorage.getItem("pm-admin-theme") === "dark" ? "dark" : "light";
+  });
+  const [users, setUsers] = useState<UserAccount[]>(initialUsers);
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
 
   const [section, setSection] = useState<Section>("dashboard");
   const [settingsTab, setSettingsTab] = useState<string>("profile");
@@ -300,10 +297,12 @@ export default function App() {
   );
   const [streamDropdownOpen, setStreamDropdownOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [capturing, setCapturing] = useState(false);
-  const mainRef = useRef<HTMLElement>(null);
-
   const isNearCutoff = checkNearCutoff();
+
+  const selectTheme = (nextTheme: Theme) => {
+    setTheme(nextTheme);
+    window.localStorage.setItem("pm-admin-theme", nextTheme);
+  };
 
   const goToSettings = (tab: string) => {
     setSettingsTab(tab);
@@ -311,168 +310,31 @@ export default function App() {
     setProfileMenuOpen(false);
   };
 
-  const handleLogin = () => {
-    if (!loginEmail.trim() || !loginPassword.trim()) {
-      setLoginError("Please enter your email and password.");
-      return;
-    }
-    // Demo: any credentials work
-    setSignedOut(false);
-    setLoginEmail("");
-    setLoginPassword("");
-    setLoginError("");
-    setShowForgot(false);
-    setForgotSent(false);
-  };
-
-  /* ── Login / Sign-out screen ──────────────────────────────────────── */
-  if (signedOut) {
+  if (!currentUser) {
     return (
-      <div className="flex h-screen items-center justify-center" style={{ background: "#0D0D0D" }}>
-        <div className="w-full max-w-sm mx-4">
-
-          {/* Brand */}
-          <div className="flex flex-col items-center mb-8">
-            <div className="flex items-center gap-3 mb-2">
-              <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-                <circle cx="18" cy="18" r="18" fill="#F5B300" />
-              </svg>
-              <div>
-                <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 18, color: "#FFFFFF", letterSpacing: "0.1em" }}>PERFORMANCE</div>
-                <div style={{ height: 2, background: "#F5B300", marginTop: 2 }} />
-                <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 500, fontSize: 11, color: "#F5B300", letterSpacing: "0.22em", textAlign: "right" }}>MEALS</div>
-              </div>
-            </div>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#555", marginTop: 4 }}>Admin Portal</div>
-          </div>
-
-          {!showForgot ? (
-            /* Sign-in form */
-            <div style={{ background: "#111", border: "1px solid #222" }}>
-              <div className="px-6 py-4" style={{ borderBottom: "1px solid #1E1E1E" }}>
-                <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14, color: "#EFEFEF" }}>Sign in to your account</div>
-              </div>
-              <div className="px-6 py-5 space-y-4">
-                <div>
-                  <label style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: "0.16em", color: "#CCCCCC", display: "block", marginBottom: 6 }}>EMAIL ADDRESS</label>
-                  <input
-                    type="email"
-                    value={loginEmail}
-                    onChange={e => { setLoginEmail(e.target.value); setLoginError(""); }}
-                    onKeyDown={e => e.key === "Enter" && handleLogin()}
-                    placeholder="jerome@performancemeals.sg"
-                    className="w-full px-3 py-2.5 outline-none text-sm"
-                    style={{ background: "#0D0D0D", border: "1px solid #2A2A2A", color: "#EFEFEF", fontFamily: "'Inter', sans-serif" }}
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: "0.16em", color: "#CCCCCC", display: "block", marginBottom: 6 }}>PASSWORD</label>
-                  <input
-                    type="password"
-                    value={loginPassword}
-                    onChange={e => { setLoginPassword(e.target.value); setLoginError(""); }}
-                    onKeyDown={e => e.key === "Enter" && handleLogin()}
-                    placeholder="••••••••"
-                    className="w-full px-3 py-2.5 outline-none text-sm"
-                    style={{ background: "#0D0D0D", border: "1px solid #2A2A2A", color: "#EFEFEF", fontFamily: "'Inter', sans-serif" }}
-                  />
-                </div>
-
-                {loginError && (
-                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "#EF4444", background: "#1A0000", border: "1px solid #3A0000", padding: "8px 12px" }}>
-                    {loginError}
-                  </div>
-                )}
-
-                <button
-                  onClick={handleLogin}
-                  className="w-full py-2.5 font-extrabold transition-opacity hover:opacity-90"
-                  style={{ background: "#F5B300", color: "#000", fontFamily: "'Outfit', sans-serif", fontSize: 12, letterSpacing: "0.12em" }}
-                >
-                  SIGN IN
-                </button>
-
-                <div className="text-center">
-                  <button
-                    onClick={() => setShowForgot(true)}
-                    style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "#555" }}
-                    className="hover:text-[#888] transition-colors"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Forgot password form */
-            <div style={{ background: "#111", border: "1px solid #222" }}>
-              <div className="px-6 py-4" style={{ borderBottom: "1px solid #1E1E1E" }}>
-                <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14, color: "#EFEFEF" }}>Reset your password</div>
-              </div>
-              <div className="px-6 py-5 space-y-4">
-                {!forgotSent ? (
-                  <>
-                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#888", lineHeight: 1.6 }}>
-                      Enter your admin email address. We'll send a reset link to your inbox.
-                    </p>
-                    <div>
-                      <label style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: "0.16em", color: "#CCCCCC", display: "block", marginBottom: 6 }}>EMAIL ADDRESS</label>
-                      <input
-                        type="email"
-                        value={forgotEmail}
-                        onChange={e => setForgotEmail(e.target.value)}
-                        onKeyDown={e => e.key === "Enter" && setForgotSent(true)}
-                        placeholder="jerome@performancemeals.sg"
-                        className="w-full px-3 py-2.5 outline-none text-sm"
-                        style={{ background: "#0D0D0D", border: "1px solid #2A2A2A", color: "#EFEFEF", fontFamily: "'Inter', sans-serif" }}
-                        autoFocus
-                      />
-                    </div>
-                    <button
-                      onClick={() => forgotEmail.trim() && setForgotSent(true)}
-                      className="w-full py-2.5 font-extrabold transition-opacity hover:opacity-90"
-                      style={{ background: "#E85D04", color: "#fff", fontFamily: "'Outfit', sans-serif", fontSize: 12, letterSpacing: "0.12em" }}
-                    >
-                      SEND RESET LINK
-                    </button>
-                  </>
-                ) : (
-                  <div className="text-center py-4 space-y-3">
-                    <div style={{ fontSize: 28 }}>✓</div>
-                    <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14, color: "#22C55E" }}>Reset link sent</div>
-                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#888" }}>
-                      Check <span style={{ color: "#EFEFEF" }}>{forgotEmail}</span> for your reset link. Check spam if it doesn't arrive within 2 minutes.
-                    </p>
-                  </div>
-                )}
-                <div className="text-center">
-                  <button
-                    onClick={() => { setShowForgot(false); setForgotSent(false); setForgotEmail(""); }}
-                    style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "#555" }}
-                    className="hover:text-[#888] transition-colors"
-                  >
-                    ← Back to sign in
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-5 px-4 py-3" style={{ background: "#0D0D0D", border: "1px solid #1E1E1E" }}>
-            <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 8.5, color: "#3A3A3A", lineHeight: 1.6, textAlign: "center" }}>
-              PROTOTYPE DEMO — NOT PRODUCTION AUTHENTICATION<br/>
-              Production requires server-side identity, secure session management &amp; access controls.<br/>
-              Roles must be derived from authenticated server-side authorization.
-            </p>
-          </div>
-          <div className="text-center mt-4" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: "#2A2A2A" }}>
-            Performance Meals Admin · KT-ADMIN-01
-          </div>
-        </div>
-      </div>
+      <LoginPage
+        users={users}
+        theme={theme}
+        onThemeChange={selectTheme}
+        onLogin={user => { setCurrentUser(user); setSection("dashboard"); }}
+      />
     );
   }
+
+  const grantedSections = new Set(currentUser.permissions);
+  const userInitials = currentUser.name
+    .split(" ")
+    .map(part => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  const createUser = (user: UserAccount) => setUsers(current => [...current, user]);
+  const updateUser = (user: UserAccount) => {
+    setUsers(current => current.map(account => account.id === user.id ? user : account));
+    if (currentUser.id === user.id) setCurrentUser(user);
+  };
+  const deleteUser = (userId: string) => setUsers(current => current.filter(user => user.id !== userId));
 
   const isMealPlans = stream === "meal-plans";
   const streamAccent = isMealPlans ? "#E85D04" : "#F5B300";
@@ -497,8 +359,9 @@ export default function App() {
 
   return (
     <div
-      className="flex h-screen overflow-hidden"
-      style={{ background: "#0D0D0D", color: "#EFEFEF" }}
+      className="pm-light-shell flex h-screen overflow-hidden"
+      data-theme={theme}
+      style={{ background: "var(--pm-bg)", color: "var(--pm-text)" }}
       onClick={() => { setStreamDropdownOpen(false); setProfileMenuOpen(false); }}
     >
       {/* Mobile nav overlay */}
@@ -512,10 +375,10 @@ export default function App() {
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
       <aside
         className={`flex-shrink-0 flex flex-col transition-all duration-200 fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto ${mobileNavOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
-        style={{ width: collapsed ? 52 : 236, background: "#090909", borderRight: "1px solid #232323" }}
+        style={{ width: collapsed ? 52 : 236, background: "var(--pm-surface)", borderRight: "1px solid var(--pm-border)" }}
       >
         {/* Brand logo area */}
-        <div className="relative" style={{ borderBottom: "1px solid #1E1E1E" }}>
+        <div className="relative" style={{ borderBottom: "1px solid var(--pm-border)" }}>
           <div className="flex items-center justify-between px-3 pt-3 pb-1 gap-2">
             <button
               onClick={(e) => { e.stopPropagation(); setStreamDropdownOpen(o => !o); }}
@@ -531,8 +394,8 @@ export default function App() {
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 {collapsed
-                  ? <path d="M3.5 2l4 4-4 4" stroke="#EFEFEF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  : <path d="M8.5 2l-4 4 4 4" stroke="#EFEFEF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  ? <path d="M3.5 2l4 4-4 4" stroke="var(--pm-text)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  : <path d="M8.5 2l-4 4 4 4" stroke="var(--pm-text)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 }
               </svg>
             </button>
@@ -548,7 +411,7 @@ export default function App() {
                 {isMealPlans ? <MealPlanBadge /> : <ReadySeriesBadge />}
               </div>
               <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="flex-shrink-0 ml-2 opacity-40 group-hover:opacity-80 transition-opacity">
-                <path d="M2 4l3.5 3.5L9 4" stroke="#EFEFEF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M2 4l3.5 3.5L9 4" stroke="var(--pm-text)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
           )}
@@ -557,11 +420,11 @@ export default function App() {
           {streamDropdownOpen && (
             <div
               className="absolute top-full left-0 z-50 w-full shadow-2xl"
-              style={{ background: "#111", border: "1px solid #2A2A2A", borderTop: "none" }}
+              style={{ background: "var(--pm-surface)", border: "1px solid var(--pm-border-strong)", borderTop: "none" }}
               onClick={e => e.stopPropagation()}
             >
-              <div className="px-3 py-2" style={{ borderBottom: "1px solid #1A1A1A" }}>
-                <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 8.5, letterSpacing: "0.2em", color: "#444" }}>
+              <div className="px-3 py-2" style={{ borderBottom: "1px solid var(--pm-surface-muted)" }}>
+                <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 8.5, letterSpacing: "0.2em", color: "var(--pm-text-muted)" }}>
                   SWITCH BUSINESS UNIT
                 </span>
               </div>
@@ -569,13 +432,13 @@ export default function App() {
               {/* Meal Plan */}
               <button
                 onClick={() => handleStreamSwitch("meal-plans")}
-                className="w-full px-3 py-3 flex items-center gap-3 text-left transition-colors hover:bg-[#181818]"
-                style={{ background: isMealPlans ? "#161616" : "transparent" }}
+                className="w-full px-3 py-3 flex items-center gap-3 text-left transition-colors hover:bg-[var(--pm-surface-subtle)]"
+                style={{ background: isMealPlans ? "var(--pm-active)" : "transparent" }}
               >
                 <div style={{ width: 2, alignSelf: "stretch", background: "#E85D04", flexShrink: 0 }} />
                 <div className="flex-1 min-w-0">
-                  <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 11.5, color: "#EFEFEF", letterSpacing: "0.06em" }}>MEAL PLAN</div>
-                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 9.5, color: "#555", marginTop: 2 }}>Subscriptions · Menu · Billing</div>
+                  <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 11.5, color: "var(--pm-text)", letterSpacing: "0.06em" }}>MEAL PLAN</div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 9.5, color: "var(--pm-text-muted)", marginTop: 2 }}>Subscriptions · Menu · Billing</div>
                 </div>
                 {isMealPlans && (
                   <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
@@ -587,15 +450,15 @@ export default function App() {
               {/* Ready-Series */}
               <button
                 onClick={() => handleStreamSwitch("ready-series")}
-                className="w-full px-3 py-3 flex items-center gap-3 text-left transition-colors hover:bg-[#181818]"
-                style={{ background: !isMealPlans ? "#161616" : "transparent", borderTop: "1px solid #1A1A1A" }}
+                className="w-full px-3 py-3 flex items-center gap-3 text-left transition-colors hover:bg-[var(--pm-surface-subtle)]"
+                style={{ background: !isMealPlans ? "var(--pm-active)" : "transparent", borderTop: "1px solid var(--pm-surface-muted)" }}
               >
                 <svg width="8" height="8" viewBox="0 0 8 8" fill="none" className="flex-shrink-0 ml-px">
                   <circle cx="4" cy="4" r="4" fill="#F5B300" />
                 </svg>
                 <div className="flex-1 min-w-0">
-                  <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 11.5, color: "#EFEFEF", letterSpacing: "0.06em" }}>READY-SERIES</div>
-                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 9.5, color: "#555", marginTop: 2 }}>Box Subs · Ready-to-Go</div>
+                  <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 11.5, color: "var(--pm-text)", letterSpacing: "0.06em" }}>READY-SERIES</div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 9.5, color: "var(--pm-text-muted)", marginTop: 2 }}>Box Subs · Ready-to-Go</div>
                 </div>
                 {!isMealPlans && (
                   <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
@@ -612,7 +475,7 @@ export default function App() {
           {navGroups.map(g => {
             const visibleItems = g.items.filter(item => {
               if (item.streamOnly && item.streamOnly !== stream) return false;
-              return true;
+              return grantedSections.has(item.id);
             });
             if (visibleItems.length === 0) return null;
             const isGCollapsed = collapsedGroups.has(g.group);
@@ -623,7 +486,7 @@ export default function App() {
                     onClick={() => toggleGroup(g.group)}
                     className="w-full flex items-center justify-between px-3 py-1 group"
                   >
-                    <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 9, letterSpacing: "0.18em", color: "#FFFFFF" }}>
+                    <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 9, letterSpacing: "0.18em", color: "var(--pm-text)" }}>
                       {g.group.toUpperCase()}
                     </span>
                     {/* Prominent chevron badge */}
@@ -631,9 +494,9 @@ export default function App() {
                       className="flex items-center justify-center transition-all duration-150"
                       style={{
                         width: 16, height: 16,
-                        background: isGCollapsed ? "#1E1E1E" : "transparent",
-                        border: isGCollapsed ? "1px solid #2E2E2E" : "1px solid transparent",
-                        color: isGCollapsed ? "#888" : "#3A3A3A",
+                        background: isGCollapsed ? "var(--pm-border)" : "transparent",
+                        border: isGCollapsed ? "1px solid var(--pm-border-strong)" : "1px solid transparent",
+                        color: isGCollapsed ? "var(--pm-text-muted)" : "var(--pm-text-muted)",
                         transform: isGCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
                       }}
                     >
@@ -647,24 +510,24 @@ export default function App() {
                 {!isGCollapsed && visibleItems.map(item => {
                   const active = section === item.id;
                   const isItemShared = sharedSections.includes(item.id);
-                  const accent = isItemShared ? "#666" : streamAccent;
+                  const accent = isItemShared ? "var(--pm-text-muted)" : streamAccent;
                   return (
                     <button
                       key={item.id}
                       onClick={() => { setSection(item.id); setMobileNavOpen(false); }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 transition-colors border-l-2 group"
                       style={active
-                        ? { borderLeftColor: item.deferred ? "#444" : accent, background: "#161616", color: item.deferred ? "#666" : accent }
-                        : { borderLeftColor: "transparent", color: "#666" }
+                        ? { borderLeftColor: item.deferred ? "var(--pm-text-muted)" : accent, background: "var(--pm-active)", color: item.deferred ? "var(--pm-text-muted)" : accent }
+                        : { borderLeftColor: "transparent", color: "var(--pm-text-muted)" }
                       }
                       title={collapsed ? item.label : undefined}
                     >
                       <span className="mono flex-shrink-0 w-4 text-center text-[13px]" style={{ opacity: active ? 1 : item.deferred ? 0.3 : 0.5 }}>{item.icon}</span>
                       {!collapsed && (
-                        <span className="flex-1 flex items-center gap-1.5" style={{ fontFamily: "'Inter', sans-serif", fontWeight: active ? 600 : 400, fontSize: 12.5, color: active ? (item.deferred ? "#555" : accent) : item.deferred ? "#555" : "#C0C0C0" }}>
+                        <span className="flex-1 flex items-center gap-1.5" style={{ fontFamily: "'Inter', sans-serif", fontWeight: active ? 600 : 400, fontSize: 12.5, color: active ? (item.deferred ? "var(--pm-text-muted)" : accent) : item.deferred ? "var(--pm-text-muted)" : "var(--pm-text-secondary)" }}>
                           {item.label}
                           {item.deferred && (
-                            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 7.5, letterSpacing: "0.1em", color: "#3A3A3A", background: "#1A1A1A", border: "1px solid #2A2A2A", padding: "1px 4px", flexShrink: 0 }}>
+                            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 7.5, letterSpacing: "0.1em", color: "var(--pm-text-muted)", background: "var(--pm-surface-muted)", border: "1px solid var(--pm-border-strong)", padding: "1px 4px", flexShrink: 0 }}>
                               DEFERRED
                             </span>
                           )}
@@ -678,40 +541,22 @@ export default function App() {
           })}
         </nav>
 
-        {/* Download prototype strip */}
-        <div className="px-3 py-2" style={{ borderTop: "1px solid #1A1A1A" }}>
-          <a
-            href="/performance-meals-admin-prototype.zip"
-            download="performance-meals-admin-prototype.zip"
-            className="flex items-center gap-2 w-full px-3 py-2 transition-colors hover:bg-[#181818]"
-            style={{ textDecoration: "none" }}
-            title="Download full prototype source"
-          >
-            <span style={{ fontSize: 13, color: "#F5B300", flexShrink: 0 }}>⬇</span>
-            {!collapsed && (
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 11.5, color: "#888", letterSpacing: "0.02em" }}>
-                Download Prototype (.zip)
-              </span>
-            )}
-          </a>
-        </div>
-
         {/* User strip */}
-        <div className="relative px-3 py-3" style={{ borderTop: "1px solid #1A1A1A" }}>
+        <div className="relative px-3 py-3" style={{ borderTop: "1px solid var(--pm-surface-muted)" }}>
 
           {/* Profile popup — above the strip */}
           {profileMenuOpen && (
             <div
               className="absolute bottom-full left-0 right-0 mb-1 shadow-2xl z-50"
-              style={{ background: "#111", border: "1px solid #2A2A2A" }}
+              style={{ background: "var(--pm-surface)", border: "1px solid var(--pm-border-strong)" }}
               onClick={e => e.stopPropagation()}
             >
               {/* User header inside popup */}
-              <div className="px-3 py-3 border-b border-[#1E1E1E] flex items-center gap-2.5">
-                <div className="w-8 h-8 flex items-center justify-center text-black font-bold text-sm flex-shrink-0" style={{ background: "#F5B300", fontFamily: "'Outfit', sans-serif" }}>J</div>
+              <div className="px-3 py-3 border-b border-[var(--pm-border)] flex items-center gap-2.5">
+                <div className="w-8 h-8 flex items-center justify-center text-black font-bold text-sm flex-shrink-0" style={{ background: "#F5B300", fontFamily: "'Outfit', sans-serif" }}>{userInitials}</div>
                 <div>
-                  <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13, color: "#EFEFEF" }}>Jerome Lim</div>
-                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: streamAccent, letterSpacing: "0.06em" }}>Super Admin · KT-ADMIN-01</div>
+                  <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13, color: "var(--pm-text)" }}>{currentUser.name}</div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: streamAccent, letterSpacing: "0.06em" }}>{currentUser.role} · {currentUser.department}</div>
                 </div>
               </div>
 
@@ -721,30 +566,32 @@ export default function App() {
                 { icon: "⊛", label: "Change Password",    sub: "Security & email settings",  action: () => goToSettings("security") },
                 { icon: "◇", label: "Notifications",      sub: "Alerts & preferences",       action: () => goToSettings("notifications") },
                 { icon: "⚙", label: "System Settings",    sub: "App config & business rules", action: () => goToSettings("system") },
-              ].map(item => (
+              ]
+                .filter(item => item.label !== "System Settings" || currentUser.role === "Super Admin")
+                .map(item => (
                 <button
                   key={item.label}
                   onClick={item.action}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[#1A1A1A]"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[var(--pm-surface-muted)]"
                 >
-                  <span className="mono text-base w-5 text-center flex-shrink-0" style={{ color: "#666" }}>{item.icon}</span>
+                  <span className="mono text-base w-5 text-center flex-shrink-0" style={{ color: "var(--pm-text-muted)" }}>{item.icon}</span>
                   <div className="min-w-0">
-                    <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 12, color: "#EFEFEF" }}>{item.label}</div>
-                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: "#555", marginTop: 1 }}>{item.sub}</div>
+                    <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 12, color: "var(--pm-text)" }}>{item.label}</div>
+                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: "var(--pm-text-muted)", marginTop: 1 }}>{item.sub}</div>
                   </div>
                 </button>
               ))}
 
               {/* Sign out */}
-              <div style={{ borderTop: "1px solid #1E1E1E" }}>
+              <div style={{ borderTop: "1px solid var(--pm-border)" }}>
                 <button
-                  onClick={() => { setProfileMenuOpen(false); setSignedOut(true); }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[#200000]"
+                  onClick={() => { setProfileMenuOpen(false); setCurrentUser(null); }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[#FEF3F2]"
                 >
                   <span className="mono text-base w-5 text-center flex-shrink-0" style={{ color: "#EF4444" }}>↩</span>
                   <div>
                     <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 12, color: "#EF4444" }}>Sign Out</div>
-                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: "#5A2222", marginTop: 1 }}>End your session</div>
+                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: "#B42318", marginTop: 1 }}>End your session</div>
                   </div>
                 </button>
               </div>
@@ -753,21 +600,21 @@ export default function App() {
 
           <button
             onClick={(e) => { e.stopPropagation(); setProfileMenuOpen(o => !o); }}
-            className="w-full transition-colors hover:bg-[#141414] rounded px-1 py-1 -mx-1"
+            className="w-full transition-colors hover:bg-[var(--pm-surface-subtle)] rounded px-1 py-1 -mx-1"
           >
             {!collapsed ? (
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center text-black font-bold text-xs" style={{ background: "#F5B300", fontFamily: "'Outfit', sans-serif" }}>J</div>
+                <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center text-black font-bold text-xs" style={{ background: "#F5B300", fontFamily: "'Outfit', sans-serif" }}>{userInitials}</div>
                 <div className="flex-1 min-w-0 text-left">
-                  <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 12, color: "#EFEFEF" }}>Jerome</div>
-                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: streamAccent, letterSpacing: "0.08em" }}>Super Admin</div>
+                  <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 12, color: "var(--pm-text)" }}>{currentUser.name}</div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: streamAccent, letterSpacing: "0.08em" }}>{currentUser.role}</div>
                 </div>
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ color: "#444", flexShrink: 0 }}>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ color: "var(--pm-text-muted)", flexShrink: 0 }}>
                   <path d="M2 6.5l3-3 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
             ) : (
-              <div className="w-7 h-7 mx-auto flex items-center justify-center text-black font-bold text-xs" style={{ background: "#F5B300", fontFamily: "'Outfit', sans-serif" }}>J</div>
+              <div className="w-7 h-7 mx-auto flex items-center justify-center text-black font-bold text-xs" style={{ background: "#F5B300", fontFamily: "'Outfit', sans-serif" }}>{userInitials}</div>
             )}
           </button>
         </div>
@@ -779,7 +626,7 @@ export default function App() {
         {/* Top bar */}
         <header
           className="flex-shrink-0 px-3 sm:px-5 flex items-center justify-between gap-2 sm:gap-4"
-          style={{ minHeight: 50, background: "#090909", borderBottom: "1px solid #1E1E1E" }}
+          style={{ minHeight: 56, background: "var(--pm-surface)", borderBottom: "1px solid var(--pm-border)" }}
         >
           {/* Hamburger — mobile only */}
           <button
@@ -787,7 +634,7 @@ export default function App() {
             onClick={(e) => { e.stopPropagation(); setMobileNavOpen(o => !o); }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M2 4h12M2 8h12M2 12h12" stroke="#EFEFEF" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M2 4h12M2 8h12M2 12h12" stroke="var(--pm-text)" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           </button>
 
@@ -795,13 +642,13 @@ export default function App() {
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <h1
               className="truncate"
-              style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14, color: "#EFEFEF", letterSpacing: "0.01em" }}
+              style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14, color: "var(--pm-text)", letterSpacing: "0.01em" }}
             >
               {sectionTitles[section]}
             </h1>
 
             {isShared ? (
-              <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", color: "#3A3A3A", border: "1px solid #252525", padding: "2px 6px" }}>
+              <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", color: "var(--pm-text-muted)", border: "1px solid var(--pm-border)", padding: "2px 6px" }}>
                 SHARED
               </span>
             ) : (
@@ -811,85 +658,101 @@ export default function App() {
             )}
 
             {isNearCutoff && ["dashboard", "subscriptions", "menu-review", "menu-planning"].includes(section) && (
-              <span className="animate-pulse" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "#F5B300", background: "#1A1500", border: "1px solid #3D3000", padding: "2px 7px" }}>
+              <span className="animate-pulse" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: theme === "dark" ? "#F5B300" : "#B54708", background: theme === "dark" ? "#1A1500" : "#FFFAEB", border: `1px solid ${theme === "dark" ? "#3D3000" : "#FEDF89"}`, padding: "2px 7px" }}>
                 SWAP CUTOFF SOON
               </span>
             )}
           </div>
 
-          {/* Right: stream toggle + pdf + date */}
+          {/* Right: signed-in identity, theme, and business stream */}
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            {/* Download button — hidden on small screens */}
-            <a
-              href="/performance-meals-admin-prototype.zip"
-              download="performance-meals-admin-prototype.zip"
-              className="hidden sm:inline-flex"
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 6,
-                background: "#F5B300", color: "#000",
-                fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 9.5,
-                letterSpacing: "0.1em", textTransform: "uppercase",
-                padding: "0 10px", height: 26, textDecoration: "none", flexShrink: 0,
-              }}
-              title="Download prototype source .zip"
+            <div
+              className="flex max-w-44 items-center gap-2 rounded-lg border px-2 py-1.5"
+              style={{ background: "var(--pm-surface-subtle)", borderColor: "var(--pm-border)" }}
+              title={`${currentUser.name} · ${currentUser.role} · ${currentUser.department}`}
             >
-              ⬇ Download .zip
-            </a>
+              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-[#F5B300] text-[10px] font-extrabold text-[#111827]">
+                {userInitials}
+              </div>
+              <div className="min-w-0">
+                <div className="truncate text-xs font-bold" style={{ color: "var(--pm-text)" }}>{currentUser.name}</div>
+                <div className="hidden truncate text-[9px] sm:block" style={{ color: "var(--pm-text-muted)" }}>{currentUser.role}</div>
+              </div>
+            </div>
+
+            {/* Customer theme preference */}
+            <div
+              className="theme-switch flex items-center rounded-lg p-0.5"
+              style={{ background: "var(--pm-surface-muted)", border: "1px solid var(--pm-border)" }}
+              aria-label="Color theme"
+            >
+              <button
+                onClick={() => selectTheme("light")}
+                aria-pressed={theme === "light"}
+                title="Use light theme"
+                className="flex h-7 items-center gap-1.5 rounded-md px-2 transition-all"
+                style={{
+                  background: theme === "light" ? "var(--pm-surface)" : "transparent",
+                  color: theme === "light" ? "var(--pm-text)" : "var(--pm-text-muted)",
+                  boxShadow: theme === "light" ? "0 1px 2px rgba(16, 24, 40, 0.10)" : "none",
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M8 1.5v1.25M8 13.25v1.25M1.5 8h1.25M13.25 8h1.25M3.4 3.4l.9.9M11.7 11.7l.9.9M12.6 3.4l-.9.9M4.3 11.7l-.9.9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+                <span className="hidden 2xl:inline text-[10px] font-semibold">Light</span>
+              </button>
+              <button
+                onClick={() => selectTheme("dark")}
+                aria-pressed={theme === "dark"}
+                title="Use dark theme"
+                className="flex h-7 items-center gap-1.5 rounded-md px-2 transition-all"
+                style={{
+                  background: theme === "dark" ? "var(--pm-surface)" : "transparent",
+                  color: theme === "dark" ? "var(--pm-text)" : "var(--pm-text-muted)",
+                  boxShadow: theme === "dark" ? "0 1px 2px rgba(0, 0, 0, 0.35)" : "none",
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M13.25 10.25A5.75 5.75 0 015.75 2.75a5.76 5.76 0 107.5 7.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                </svg>
+                <span className="hidden 2xl:inline text-[10px] font-semibold">Dark</span>
+              </button>
+            </div>
 
             {/* Stream toggle */}
-            <div className="flex items-center overflow-hidden" style={{ height: 26, border: "1px solid #252525", borderRadius: 8 }}>
+            <div className="hidden items-center overflow-hidden md:flex" style={{ height: 26, border: "1px solid var(--pm-border)", borderRadius: 8 }}>
               <button
                 onClick={() => handleStreamSwitch("meal-plans")}
                 className="px-3 h-full flex items-center transition-all rounded-none"
                 style={isMealPlans
                   ? { background: "#E85D04", fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 9.5, letterSpacing: "0.1em", color: "#fff" }
-                  : { fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 9.5, letterSpacing: "0.1em", color: "#3A3A3A" }
+                  : { fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 9.5, letterSpacing: "0.1em", color: "var(--pm-text-muted)" }
                 }
               >
                 MEAL PLAN
               </button>
-              <div className="h-full" style={{ width: 1, background: "#252525" }} />
+              <div className="h-full" style={{ width: 1, background: "var(--pm-border)" }} />
               <button
                 onClick={() => handleStreamSwitch("ready-series")}
                 className="px-3 h-full flex items-center transition-all rounded-none"
                 style={!isMealPlans
-                  ? { background: "#F5B300", fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 9.5, letterSpacing: "0.1em", color: "#000" }
-                  : { fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 9.5, letterSpacing: "0.1em", color: "#3A3A3A" }
+                  ? { background: "#F5B300", fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 9.5, letterSpacing: "0.1em", color: "var(--pm-text)" }
+                  : { fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 9.5, letterSpacing: "0.1em", color: "var(--pm-text-muted)" }
                 }
               >
                 READY-SERIES
               </button>
             </div>
-
-            <div style={{ width: 1, height: 16, background: "#252525" }} />
-
-            <PDFExport
-              setSection={setSection as (s: string) => void}
-              setStream={setStream}
-              setCapturing={setCapturing}
-              mainRef={mainRef}
-            />
-
-            <div className="hidden sm:block" style={{ width: 1, height: 16, background: "#252525" }} />
-
-            {/* Date — hidden on small screens */}
-            <span className="hidden sm:block" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600, color: "#B0B0B0", letterSpacing: "0.04em" }}>
-              {new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
-            </span>
-
-            <div className="hidden md:block" style={{ width: 1, height: 16, background: "#252525" }} />
-
-            <span className="hidden md:block" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "#666666", letterSpacing: "0.04em" }}>
-              KT-ADMIN-01
-            </span>
           </div>
         </header>
 
         {/* Shopify system-of-record banner for commerce-adjacent sections */}
         {["orders", "refunds", "wallet", "finance", "customers"].includes(section) && (
-          <div className="flex-shrink-0 px-5 py-1.5 flex items-center gap-2" style={{ background: "#0A0A0A", borderBottom: "1px solid #1A1A1A" }}>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 8.5, color: "#3A6B3A", letterSpacing: "0.06em" }}>◈ SHOPIFY</span>
-            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: "#3A3A3A" }}>
+          <div className="flex-shrink-0 px-5 py-1.5 flex items-center gap-2" style={{ background: theme === "dark" ? "#0A0A0A" : "#F6FEF9", borderBottom: "1px solid var(--pm-surface-muted)" }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 8.5, color: theme === "dark" ? "#66A566" : "#3A6B3A", letterSpacing: "0.06em" }}>◈ SHOPIFY</span>
+            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: "var(--pm-text-muted)" }}>
               Shopify is the commerce system of record — orders, payments, products &amp; refund execution remain in Shopify. This portal manages Meal Plan &amp; operational workflows.
             </span>
           </div>
@@ -897,58 +760,65 @@ export default function App() {
 
         {/* Deferred section banner */}
         {DEFERRED_HIDDEN.includes(section) && (
-          <div className="flex-shrink-0 px-5 py-2 flex items-center gap-3" style={{ background: "#0F0A00", borderBottom: "1px solid #2A1A00" }}>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 8.5, fontWeight: 700, letterSpacing: "0.12em", color: "#7A4A00", background: "#1A1000", border: "1px solid #3A2A00", padding: "2px 7px" }}>FUTURE / DEFERRED</span>
-            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "#5A3A00" }}>
+          <div className="flex-shrink-0 px-5 py-2 flex items-center gap-3" style={{ background: theme === "dark" ? "#0F0A00" : "#FFFAEB", borderBottom: `1px solid ${theme === "dark" ? "#2A1A00" : "#FEDF89"}` }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 8.5, fontWeight: 700, letterSpacing: "0.12em", color: theme === "dark" ? "#D98A22" : "#B54708", background: theme === "dark" ? "#1A1000" : "#FEF0C7", border: `1px solid ${theme === "dark" ? "#3A2A00" : "#FEDF89"}`, padding: "2px 7px" }}>FUTURE / DEFERRED</span>
+            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: theme === "dark" ? "#C98B45" : "#7A2E0E" }}>
               This module is not part of the Phase 1 implementation scope. It is presented as a roadmap reference only.
             </span>
           </div>
         )}
 
-        {/* Section content — demoMode=capturing forces modals/panels open for PDF capture */}
-        <main ref={mainRef} className="flex-1 overflow-y-auto">
-          {section === "dashboard" && <Dashboard stream={stream} swapAlert={isNearCutoff} demoMode={capturing} />}
-          {section === "orders" && <Orders stream={stream} demoMode={capturing} />}
-          {section === "delivery" && <Delivery stream={stream} demoMode={capturing} />}
-          {section === "print-slips" && <PrintSlips stream={stream} demoMode={capturing} />}
-          {section === "customers" && <Customers stream={stream} demoMode={capturing} />}
-          {section === "subscriptions" && <Subscriptions stream={stream} swapAlert={isNearCutoff} demoMode={capturing} />}
-          {section === "menu-review" && <MenuReview demoMode={capturing} />}
-          {section === "menu-planning" && <MenuPlanning demoMode={capturing} />}
-          {section === "kitchen" && <Kitchen stream={stream} demoMode={capturing} />}
-          {section === "kitchen-forecast" && <KitchenForecast demoMode={capturing} />}
-          {section === "inventory" && <Inventory demoMode={capturing} />}
-          {section === "procurement" && <Procurement demoMode={capturing} />}
-          {section === "packaging" && <Packaging demoMode={capturing} />}
-          {section === "dispatch" && <Dispatch stream={stream} demoMode={capturing} />}
-          {section === "delivery-hub" && <DeliveryHub demoMode={capturing} />}
-          {section === "riders" && <Riders demoMode={capturing} />}
-          {section === "rider-app" && <RiderApp demoMode={capturing} />}
-          {section === "support" && <Support demoMode={capturing} />}
-          {section === "customer-success" && <CustomerSuccess demoMode={capturing} />}
-          {section === "notifications" && <Notifications demoMode={capturing} />}
-          {section === "marketing" && <Marketing demoMode={capturing} />}
-          {section === "wallet" && <Wallet demoMode={capturing} />}
-          {section === "finance" && <Finance stream={stream} demoMode={capturing} />}
-          {section === "refunds" && <Refunds demoMode={capturing} />}
-          {section === "reports" && <Reports stream={stream} demoMode={capturing} />}
-          {section === "business-intel" && <BusinessIntel demoMode={capturing} />}
-          {section === "executive" && <Executive demoMode={capturing} />}
-          {section === "acl" && <ACL demoMode={capturing} />}
-          {section === "audit-logs" && <AuditLogs demoMode={capturing} />}
-          {section === "business-rules" && <BusinessRules demoMode={capturing} />}
-          {section === "whatsapp" && <WhatsApp demoMode={capturing} />}
-          {section === "operations-center" && <OperationsCenter demoMode={capturing} />}
-          {section === "production-forecast" && <ProductionForecast demoMode={capturing} />}
-          {section === "production-board" && <ProductionBoard stream={stream} demoMode={capturing} />}
-          {section === "export-center" && <ExportCenter stream={stream} demoMode={capturing} />}
-          {section === "failed-deliveries" && <FailedDeliveries demoMode={capturing} />}
-          {section === "fulfillment" && <Fulfillment demoMode={capturing} />}
-          {section === "pause-management" && <PauseManagement demoMode={capturing} />}
-          {section === "billing-cycles" && <BillingCycles demoMode={capturing} />}
-          {section === "department-login" && <DepartmentLogin demoMode={capturing} />}
-          {section === "subscriber-profile" && <SubscriberProfile demoMode={capturing} />}
-          {section === "settings" && <Settings demoMode={capturing} initialTab={settingsTab} />}
+        {/* Section content */}
+        <main className="flex-1 overflow-y-auto">
+          {section === "dashboard" && <Dashboard stream={stream} swapAlert={isNearCutoff} theme={theme} />}
+          {section === "orders" && <Orders stream={stream} />}
+          {section === "delivery" && <Delivery stream={stream} />}
+          {section === "print-slips" && <PrintSlips stream={stream} />}
+          {section === "customers" && <Customers stream={stream} />}
+          {section === "subscriptions" && <Subscriptions stream={stream} swapAlert={isNearCutoff} />}
+          {section === "menu-review" && <MenuReview />}
+          {section === "menu-planning" && <MenuPlanning />}
+          {section === "kitchen" && <Kitchen stream={stream} />}
+          {section === "kitchen-forecast" && <KitchenForecast />}
+          {section === "inventory" && <Inventory />}
+          {section === "procurement" && <Procurement />}
+          {section === "packaging" && <Packaging />}
+          {section === "dispatch" && <Dispatch stream={stream} />}
+          {section === "delivery-hub" && <DeliveryHub />}
+          {section === "riders" && <Riders />}
+          {section === "rider-app" && <RiderApp />}
+          {section === "support" && <Support />}
+          {section === "customer-success" && <CustomerSuccess />}
+          {section === "notifications" && <Notifications />}
+          {section === "marketing" && <Marketing />}
+          {section === "wallet" && <Wallet />}
+          {section === "finance" && <Finance stream={stream} />}
+          {section === "refunds" && <Refunds />}
+          {section === "reports" && <Reports stream={stream} />}
+          {section === "business-intel" && <BusinessIntel />}
+          {section === "executive" && <Executive />}
+          {section === "acl" && (
+            <ACL
+              users={users}
+              currentUserId={currentUser.id}
+              onCreate={createUser}
+              onUpdate={updateUser}
+              onDelete={deleteUser}
+            />
+          )}
+          {section === "audit-logs" && <AuditLogs />}
+          {section === "business-rules" && <BusinessRules />}
+          {section === "whatsapp" && <WhatsApp />}
+          {section === "operations-center" && <OperationsCenter />}
+          {section === "production-forecast" && <ProductionForecast />}
+          {section === "production-board" && <ProductionBoard stream={stream} />}
+          {section === "export-center" && <ExportCenter stream={stream} />}
+          {section === "failed-deliveries" && <FailedDeliveries />}
+          {section === "fulfillment" && <Fulfillment />}
+          {section === "pause-management" && <PauseManagement />}
+          {section === "billing-cycles" && <BillingCycles />}
+          {section === "subscriber-profile" && <SubscriberProfile />}
+          {section === "settings" && <Settings initialTab={settingsTab} user={currentUser} />}
         </main>
       </div>
     </div>

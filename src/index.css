@@ -3,15 +3,85 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 
+:root {
+  --pm-bg: #F4F5F7;
+  --pm-surface: #FFFFFF;
+  --pm-surface-subtle: #F8F9FB;
+  --pm-surface-muted: #EEF0F3;
+  --pm-active: #FFF6DC;
+  --pm-border-soft: #E7E9ED;
+  --pm-border: #D9DDE3;
+  --pm-border-strong: #C8CDD5;
+  --pm-text: #111827;
+  --pm-text-secondary: #1F2937;
+  --pm-text-muted: #374151;
+  --pm-accent-text: #B77900;
+  --pm-secondary-text: #C2410C;
+  --pm-card-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+
+.pm-light-shell[data-theme='dark'],
+.pm-auth-shell[data-theme='dark'] {
+  --pm-bg: #0D0D0D;
+  --pm-surface: #161616;
+  --pm-surface-subtle: #1C1C1C;
+  --pm-surface-muted: #1A1A1A;
+  --pm-active: #161616;
+  --pm-border-soft: #1E1E1E;
+  --pm-border: #222222;
+  --pm-border-strong: #2E2E2E;
+  --pm-text: #EFEFEF;
+  --pm-text-secondary: #E8E8E8;
+  --pm-text-muted: #AAAAAA;
+  --pm-accent-text: #F5B300;
+  --pm-secondary-text: #E85D04;
+  --pm-card-shadow: none;
+}
+
+.pm-light-shell[data-theme='light'],
+.pm-auth-shell[data-theme='light'] {
+  --pm-accent-text: #B77900;
+  --pm-secondary-text: #C2410C;
+  font-weight: 500;
+}
+
+.pm-light-shell[data-theme='light'] .text-xs,
+.pm-auth-shell[data-theme='light'] .text-xs {
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.pm-light-shell[data-theme='light'] .text-sm,
+.pm-auth-shell[data-theme='light'] .text-sm {
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.pm-light-shell[data-theme='light'] .pm-section-heading {
+  color: #1F2937;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+}
+
+.pm-light-shell[data-theme='light'] table th {
+  color: #273142;
+  font-weight: 700;
+}
+
+.pm-light-shell[data-theme='light'] table td {
+  font-weight: 500;
+}
+
 @theme inline {
-  --color-background: #0D0D0D;
-  --color-surface: #161616;
-  --color-surface-2: #1C1C1C;
-  --color-border: #222222;
-  --color-border-2: #2E2E2E;
-  --color-text: #EFEFEF;
-  --color-text-dim: #AAAAAA;
-  --color-muted: #666666;
+  --color-background: var(--pm-bg);
+  --color-surface: var(--pm-surface);
+  --color-surface-2: var(--pm-surface-subtle);
+  --color-border: var(--pm-border);
+  --color-border-2: var(--pm-border-strong);
+  --color-text: var(--pm-text);
+  --color-text-dim: var(--pm-text-secondary);
+  --color-muted: var(--pm-text-muted);
   --color-accent: #F5B300;
   --color-accent-dim: #C99200;
   --color-secondary: #E85D04;
@@ -27,8 +97,8 @@
 
 html, body, #root {
   height: 100%;
-  background: #0D0D0D;
-  color: #EFEFEF;
+  background: var(--pm-bg);
+  color: var(--pm-text);
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   padding-top: env(safe-area-inset-top);
@@ -39,8 +109,8 @@ html, body, #root {
 /* ── Scrollbars ─────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 3px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #3A3A3A; }
+::-webkit-scrollbar-thumb { background: var(--pm-border-strong); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--pm-text-muted); }
 
 /* ── Utility classes ────────────────────────────────────── */
 .mono    { font-family: 'JetBrains Mono', monospace; }
@@ -50,8 +120,11 @@ html, body, #root {
 
 /* Stat card accent top border for key metric tiles */
 .pm-stat-card {
-  background: #161616;
-  border: 1px solid #222222;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 12px;
+  box-shadow: var(--pm-card-shadow);
+  overflow: hidden;
   position: relative;
 }
 .pm-stat-card::before {
@@ -72,7 +145,7 @@ html, body, #root {
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #FFFFFF;
+  color: var(--pm-text-secondary);
 }
 
 /* Global button shape — soft rounded, never sharp rectangles */
@@ -138,17 +211,38 @@ button {
 .pm-btn-danger:hover { background: rgba(239,68,68,0.08); }
 
 /* Global heading visibility — all page headings are white */
-h1, h2, h3, h4 { color: #FFFFFF; }
+h1, h2, h3, h4 { color: var(--pm-text); }
 
 /* Table header labels readable */
-th { color: #AAAAAA; }
+th { color: var(--pm-text-muted); }
 
 /* Table row hover */
 .pm-table-row {
-  border-bottom: 1px solid #1E1E1E;
+  border-bottom: 1px solid var(--pm-border-soft);
   transition: background 0.1s;
 }
-.pm-table-row:hover { background: #161616; }
+.pm-table-row:hover { background: var(--pm-surface-subtle); }
+
+/* Light admin shell and approved Dashboard pilot */
+.pm-light-shell aside,
+.pm-light-shell header {
+  box-shadow: var(--pm-card-shadow);
+}
+
+.dashboard-pilot > div:not(.grid),
+.dashboard-pilot .grid > div {
+  border-radius: 12px;
+  box-shadow: var(--pm-card-shadow);
+  overflow: hidden;
+}
+
+.dashboard-pilot table thead {
+  background: var(--pm-surface-subtle);
+}
+
+.dashboard-pilot table tbody {
+  color: var(--pm-text-secondary);
+}
 
 /* Pill badge */
 .pm-badge {
