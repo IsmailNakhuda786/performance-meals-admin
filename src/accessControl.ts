@@ -35,8 +35,9 @@ export const moduleOptions: ModuleOption[] = [
   { id: "print-slips", label: "Print Slips", group: "Fulfilment" },
   { id: "customers", label: "Customers", group: "Subscribers" },
   { id: "subscriptions", label: "Subscriptions", group: "Subscribers" },
-  { id: "subscriber-profile", label: "Subscriber Profile", group: "Subscribers" },
+  { id: "subscriber-profile", label: "Customer Profile", group: "Subscribers" },
   { id: "menu-review", label: "Menu Review", group: "Subscribers" },
+  { id: "catalog", label: "Catalog", group: "Catalog" },
   { id: "pause-management", label: "Pause Management", group: "Subscribers" },
   { id: "billing-cycles", label: "Billing Cycles", group: "Subscribers" },
   { id: "fulfillment", label: "Fulfillment", group: "Subscribers" },
@@ -68,10 +69,10 @@ export const rolePermissions: Record<string, string[]> = {
   "Operations Manager": [
     "dashboard", "operations-center", "reports", "orders", "delivery", "dispatch",
     "print-slips", "customers", "subscriptions", "subscriber-profile", "menu-review",
-    "pause-management", "billing-cycles", "fulfillment", "notifications", "support", "settings",
+    "pause-management", "billing-cycles", "fulfillment", "catalog", "notifications", "support", "settings",
   ],
   "Kitchen Manager": [
-    "dashboard", "kitchen", "menu-planning", "production-forecast", "production-board",
+    "dashboard", "catalog", "kitchen", "menu-planning", "production-forecast", "production-board",
     "kitchen-forecast", "inventory", "export-center", "reports", "notifications", "settings",
   ],
   "Dispatch Manager": [

@@ -42,7 +42,8 @@ const marketingReportMP = [
 // ─── Ready Series report data ─────────────────────────────────────────────────
 
 const frozenStockData = readySeriesProducts.map((product, index) => {
-  const currentStock = [42, 18, 55, 28, 63, 16, 34, 47, 22, 31, 26, 11][index];
+  const stockSeed = [42, 18, 55, 28, 63, 16, 34, 47, 22, 31, 26, 11];
+  const currentStock = product.inStock ? stockSeed[index % stockSeed.length] : 0;
   const parLevel = product.category === "Just Protein" ? 40 : 35;
   const status = currentStock === 0 ? "OUT" : currentStock < parLevel ? "LOW" : "OK";
   return {

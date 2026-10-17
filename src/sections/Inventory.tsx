@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { readySeriesProducts } from "../catalog";
+import { downloadCSV } from "../utils/flowUtils";
 
-const ingredients = [
+const initialIngredients = [
   { id: "I01", name: "Chicken Breast (1kg)", category: "Protein", unit: "packs", stock: 8, minimum: 20, weeklyUsage: 45, supplier: "SG Fresh Meats", cost: 12.50 },
   { id: "I02", name: "Salmon Fillet (500g)", category: "Protein", unit: "portions", stock: 12, minimum: 15, weeklyUsage: 28, supplier: "Ocean Fresh SG", cost: 9.80 },
   { id: "I03", name: "Beef Mince (500g)", category: "Protein", unit: "packs", stock: 22, minimum: 15, weeklyUsage: 20, supplier: "SG Fresh Meats", cost: 8.40 },
@@ -17,8 +18,9 @@ const ingredients = [
 const categories = ["All", "Protein", "Carbs", "Veg"];
 
 // Ready Series frozen products with physical vs rolling stock
-const frozenProducts = readySeriesProducts.map((product, index) => {
-  const rollingStock = [42, 18, 55, 28, 63, 16, 34, 47, 22, 31, 26, 11][index];
+const initialFrozenProducts = readySeriesProducts.map((product, index) => {
+  const stockSeed = [42, 18, 55, 28, 63, 16, 34, 47, 22, 31, 26, 11];
+  const rollingStock = product.inStock ? stockSeed[index % stockSeed.length] : 0;
   const physicalStock = Math.max(0, rollingStock - (index % 3));
   const parLevel = product.category === "Just Protein" ? 40 : 35;
   return {
@@ -29,7 +31,7 @@ const frozenProducts = readySeriesProducts.map((product, index) => {
     physicalStock,
     parLevel,
     lastPhysicalAudit: "11 Sep 2024",
-    status: rollingStock < parLevel ? "LOW" : "OK",
+    status: rollingStock === 0 ? "OUT" : rollingStock < parLevel ? "LOW" : "OK",
   };
 });
 
@@ -37,6 +39,17 @@ export default function Inventory() {
   const [tab, setTab] = useState<"ingredients" | "ready-series">("ingredients");
   const [catFilter, setCatFilter] = useState("All");
   const [search, setSearch] = useState("");
+  const [ingredients, setIngredients] = useState(initialIngredients);
+  const [frozenProducts, setFrozenProducts] = useState(initialFrozenProducts);
+  const [stockModal, setStockModal] = useState<{
+    kind: "ingredient" | "ready-series";
+    id: string;
+    name: string;
+    mode: "add" | "count";
+  } | null>(null);
+  const [quantity, setQuantity] = useState("");
+  const [reference, setReference] = useState("");
+  const [stockSuccess, setStockSuccess] = useState("");
 
   const filteredIng = ingredients.filter(i => {
     if (catFilter !== "All" && i.category !== catFilter) return false;
@@ -46,19 +59,81 @@ export default function Inventory() {
 
   const lowStockIng = ingredients.filter(i => i.stock < i.minimum).length;
 
+  const openAddStock = () => {
+    const item = tab === "ingredients" ? filteredIng[0] : frozenProducts[0];
+    if (!item) return;
+    setStockModal({
+      kind: tab === "ingredients" ? "ingredient" : "ready-series",
+      id: item.id,
+      name: item.name,
+      mode: "add",
+    });
+    setQuantity("");
+    setReference("");
+  };
+
+  const saveStock = () => {
+    if (!stockModal) return;
+    const amount = Number(quantity);
+    if (!Number.isFinite(amount) || amount < 0 || (stockModal.mode === "add" && amount === 0)) return;
+
+    if (stockModal.kind === "ingredient") {
+      setIngredients(items => items.map(item => item.id === stockModal.id
+        ? { ...item, stock: stockModal.mode === "add" ? item.stock + amount : amount }
+        : item));
+    } else {
+      setFrozenProducts(items => items.map(item => {
+        if (item.id !== stockModal.id) return item;
+        const rollingStock = stockModal.mode === "add" ? item.rollingStock + amount : item.rollingStock;
+        const physicalStock = stockModal.mode === "count" ? amount : item.physicalStock;
+        return {
+          ...item,
+          rollingStock,
+          physicalStock,
+          lastPhysicalAudit: stockModal.mode === "count" ? new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : item.lastPhysicalAudit,
+          status: rollingStock < item.parLevel ? "LOW" : "OK",
+        };
+      }));
+    }
+
+    setStockSuccess(`${stockModal.name}: ${stockModal.mode === "add" ? `added ${amount}` : `physical count set to ${amount}`}${reference ? ` · ${reference}` : ""}`);
+    setStockModal(null);
+    setTimeout(() => setStockSuccess(""), 4000);
+  };
+
+  const exportInventory = () => {
+    if (tab === "ingredients") {
+      downloadCSV("ingredient-inventory.csv", ingredients.map(item => ({
+        ID: item.id, Ingredient: item.name, Category: item.category, Stock: item.stock,
+        Unit: item.unit, Minimum: item.minimum, Supplier: item.supplier, UnitCost: item.cost,
+      })));
+      return;
+    }
+    downloadCSV("ready-series-inventory.csv", frozenProducts.map(item => ({
+      SKU: item.sku, Product: item.name, RollingStock: item.rollingStock,
+      PhysicalStock: item.physicalStock, ParLevel: item.parLevel, Status: item.status,
+    })));
+  };
+
   return (
     <div className="p-6 space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-extrabold">Inventory</h2>
         <div className="flex gap-2">
-          <button className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
+          <button onClick={exportInventory} className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
             Export CSV
           </button>
-          <button className="bg-[#F5B300] text-black text-xs font-bold px-4 py-2 mono hover:bg-[#C99200] transition-colors">
+          <button onClick={openAddStock} className="bg-[#F5B300] text-black text-xs font-bold px-4 py-2 mono hover:bg-[#C99200] transition-colors">
             + Add Stock
           </button>
         </div>
       </div>
+
+      {stockSuccess && (
+        <div className="border border-green-800/40 bg-green-950/20 px-4 py-2.5 text-xs font-bold text-green-400 mono">
+          Stock updated · {stockSuccess}
+        </div>
+      )}
 
       {/* Summary KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -179,10 +254,16 @@ export default function Inventory() {
               <div className="border border-[var(--pm-border)] px-3 py-1.5 text-xs mono text-[var(--pm-text-muted)]">
                 Last physical audit: <span className="text-[var(--pm-text-secondary)]">Wed 11 Sep 2024</span>
               </div>
-              <button className="border border-[var(--pm-border)] text-[var(--pm-text-muted)] text-xs px-3 py-1.5 mono hover:border-[#E85D04] hover:text-[var(--pm-secondary-text)] transition-colors">
+              <button onClick={() => {
+                const first = frozenProducts[0];
+                if (!first) return;
+                setStockModal({ kind: "ready-series", id: first.id, name: first.name, mode: "count" });
+                setQuantity(String(first.physicalStock));
+                setReference("Biweekly physical audit");
+              }} className="border border-[var(--pm-border)] text-[var(--pm-text-muted)] text-xs px-3 py-1.5 mono hover:border-[#E85D04] hover:text-[var(--pm-secondary-text)] transition-colors">
                 Update Physical Stock Date
               </button>
-              <button className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-1.5 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
+              <button onClick={exportInventory} className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-1.5 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">
                 Export Inventory Report ↓
               </button>
             </div>
@@ -225,7 +306,11 @@ export default function Inventory() {
                       <td className="px-4 py-2.5"><span className={`mono px-2 py-0.5 ${statusStyle}`}>{r.status}</span></td>
                       <td className="px-4 py-2.5 mono text-[var(--pm-text-muted)] text-xs">{r.lastPhysicalAudit}</td>
                       <td className="px-4 py-2.5">
-                        <button className="text-xs mono text-[var(--pm-text-muted)] border border-[var(--pm-border)] px-2 py-0.5 hover:border-[#E85D04] hover:text-[var(--pm-secondary-text)] transition-colors">
+                        <button onClick={() => {
+                          setStockModal({ kind: "ready-series", id: r.id, name: r.name, mode: "count" });
+                          setQuantity(String(r.physicalStock));
+                          setReference("");
+                        }} className="text-xs mono text-[var(--pm-text-muted)] border border-[var(--pm-border)] px-2 py-0.5 hover:border-[#E85D04] hover:text-[var(--pm-secondary-text)] transition-colors">
                           Update Count
                         </button>
                       </td>
@@ -236,6 +321,54 @@ export default function Inventory() {
             </table>
           </div>
           <p className="text-[10px] text-[var(--pm-text-muted)] mono">Rolling Stock = system-tracked count. Physical Stock = Packing Supervisor physical count. Biweekly Wednesday: update physical stock date for audit accuracy. New stock ready to sell → use "+ Add Stock" to increase rolling stock.</p>
+        </div>
+      )}
+
+      {stockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setStockModal(null)}>
+          <div className="w-full max-w-md space-y-4 border border-[var(--pm-border)] bg-[var(--pm-surface)] p-6" onClick={event => event.stopPropagation()}>
+            <div className="flex items-start justify-between border-b border-[var(--pm-border)] pb-3">
+              <div>
+                <div className="font-bold text-[var(--pm-text-secondary)]">{stockModal.mode === "add" ? "Add Stock" : "Update Physical Count"}</div>
+                <div className="mt-1 text-xs text-[var(--pm-text-muted)]">{stockModal.name}</div>
+              </div>
+              <button onClick={() => setStockModal(null)} className="text-xl leading-none text-[var(--pm-text-muted)]">×</button>
+            </div>
+            {stockModal.mode === "add" && (
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase tracking-wider text-[var(--pm-text)]">Stock item</label>
+                <select value={stockModal.id} onChange={event => {
+                  const options = stockModal.kind === "ingredient" ? ingredients : frozenProducts;
+                  const selected = options.find(item => item.id === event.target.value);
+                  if (selected) setStockModal(current => current ? { ...current, id: selected.id, name: selected.name } : current);
+                }} className="w-full border border-[var(--pm-border)] bg-[var(--pm-bg)] px-3 py-2 text-sm text-[var(--pm-text-secondary)]">
+                  {(stockModal.kind === "ingredient" ? ingredients : frozenProducts).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+                </select>
+              </div>
+            )}
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-wider text-[var(--pm-text)]">
+                {stockModal.mode === "add" ? "Quantity received" : "Physical quantity"}
+              </label>
+              <input type="number" min="0" step="1" value={quantity} onChange={event => setQuantity(event.target.value)}
+                className="w-full border border-[var(--pm-border)] bg-[var(--pm-bg)] px-3 py-2 text-sm text-[var(--pm-text-secondary)] outline-none focus:border-[#F5B300]" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-wider text-[var(--pm-text)]">Reference / note</label>
+              <input value={reference} onChange={event => setReference(event.target.value)} placeholder="PO number, supplier delivery, or audit note"
+                className="w-full border border-[var(--pm-border)] bg-[var(--pm-bg)] px-3 py-2 text-sm text-[var(--pm-text-secondary)] outline-none focus:border-[#F5B300]" />
+            </div>
+            <div className="border border-[var(--pm-border)] bg-[var(--pm-bg)] px-3 py-2 text-xs text-[var(--pm-text-muted)]">
+              The adjustment will update stock immediately and should be recorded in the audit trail in the embedded app.
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setStockModal(null)} className="flex-1 border border-[var(--pm-border)] py-2 text-xs text-[var(--pm-text-muted)] mono">Cancel</button>
+              <button onClick={saveStock} disabled={!quantity || Number(quantity) < 0}
+                className="flex-1 bg-[#F5B300] py-2 text-xs font-bold text-black disabled:cursor-not-allowed disabled:opacity-40 mono">
+                Save Adjustment
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

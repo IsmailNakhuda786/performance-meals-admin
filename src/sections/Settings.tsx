@@ -43,7 +43,7 @@ const escalationRequests = [
   { id: "ESC-005", title: "Rider reassignment — Ahmad unavailable", type: "Delivery", priority: "medium" as const, raisedBy: "Lena Wong", dept: "Delivery", assignedTo: "Daniel Ng", status: "resolved" as const, notes: "Motorcycle breakdown. Rerouted to James Ng.", date: "11 Sep 2024" },
 ];
 
-const teamMembers = [
+const initialTeamMembers = [
   { id: "U02", name: "Rachel Tan", role: "Operations Executive", dept: "Operations", status: "Active", lastActive: "14 Sep 2024 09:15" },
   { id: "U03", name: "Hafiz Ahmad", role: "Kitchen Manager", dept: "Kitchen", status: "Active", lastActive: "14 Sep 2024 07:15" },
   { id: "U04", name: "Lena Wong", role: "Delivery Manager", dept: "Delivery", status: "Active", lastActive: "14 Sep 2024 08:45" },
@@ -62,6 +62,18 @@ const loginHistory = [
   { date: "13 Sep 2024 09:00", device: "MacBook Pro · Chrome", ip: "103.22.44.11", status: "success" },
   { date: "12 Sep 2024 08:15", device: "iPhone 15 · Safari", ip: "103.22.44.55", status: "success" },
   { date: "11 Sep 2024 22:30", device: "Unknown Device", ip: "58.182.33.99", status: "failed" },
+];
+
+const initialCommerceSettings = [
+  { id: "gst-rate", label: "GST Rate", value: "9%" },
+  { id: "minimum-order", label: "Minimum Online Order", value: "$50.00" },
+  { id: "standard-delivery", label: "Standard Delivery Fee", value: "$10.00" },
+  { id: "reduced-delivery", label: "Reduced Delivery", value: "$5.00 from $75" },
+  { id: "free-delivery", label: "Free Delivery Threshold", value: "$125.00" },
+  { id: "menu-cutoff", label: "Meal Selection Cutoff", value: "Thursday 1:59 PM SGT" },
+  { id: "delivery-notice", label: "Delivery Change Notice", value: "72 hours" },
+  { id: "ready-cadence", label: "Ready Series Cadence", value: "Every 4 weeks · 3 or 6 deliveries" },
+  { id: "credit-expiry", label: "Wallet Credit Expiry", value: "1 year per credit lot" },
 ];
 
 const statusColor: Record<string, string> = {
@@ -118,6 +130,12 @@ export default function Settings({ demoMode, initialTab, user }: { demoMode?: bo
   const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("Operations Executive");
+  const [teamMembers, setTeamMembers] = useState(initialTeamMembers);
+  const [roleModal, setRoleModal] = useState<string | null>(null);
+  const [editedRole, setEditedRole] = useState("");
+  const [commerceSettings, setCommerceSettings] = useState(initialCommerceSettings);
+  const [editingSetting, setEditingSetting] = useState<{ id: string; label: string; value: string } | null>(null);
+  const [settingSaved, setSettingSaved] = useState("");
 
   const handleSave = () => {
     setSaved(true);
@@ -637,7 +655,7 @@ export default function Settings({ demoMode, initialTab, user }: { demoMode?: bo
           )}
           {suspendSuccess && (
             <div className="border border-green-800/40 bg-green-950/20 px-4 py-2.5 text-xs text-green-400 mono font-bold">
-              ✓ {suspendSuccess} suspended · Audit entry created
+              ✓ {suspendSuccess} · Sessions revoked where applicable · Audit entry created
             </div>
           )}
 
@@ -666,7 +684,7 @@ export default function Settings({ demoMode, initialTab, user }: { demoMode?: bo
                     <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{u.lastActive}</td>
                     <td className="px-4 py-2.5">
                       <div className="flex gap-1">
-                        <button className="text-xs border border-[var(--pm-border)] text-[var(--pm-text-muted)] px-2 py-1 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">Edit Role</button>
+                        <button onClick={() => { setRoleModal(u.id); setEditedRole(u.role); }} className="text-xs border border-[var(--pm-border)] text-[var(--pm-text-muted)] px-2 py-1 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">Edit Role</button>
                         <button onClick={() => setSuspendModal(u.id)}
                           className={`text-xs border px-2 py-1 mono transition-colors ${u.status === "Active" ? "border-red-800/40 text-red-400 hover:bg-red-950/30" : "border-green-800/40 text-green-400 hover:bg-green-950/30"}`}>
                           {u.status === "Active" ? "Suspend" : "Restore"}
@@ -715,21 +733,59 @@ export default function Settings({ demoMode, initialTab, user }: { demoMode?: bo
             </div>
           )}
 
+          {/* Edit role modal */}
+          {roleModal && (
+            <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+              <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] w-full max-w-sm p-6 space-y-4">
+                <div>
+                  <div className="font-bold text-[var(--pm-text-secondary)]">Edit Team Role</div>
+                  <div className="mt-1 text-xs text-[var(--pm-text-muted)]">{teamMembers.find(member => member.id === roleModal)?.name}</div>
+                </div>
+                <label className="block space-y-1 text-xs font-bold uppercase tracking-wider text-[var(--pm-text)]">Role
+                  <select value={editedRole} onChange={event => setEditedRole(event.target.value)}
+                    className="mt-1 block w-full border border-[var(--pm-border)] bg-[var(--pm-bg)] px-3 py-2 text-sm text-[var(--pm-text-secondary)]">
+                    {["Operations Executive", "Kitchen Manager", "Delivery Manager", "Finance Manager", "Marketing Manager", "Support Agent", "Department Head"].map(role => <option key={role}>{role}</option>)}
+                  </select>
+                </label>
+                <div className="border border-[var(--pm-border)] bg-[var(--pm-bg)] px-3 py-2 text-xs text-[var(--pm-text-muted)] mono">
+                  Role changes affect module access and are recorded in the Audit Trail.
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setRoleModal(null)} className="flex-1 border border-[var(--pm-border)] py-2 text-xs text-[var(--pm-text-muted)] mono">Cancel</button>
+                  <button onClick={() => {
+                    setTeamMembers(members => members.map(member => member.id === roleModal ? { ...member, role: editedRole } : member));
+                    setRoleModal(null);
+                  }} className="flex-1 bg-[#F5B300] py-2 text-xs font-bold text-black mono">Save Role</button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Suspend confirmation modal */}
           {suspendModal && (
             <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
               <div className="border border-red-800/40 bg-[var(--pm-surface)] w-full max-w-sm p-6 space-y-4">
                 <div className="font-bold text-[var(--pm-text-secondary)]">Confirm Action</div>
                 <p className="text-sm text-[var(--pm-text-muted)]">
-                  Are you sure you want to suspend <span className="text-[var(--pm-text-secondary)] font-semibold">{teamMembers.find(u => u.id === suspendModal)?.name}</span>? Their access will be revoked immediately.
+                  Are you sure you want to {teamMembers.find(member => member.id === suspendModal)?.status === "Active" ? "suspend" : "restore"} <span className="text-[var(--pm-text-secondary)] font-semibold">{teamMembers.find(u => u.id === suspendModal)?.name}</span>? {teamMembers.find(member => member.id === suspendModal)?.status === "Active" ? "Their access and active sessions will be revoked immediately." : "Their assigned role access will be restored."}
                 </p>
                 <div className="border border-[var(--pm-border)] bg-[var(--pm-bg)] px-3 py-2 text-xs text-[var(--pm-text-muted)] mono">
                   This action will be logged in the Audit Trail.
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => setSuspendModal(null)} className="flex-1 py-2 border border-[var(--pm-border)] text-[var(--pm-text-muted)] text-xs mono">Cancel</button>
-                  <button onClick={() => { const userName = teamMembers.find(u => u.id === suspendModal)?.name ?? "User"; setSuspendModal(null); setSuspendSuccess(userName); setTimeout(() => setSuspendSuccess(null), 4000); }}
-                    className="flex-1 py-2 bg-red-900 border border-red-700 text-red-200 text-xs font-bold mono hover:bg-red-800 transition-colors">Confirm Suspend</button>
+                  <button onClick={() => {
+                    const selectedMember = teamMembers.find(u => u.id === suspendModal);
+                    const nextStatus = selectedMember?.status === "Active" ? "Suspended" : "Active";
+                    const userName = selectedMember?.name ?? "User";
+                    setTeamMembers(members => members.map(member => member.id === suspendModal ? { ...member, status: nextStatus } : member));
+                    setSuspendModal(null);
+                    setSuspendSuccess(`${userName} ${nextStatus === "Active" ? "restored" : "suspended"}`);
+                    setTimeout(() => setSuspendSuccess(null), 4000);
+                  }}
+                    className="flex-1 py-2 bg-red-900 border border-red-700 text-red-200 text-xs font-bold mono hover:bg-red-800 transition-colors">
+                    {teamMembers.find(member => member.id === suspendModal)?.status === "Active" ? "Confirm Suspend" : "Confirm Restore"}
+                  </button>
                 </div>
               </div>
             </div>
@@ -748,20 +804,13 @@ export default function Settings({ demoMode, initialTab, user }: { demoMode?: bo
             {/* Global rules */}
             <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-5 space-y-3">
               <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider border-b border-[var(--pm-border)] pb-2">Global Configuration</div>
-              {[
-                { label: "Menu Cutoff Day", value: "Thursday" },
-                { label: "Menu Cutoff Time", value: "13:00 SGT" },
-                { label: "Max Pause Duration", value: "4 weeks" },
-                { label: "Min Pause Duration", value: "1 week" },
-                { label: "Bi-Weekly Billing Rate", value: "$168 / cycle" },
-                { label: "Monthly Billing Rate", value: "$336 / cycle" },
-                { label: "Free Delivery Threshold", value: "Configurable" },
-              ].map(f => (
+              {settingSaved && <div className="border border-green-800/40 bg-green-950/20 px-3 py-2 text-xs text-green-400 mono">{settingSaved}</div>}
+              {commerceSettings.map(f => (
                 <div key={f.label} className="flex items-center justify-between py-1.5 border-b border-[var(--pm-border)] last:border-0">
                   <span className="text-xs text-[var(--pm-text-secondary)]">{f.label}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-xs mono font-bold text-[var(--pm-accent-text)]">{f.value}</span>
-                    <button className="text-xs border border-[var(--pm-border-strong)] text-[var(--pm-text-muted)] px-2 py-0.5 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">Edit</button>
+                    <button onClick={() => setEditingSetting({ ...f })} className="text-xs border border-[var(--pm-border-strong)] text-[var(--pm-text-muted)] px-2 py-0.5 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">Edit</button>
                   </div>
                 </div>
               ))}
@@ -804,6 +853,31 @@ export default function Settings({ demoMode, initialTab, user }: { demoMode?: bo
               </div>
             </div>
           </div>
+
+          {editingSetting && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setEditingSetting(null)}>
+              <div className="w-full max-w-sm space-y-4 border border-[var(--pm-border)] bg-[var(--pm-surface)] p-6" onClick={event => event.stopPropagation()}>
+                <div>
+                  <div className="font-bold text-[var(--pm-text-secondary)]">Edit Commerce Rule</div>
+                  <div className="mt-1 text-xs text-[var(--pm-text-muted)]">{editingSetting.label}</div>
+                </div>
+                <input value={editingSetting.value} onChange={event => setEditingSetting(current => current ? { ...current, value: event.target.value } : current)}
+                  className="w-full border border-[var(--pm-border)] bg-[var(--pm-bg)] px-3 py-2 text-sm text-[var(--pm-text-secondary)] outline-none focus:border-[#F5B300]" />
+                <div className="border border-yellow-800/30 bg-yellow-950/10 px-3 py-2 text-xs text-yellow-300">
+                  Publishing a commerce-rule change must update both the Shopify storefront configuration and the operational audit trail.
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setEditingSetting(null)} className="flex-1 border border-[var(--pm-border)] py-2 text-xs text-[var(--pm-text-muted)] mono">Cancel</button>
+                  <button onClick={() => {
+                    setCommerceSettings(settings => settings.map(setting => setting.id === editingSetting.id ? editingSetting : setting));
+                    setSettingSaved(`${editingSetting.label} updated to ${editingSetting.value}`);
+                    setEditingSetting(null);
+                    setTimeout(() => setSettingSaved(""), 4000);
+                  }} className="flex-1 bg-[#F5B300] py-2 text-xs font-bold text-black mono">Save Rule</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* System Scope Reference */}
           <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-5">

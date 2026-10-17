@@ -1,10 +1,17 @@
 import { useState } from "react";
 import StatusBadge from "../components/StatusBadge";
-import { customers, type Customer } from "../data";
+import { customers as initialCustomers, goalLabel, type Customer, type PlanType } from "../data";
 import type { BusinessStream } from "../App";
 
-function CustomerModal({ customer, onClose }: { customer: Customer; onClose: () => void }) {
+function CustomerModal({ customer, onClose, onUpdate }: { customer: Customer; onClose: () => void; onUpdate: (customer: Customer) => void }) {
   const [activeAction, setActiveAction] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [planType, setPlanType] = useState<PlanType>(customer.planType);
+  const [credit, setCredit] = useState("");
+  const [reason, setReason] = useState("");
+  const [success, setSuccess] = useState("");
+  const [validationError, setValidationError] = useState("");
   const timeline = [
     { date: "9 Sep 2024", event: "Plan week 8 started", type: "normal" },
     { date: "21 Aug 2024", event: "Menu confirmed for W7", type: "normal" },
@@ -12,6 +19,60 @@ function CustomerModal({ customer, onClose }: { customer: Customer; onClose: () 
     { date: "7 Aug 2024", event: "Pause request submitted (1 week)", type: "pause" },
     { date: "12 Jan 2024", event: "Subscription started — CUT 12-week plan", type: "start" },
   ];
+
+  const completeAction = () => {
+    if (!activeAction) return;
+    setValidationError("");
+    let updated = { ...customer };
+    if (activeAction === "Pause") {
+      if (!startDate || !endDate || !reason.trim()) {
+        setValidationError("Pause dates and a support note are required.");
+        return;
+      }
+      updated = { ...updated, status: "Paused", pauseStart: startDate, pauseEnd: endDate };
+    } else if (activeAction === "Resume") {
+      updated = { ...updated, status: "Active", pauseStart: undefined, pauseEnd: undefined };
+    } else if (activeAction === "Edit Plan") {
+      updated = { ...updated, planType };
+    } else if (activeAction === "Add Credit") {
+      const amount = Number(credit);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        setValidationError("Enter a credit amount greater than $0.");
+        return;
+      }
+      if (!reason.trim()) {
+        setValidationError("Support note required before credits can be added.");
+        return;
+      }
+      updated = { ...updated, walletBalance: updated.walletBalance + amount };
+    } else if (activeAction === "Cancel") {
+      if (!reason.trim()) {
+        setValidationError("Cancellation reason is required.");
+        return;
+      }
+      setSuccess("Cancellation request submitted for administrator approval. No refund was issued.");
+      setActiveAction(null);
+      setReason("");
+      setTimeout(() => setSuccess(""), 4000);
+      return;
+    }
+    onUpdate(updated);
+    setSuccess(
+      activeAction === "Add Credit"
+        ? `$${Number(credit).toFixed(2)} credit added to ${customer.name}'s wallet.`
+        : activeAction === "Pause"
+          ? "Subscription paused."
+          : activeAction === "Resume"
+            ? "Subscription resumed."
+            : "Subscription plan updated."
+    );
+    setActiveAction(null);
+    setCredit("");
+    setReason("");
+    setStartDate("");
+    setEndDate("");
+    setTimeout(() => setSuccess(""), 4000);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80" onClick={onClose}>
@@ -53,7 +114,7 @@ function CustomerModal({ customer, onClose }: { customer: Customer; onClose: () 
               {customer.goal && (
                 <div className="flex justify-between border-b border-[var(--pm-border)] pb-2">
                   <span className="text-[var(--pm-text-muted)]">Goal</span>
-                  <span className="font-bold text-[var(--pm-secondary-text)]">{customer.goal}</span>
+                  <span className="font-bold text-[var(--pm-secondary-text)]">{goalLabel(customer.goal)}</span>
                 </div>
               )}
               <div className="flex justify-between border-b border-[var(--pm-border)] pb-2">
@@ -104,10 +165,19 @@ function CustomerModal({ customer, onClose }: { customer: Customer; onClose: () 
 
           {/* Actions */}
           <div className="flex flex-wrap gap-2 pt-2 border-t border-[var(--pm-border)]">
-            {["Pause", "Resume", "Edit Plan", "Add Credit", "Cancel"].map(action => (
+            {[
+              customer.status === "Paused" ? "Resume" : "Pause",
+              "Edit Plan",
+              "Add Credit",
+              "Cancel",
+            ].map(action => (
               <button
                 key={action}
-                onClick={() => setActiveAction(action)}
+                onClick={() => {
+                  setActiveAction(action);
+                  setValidationError("");
+                  setSuccess("");
+                }}
                 className={`text-xs px-3 py-2 font-medium mono transition-colors ${
                   action === "Cancel"
                     ? "border border-red-800 text-red-400 hover:bg-red-950"
@@ -120,9 +190,63 @@ function CustomerModal({ customer, onClose }: { customer: Customer; onClose: () 
               </button>
             ))}
           </div>
+          {success && (
+            <div className="border border-green-800/40 bg-green-950/20 px-4 py-3 text-sm text-green-400 mono">{success}</div>
+          )}
           {activeAction && (
-            <div className="bg-[var(--pm-bg)] border border-[#F5B300]/30 px-4 py-3 text-sm text-[var(--pm-accent-text)] mono">
-              Action: <strong>{activeAction}</strong> — modal would open here in production
+            <div className="space-y-3 border border-[#F5B300]/30 bg-[var(--pm-bg)] p-4">
+              <div>
+                <div className="text-sm font-bold text-[var(--pm-text-secondary)]">{activeAction} subscription</div>
+                <div className="mt-1 text-xs text-[var(--pm-text-muted)]">
+                  {activeAction === "Cancel"
+                    ? "This creates a cancellation request for administrator approval. Renewal continues until the request is approved, and refunds remain separate."
+                    : "Review the details before confirming this change."}
+                </div>
+              </div>
+              {activeAction === "Pause" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="space-y-1 text-xs text-[var(--pm-text-muted)]">Pause start
+                    <input type="date" value={startDate} onChange={event => setStartDate(event.target.value)} className="block w-full border border-[var(--pm-border)] bg-[var(--pm-surface)] px-3 py-2 text-[var(--pm-text-secondary)]" />
+                  </label>
+                  <label className="space-y-1 text-xs text-[var(--pm-text-muted)]">Resume date
+                    <input type="date" value={endDate} min={startDate} onChange={event => setEndDate(event.target.value)} className="block w-full border border-[var(--pm-border)] bg-[var(--pm-surface)] px-3 py-2 text-[var(--pm-text-secondary)]" />
+                  </label>
+                </div>
+              )}
+              {activeAction === "Edit Plan" && (
+                <label className="block space-y-1 text-xs text-[var(--pm-text-muted)]">Plan
+                  <select value={planType} onChange={event => setPlanType(event.target.value as PlanType)} className="block w-full border border-[var(--pm-border)] bg-[var(--pm-surface)] px-3 py-2 text-[var(--pm-text-secondary)]">
+                    {["Meal Plan", "Ready Series Subscription", "Ready Series A-la-carte", "Ready Series Bundle"].map(plan => <option key={plan}>{plan}</option>)}
+                  </select>
+                </label>
+              )}
+              {activeAction === "Add Credit" && (
+                <label className="block space-y-1 text-xs text-[var(--pm-text-muted)]">Credit amount
+                  <input type="number" min="0.01" step="0.01" value={credit} onChange={event => setCredit(event.target.value)} placeholder="0.00" className="block w-full border border-[var(--pm-border)] bg-[var(--pm-surface)] px-3 py-2 text-[var(--pm-text-secondary)]" />
+                </label>
+              )}
+              {["Pause", "Add Credit", "Cancel"].includes(activeAction) && (
+                <label className="block space-y-1 text-xs text-[var(--pm-text-muted)]">Reason
+                  <textarea rows={2} value={reason} onChange={event => {
+                    setReason(event.target.value);
+                    setValidationError("");
+                  }} placeholder="Required for the audit trail" className={`block w-full resize-none border bg-[var(--pm-surface)] px-3 py-2 text-[var(--pm-text-secondary)] ${validationError && !reason.trim() ? "border-red-600" : "border-[var(--pm-border)]"}`} />
+                </label>
+              )}
+              {validationError && (
+                <div role="alert" className="border border-red-700 bg-red-950/30 px-3 py-2 text-xs font-bold text-red-300 mono">
+                  {validationError}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button onClick={() => {
+                  setActiveAction(null);
+                  setValidationError("");
+                }} className="flex-1 border border-[var(--pm-border)] py-2 text-xs text-[var(--pm-text-muted)] mono">Back</button>
+                <button onClick={completeAction} className={`flex-1 py-2 text-xs font-bold mono ${activeAction === "Cancel" ? "bg-red-900 text-red-100" : "bg-[#F5B300] text-black"}`}>
+                  Confirm {activeAction}
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -131,9 +255,10 @@ function CustomerModal({ customer, onClose }: { customer: Customer; onClose: () 
   );
 }
 
-export default function Customers({ stream }: { stream: BusinessStream }) {
+export default function Customers({ stream, onOpenProfile }: { stream: BusinessStream; onOpenProfile?: (customerId: string) => void }) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Customer | null>(null);
+  const [customers, setCustomers] = useState(initialCustomers);
 
   const accent = stream === "meal-plans" ? "var(--pm-accent-text)" : "var(--pm-secondary-text)";
 
@@ -176,13 +301,13 @@ export default function Customers({ stream }: { stream: BusinessStream }) {
               <tr
                 key={c.id}
                 className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] cursor-pointer transition-colors ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}
-                onClick={() => setSelected(c)}
+                onClick={() => onOpenProfile ? onOpenProfile(c.id) : setSelected(c)}
               >
                 <td className="px-4 py-2.5 font-semibold">{c.name}</td>
                 <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{c.email}</td>
                 <td className="px-4 py-2.5 text-xs">{c.planType}</td>
                 <td className="px-4 py-2.5">
-                  {c.goal ? <span className="mono text-xs font-bold text-[var(--pm-secondary-text)]">{c.goal}</span> : <span className="text-[var(--pm-text-muted)]">—</span>}
+                  {c.goal ? <span className="text-xs font-bold text-[var(--pm-secondary-text)]">{goalLabel(c.goal)}</span> : <span className="text-[var(--pm-text-muted)]">—</span>}
                 </td>
                 <td className="px-4 py-2.5 mono text-xs">{c.planWeek}</td>
                 <td className="px-4 py-2.5"><StatusBadge status={c.status} /></td>
@@ -198,7 +323,10 @@ export default function Customers({ stream }: { stream: BusinessStream }) {
         </table>
       </div>
 
-      {selected && <CustomerModal customer={selected} onClose={() => setSelected(null)} />}
+      {selected && <CustomerModal customer={selected} onClose={() => setSelected(null)} onUpdate={updated => {
+        setCustomers(current => current.map(customer => customer.id === updated.id ? updated : customer));
+        setSelected(updated);
+      }} />}
     </div>
   );
 }

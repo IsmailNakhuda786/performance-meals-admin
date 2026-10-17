@@ -14,9 +14,9 @@ const mpTransactions = [
 
 const rsTransactions = [
   { id: "TXN-4101", date: "14 Sep 2024", customer: "Wei Jie Lim", type: "Signature 5 — Non-Beef", amount: 48.99, method: "Card (via Shopify)", status: "Paid" },
-  { id: "TXN-4102", date: "14 Sep 2024", customer: "Jade Koh", type: "JPSUB01 · 6 Months", amount: 480.50, method: "PayNow", status: "Paid" },
+  { id: "TXN-4102", date: "14 Sep 2024", customer: "Jade Koh", type: "JPSUB01 · 6 Deliveries", amount: 493.60, method: "PayNow", status: "Paid" },
   { id: "TXN-4103", date: "14 Sep 2024", customer: "Darren Ong", type: "Ready Series A-la-carte", amount: 38.70, method: "Card (via Shopify)", status: "Paid" },
-  { id: "TXN-4104", date: "14 Sep 2024", customer: "Jason Yeo", type: "LCMIXSUB01 · 3 Months", amount: 354.56, method: "GrabPay", status: "Pending" },
+  { id: "TXN-4104", date: "14 Sep 2024", customer: "Jason Yeo", type: "LCMIXSUB01 · 3 Deliveries", amount: 359.00, method: "GrabPay", status: "Pending" },
   { id: "TXN-4105", date: "13 Sep 2024", customer: "Serene Tay", type: "Ready Series A-la-carte", amount: 26.00, method: "Card (via Shopify)", status: "Refunded" },
 ];
 

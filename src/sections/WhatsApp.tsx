@@ -33,7 +33,7 @@ const templates = [
   { id: "T-04", name: "Payment Due", type: "payment-reminder" as MsgType, stream: "meal-plans", preview: "Reminder: Your Meal Plan payment of $[Amount] is due [Date]. Pay here: [Link]" },
   { id: "T-05", name: "Payment Failed", type: "payment-reminder" as MsgType, stream: "meal-plans", preview: "We couldn't process your payment of $[Amount]. Please update your payment method: [Link]" },
   { id: "T-06", name: "Weekly Meal Reminder", type: "subscription-reminder" as MsgType, stream: "meal-plans", preview: "Hi [Name]! Your [Plan] renews [Date]. This week's meals: [MealList]" },
-  { id: "T-07", name: "Swap Deadline Reminder", type: "subscription-reminder" as MsgType, stream: "meal-plans", preview: "Reminder: Meal swap window closes Thursday 12pm. Select your meals now: [Link]" },
+  { id: "T-07", name: "Swap Deadline Reminder", type: "subscription-reminder" as MsgType, stream: "meal-plans", preview: "Reminder: Meal selection closes Thursday at 1:59pm SGT. Select your meals now: [Link]" },
   { id: "T-08", name: "Ready Sub Welcome", type: "subscription-reminder" as MsgType, stream: "ready-series", preview: "Welcome to Ready Series! Your 10-Meal Box first delivery is [Date]. We're excited to have you!" },
 ];
 

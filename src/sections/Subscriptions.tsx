@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { subscriptions, type CustomerStatus } from "../data";
+import { subscriptions, type CustomerStatus, type Subscription } from "../data";
 import { mealPlanProgrammes, mealPlanVariants, readySeriesSubscriptions } from "../catalog";
 import type { BusinessStream } from "../App";
 import { downloadCSV, downloadExcel } from "../utils/flowUtils";
@@ -396,13 +396,45 @@ function AutomationTab() {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 type TabType = CustomerStatus | "Automation";
+type ReadyCatalogPlan = {
+  sku: string;
+  name: string;
+  variant: string;
+  items: number;
+  price3m: number;
+  price6m: number;
+};
+
+type CancellationRequest = {
+  id: string;
+  subscriptionId: string;
+  customer: string;
+  stream: BusinessStream;
+  reason: string;
+  requestedAt: string;
+  status: "Pending" | "Approved" | "Rejected";
+};
+
+const initialCancellationRequests: CancellationRequest[] = [
+  { id: "CAN-001", subscriptionId: "SUB-011", customer: "Vanessa Ng", stream: "ready-series", reason: "Moving overseas before the next delivery.", requestedAt: "Today 09:42", status: "Pending" },
+  { id: "CAN-002", subscriptionId: "SUB-001", customer: "Marcus Tan", stream: "meal-plans", reason: "Programme no longer fits current schedule.", requestedAt: "Today 10:18", status: "Pending" },
+];
 
 export default function Subscriptions({ swapAlert, stream }: { swapAlert: boolean; stream: BusinessStream }) {
   const [activeTab, setActiveTab] = useState<TabType>("Active");
+  const [subscriptionRows, setSubscriptionRows] = useState<Subscription[]>(subscriptions);
+  const [managedSubscription, setManagedSubscription] = useState<Subscription | null>(null);
+  const [catalogPlans, setCatalogPlans] = useState<ReadyCatalogPlan[]>(readySeriesSubscriptions.map(plan => ({ ...plan })));
+  const [catalogModal, setCatalogModal] = useState<ReadyCatalogPlan | null>(null);
+  const [catalogSuccess, setCatalogSuccess] = useState("");
+  const [cancellationRequests, setCancellationRequests] = useState(initialCancellationRequests);
+  const [actionFeedback, setActionFeedback] = useState("");
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [cancellationError, setCancellationError] = useState("");
 
   const accent = stream === "meal-plans" ? "#F5B300" : "#E85D04";
 
-  const streamSubs = subscriptions.filter(s =>
+  const streamSubs = subscriptionRows.filter(s =>
     stream === "meal-plans" ? s.planType === "Meal Plan" : s.planType !== "Meal Plan"
   );
 
@@ -433,6 +465,56 @@ export default function Subscriptions({ swapAlert, stream }: { swapAlert: boolea
 
   const allTabs: TabType[] = stream === "meal-plans" ? [...tabs, "Automation"] : [...tabs];
 
+  const saveCatalogPlan = () => {
+    if (!catalogModal || !catalogModal.sku.trim() || !catalogModal.name.trim()) return;
+    const exists = catalogPlans.some(plan => plan.sku === catalogModal.sku);
+    setCatalogPlans(plans => exists
+      ? plans.map(plan => plan.sku === catalogModal.sku ? catalogModal : plan)
+      : [...plans, catalogModal]);
+    setCatalogSuccess(`${catalogModal.sku} ${exists ? "updated" : "added"} to the subscription catalog.`);
+    setCatalogModal(null);
+    setTimeout(() => setCatalogSuccess(""), 4000);
+  };
+
+  const updateManagedStatus = (status: CustomerStatus) => {
+    if (!managedSubscription) return;
+    setSubscriptionRows(rows => rows.map(row => row.id === managedSubscription.id ? { ...row, status } : row));
+    setManagedSubscription(current => current ? { ...current, status } : current);
+    setActionFeedback(status === "Paused" ? "Subscription paused." : "Subscription resumed.");
+  };
+
+  const decideCancellation = (request: CancellationRequest, status: "Approved" | "Rejected") => {
+    setCancellationRequests(requests => requests.map(item => item.id === request.id ? { ...item, status } : item));
+    if (status === "Approved") {
+      setSubscriptionRows(rows => rows.map(row => row.id === request.subscriptionId ? { ...row, status: "Cancelled" } : row));
+    }
+    setActionFeedback(`${request.id} ${status.toLowerCase()}.`);
+  };
+
+  const requestCancellation = () => {
+    if (!managedSubscription) return;
+    if (!cancellationReason.trim()) {
+      setCancellationError("Cancellation reason is required.");
+      return;
+    }
+    if (cancellationRequests.some(request => request.subscriptionId === managedSubscription.id && request.status === "Pending")) {
+      setCancellationError("A cancellation request is already pending approval.");
+      return;
+    }
+    setCancellationRequests(requests => [{
+      id: `CAN-${String(requests.length + 1).padStart(3, "0")}`,
+      subscriptionId: managedSubscription.id,
+      customer: managedSubscription.customerName,
+      stream,
+      reason: cancellationReason.trim(),
+      requestedAt: "Just now",
+      status: "Pending",
+    }, ...requests]);
+    setActionFeedback(`Cancellation request submitted for ${managedSubscription.customerName}. Status: Pending approval.`);
+    setCancellationReason("");
+    setCancellationError("");
+  };
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -442,6 +524,11 @@ export default function Subscriptions({ swapAlert, stream }: { swapAlert: boolea
           <button onClick={() => downloadExcel("subscriptions.xlsx", subRows)} className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">Excel ↓</button>
         </div>
       </div>
+      {actionFeedback && (
+        <div role="status" className="border border-green-800/40 bg-green-950/20 px-4 py-2.5 text-xs font-bold text-green-400 mono">
+          {actionFeedback}
+        </div>
+      )}
 
       {swapAlert && (
         <div className="border border-yellow-600 bg-yellow-950/40 px-4 py-3 flex items-center gap-3">
@@ -452,6 +539,42 @@ export default function Subscriptions({ swapAlert, stream }: { swapAlert: boolea
           </span>
         </div>
       )}
+
+      <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+        <div className="flex items-center justify-between border-b border-[var(--pm-border)] px-4 py-3">
+          <div>
+            <div className="text-sm font-semibold">Cancellation Requests</div>
+            <div className="mt-1 text-xs text-[var(--pm-text-muted)]">Customer requests require approval. Approval stops future renewal; refunds are handled separately.</div>
+          </div>
+          <span className="bg-yellow-950/30 px-2 py-1 text-xs font-bold text-yellow-400 mono">
+            {cancellationRequests.filter(request => request.stream === stream && request.status === "Pending").length} pending
+          </span>
+        </div>
+        <div className="divide-y divide-[var(--pm-border-soft)]">
+          {cancellationRequests.filter(request => request.stream === stream).map(request => (
+            <div key={request.id} className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-[var(--pm-accent-text)] mono">{request.id}</span>
+                  <span className="text-sm font-semibold">{request.customer}</span>
+                  <span className="text-xs text-[var(--pm-text-muted)] mono">{request.subscriptionId}</span>
+                </div>
+                <div className="mt-1 text-xs text-[var(--pm-text-muted)]">{request.reason} · {request.requestedAt}</div>
+              </div>
+              {request.status === "Pending" ? (
+                <div className="flex gap-2">
+                  <button onClick={() => decideCancellation(request, "Rejected")} className="border border-[var(--pm-border)] px-3 py-1.5 text-xs text-[var(--pm-text-muted)] mono">Reject</button>
+                  <button onClick={() => {
+                    if (window.confirm(`Approve cancellation for ${request.customer}? This stops future renewal but does not issue a refund.`)) decideCancellation(request, "Approved");
+                  }} className="border border-red-800 bg-red-950/20 px-3 py-1.5 text-xs font-bold text-red-400 mono">Approve Cancellation</button>
+                </div>
+              ) : (
+                <span className={request.status === "Approved" ? "text-xs font-bold text-red-400 mono" : "text-xs font-bold text-[var(--pm-text-muted)] mono"}>{request.status}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
 
       {stream === "meal-plans" ? (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -485,22 +608,28 @@ export default function Subscriptions({ swapAlert, stream }: { swapAlert: boolea
           </div>
         </div>
       ) : (
-        <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
-          <div className="border-b border-[var(--pm-border)] px-4 py-3">
-            <div className="text-sm font-semibold">Ready Series Subscription Catalog</div>
-            <div className="mt-1 text-xs text-[var(--pm-text-muted)]">Predefined products · one planned delivery each month · 3- or 6-month term</div>
+        <div className="space-y-4">
+          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+          <div className="flex items-center justify-between gap-4 border-b border-[var(--pm-border)] px-4 py-3">
+            <div>
+              <div className="text-sm font-semibold">Ready Series Subscription Catalog</div>
+            <div className="mt-1 text-xs text-[var(--pm-text-muted)]">Prepaid packages · one planned delivery every four weeks · 3 or 6 deliveries</div>
+            </div>
+            <button onClick={() => setCatalogModal({ sku: "", name: "", variant: "Non-Beef", items: 10, price3m: 0, price6m: 0 })}
+              className="bg-[#F5B300] px-3 py-2 text-xs font-bold text-black mono">+ Add Subscription</button>
           </div>
+          {catalogSuccess && <div className="border-b border-green-800/40 bg-green-950/20 px-4 py-2 text-xs text-green-400 mono">{catalogSuccess}</div>}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[var(--pm-border-soft)]">
-                  {["SKU", "Package", "Variant", "Items / Delivery", "3 Months", "6 Months"].map(heading => (
+                  {["SKU", "Package", "Variant", "Items / Delivery", "3 Deliveries", "6 Deliveries", "Actions"].map(heading => (
                     <th key={heading} className="whitespace-nowrap px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--pm-text-muted)]">{heading}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {readySeriesSubscriptions.map(product => (
+                {catalogPlans.map(product => (
                   <tr key={product.sku} className="border-b border-[var(--pm-border-soft)]">
                     <td className="px-4 py-2 text-xs font-bold text-[var(--pm-secondary-text)] mono">{product.sku}</td>
                     <td className="px-4 py-2 text-xs font-semibold text-[var(--pm-text-secondary)]">{product.name}</td>
@@ -508,10 +637,21 @@ export default function Subscriptions({ swapAlert, stream }: { swapAlert: boolea
                     <td className="px-4 py-2 text-xs text-[var(--pm-text-secondary)] mono">{product.items}</td>
                     <td className="px-4 py-2 text-xs text-[var(--pm-text-secondary)] mono">${product.price3m.toFixed(2)}</td>
                     <td className="px-4 py-2 text-xs text-[var(--pm-text-secondary)] mono">${product.price6m.toFixed(2)}</td>
+                    <td className="px-4 py-2">
+                      <div className="flex gap-2">
+                        <button onClick={() => setCatalogModal({ ...product })} className="border border-[var(--pm-border)] px-2 py-1 text-xs text-[var(--pm-text-muted)] mono">Edit</button>
+                        <button onClick={() => {
+                          if (!window.confirm(`Remove ${product.sku} from the subscription catalog? Existing customer subscriptions will not be cancelled.`)) return;
+                          setCatalogPlans(plans => plans.filter(plan => plan.sku !== product.sku));
+                          setCatalogSuccess(`${product.sku} removed from the catalog. Existing subscriptions were preserved.`);
+                        }} className="border border-red-800/40 px-2 py-1 text-xs text-red-400 mono">Remove</button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
           </div>
         </div>
       )}
@@ -553,7 +693,7 @@ export default function Subscriptions({ swapAlert, stream }: { swapAlert: boolea
               <tr className="border-b border-[var(--pm-border)]">
                 {stream === "ready-series"
                   ? (activeTab === "Paused"
-                      ? ["Sub ID", "Customer", "SKU", "Term", "Pause Period", "Resume Date", "Payment"].map(h => (
+                      ? ["Sub ID", "Customer", "SKU", "Term", "Pause Period", "Resume Date", "Payment", ""].map(h => (
                           <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                         ))
                       : ["Sub ID", "Customer", "SKU", "Term", "Deliveries", "Renewal Date", "Next Delivery", "Payment", ""].map(h => (
@@ -561,7 +701,7 @@ export default function Subscriptions({ swapAlert, stream }: { swapAlert: boolea
                         ))
                     )
                   : (activeTab === "Paused"
-                      ? ["Sub ID", "Customer", "Plan", "Goal", "Meals/wk", "Pause Period", "Resume Date", "Menu"].map(h => (
+                      ? ["Sub ID", "Customer", "Plan", "Goal", "Meals/wk", "Pause Period", "Resume Date", "Menu", ""].map(h => (
                           <th key={h} className="px-4 py-2 text-left text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                         ))
                       : ["Sub ID", "Customer", "Plan", "Goal", "Meals/wk", "Plan Week", "Wks Left", "Next Delivery", "Next Billing", "Menu", ""].map(h => (
@@ -606,13 +746,14 @@ export default function Subscriptions({ swapAlert, stream }: { swapAlert: boolea
                           {s.paymentStatus ?? "—"}
                         </span>
                       </td>
-                      {activeTab !== "Paused" && (
-                        <td className="px-4 py-2.5">
-                          <button className="text-xs border border-[var(--pm-border)] px-2 py-1 text-[var(--pm-text-muted)] hover:border-[#E85D04] hover:text-[var(--pm-secondary-text)] transition-colors mono">
-                            Manage
-                          </button>
-                        </td>
-                      )}
+                      <td className="px-4 py-2.5">
+                        <button onClick={() => {
+                          setManagedSubscription(s);
+                          setActionFeedback("");
+                        }} className="text-xs border border-[var(--pm-border)] px-2 py-1 text-[var(--pm-text-muted)] hover:border-[#E85D04] hover:text-[var(--pm-secondary-text)] transition-colors mono">
+                          Manage
+                        </button>
+                      </td>
                     </>
                   ) : (
                     <>
@@ -659,13 +800,14 @@ export default function Subscriptions({ swapAlert, stream }: { swapAlert: boolea
                         </span>
                       </td>
 
-                      {activeTab !== "Paused" && (
-                        <td className="px-4 py-2.5">
-                          <button className="text-xs border border-[var(--pm-border)] px-2 py-1 text-[var(--pm-text-muted)] hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors mono">
-                            Manage
-                          </button>
-                        </td>
-                      )}
+                      <td className="px-4 py-2.5">
+                        <button onClick={() => {
+                          setManagedSubscription(s);
+                          setActionFeedback("");
+                        }} className="text-xs border border-[var(--pm-border)] px-2 py-1 text-[var(--pm-text-muted)] hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors mono">
+                          Manage
+                        </button>
+                      </td>
                     </>
                   )}
                 </tr>
@@ -675,6 +817,106 @@ export default function Subscriptions({ swapAlert, stream }: { swapAlert: boolea
           {filtered.length === 0 && (
             <div className="px-4 py-8 text-center text-[var(--pm-text-muted)] text-sm">No {(activeTab as string).toLowerCase()} subscriptions</div>
           )}
+        </div>
+      )}
+
+      {catalogModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setCatalogModal(null)}>
+          <div className="w-full max-w-lg space-y-4 border border-[var(--pm-border)] bg-[var(--pm-surface)] p-6" onClick={event => event.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[var(--pm-border)] pb-3">
+              <div className="font-bold text-[var(--pm-text-secondary)]">{catalogPlans.some(plan => plan.sku === catalogModal.sku) ? "Edit" : "Add"} Subscription Product</div>
+              <button onClick={() => setCatalogModal(null)} className="text-xl text-[var(--pm-text-muted)]">×</button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { key: "sku", label: "SKU", type: "text" },
+                { key: "name", label: "Package name", type: "text" },
+                { key: "variant", label: "Variant", type: "text" },
+                { key: "items", label: "Items / delivery", type: "number" },
+                { key: "price3m", label: "3-delivery package price", type: "number" },
+                { key: "price6m", label: "6-delivery package price", type: "number" },
+              ].map(field => (
+                <label key={field.key} className="space-y-1 text-xs text-[var(--pm-text-muted)]">{field.label}
+                  <input type={field.type} min={field.type === "number" ? "0" : undefined} step={field.key.startsWith("price") ? "0.01" : undefined}
+                    value={catalogModal[field.key as keyof ReadyCatalogPlan]}
+                    onChange={event => setCatalogModal(current => current ? { ...current, [field.key]: field.type === "number" ? Number(event.target.value) : event.target.value } : current)}
+                    className="block w-full border border-[var(--pm-border)] bg-[var(--pm-bg)] px-3 py-2 text-sm text-[var(--pm-text-secondary)]" />
+                </label>
+              ))}
+            </div>
+            <div className="border border-[var(--pm-border)] bg-[var(--pm-bg)] px-3 py-2 text-xs text-[var(--pm-text-muted)]">
+              In the embedded app this catalog record will be linked to its Shopify product and Shopify Subscriptions selling plan.
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setCatalogModal(null)} className="flex-1 border border-[var(--pm-border)] py-2 text-xs text-[var(--pm-text-muted)] mono">Cancel</button>
+              <button onClick={saveCatalogPlan} className="flex-1 bg-[#F5B300] py-2 text-xs font-bold text-black mono">Save Product</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {managedSubscription && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setManagedSubscription(null)}>
+          <div className="w-full max-w-lg space-y-4 border border-[var(--pm-border)] bg-[var(--pm-surface)] p-6" onClick={event => event.stopPropagation()}>
+            <div className="flex items-start justify-between border-b border-[var(--pm-border)] pb-3">
+              <div>
+                <div className="font-bold text-[var(--pm-text-secondary)]">Manage {managedSubscription.id}</div>
+                <div className="mt-1 text-xs text-[var(--pm-text-muted)]">{managedSubscription.customerName} · {managedSubscription.sku ?? managedSubscription.mealPlanType ?? managedSubscription.planType}</div>
+              </div>
+              <button onClick={() => setManagedSubscription(null)} className="text-xl text-[var(--pm-text-muted)]">×</button>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              {[
+                ["Status", managedSubscription.status],
+                ["Next delivery", managedSubscription.nextDelivery || "—"],
+                ["Next billing", managedSubscription.nextBilling || "—"],
+                ["Payment", managedSubscription.paymentStatus || "Managed by Shopify"],
+              ].map(([label, value]) => (
+                <div key={label} className="border border-[var(--pm-border)] bg-[var(--pm-bg)] p-3">
+                  <div className="text-[var(--pm-text-muted)]">{label}</div>
+                  <div className="mt-1 font-semibold text-[var(--pm-text-secondary)]">{value}</div>
+                </div>
+              ))}
+            </div>
+            <div className="border border-blue-900/40 bg-blue-950/10 px-3 py-2 text-xs text-blue-300">
+              Recurring billing and payment methods remain managed by Shopify Subscriptions. Cancellation creates an approval request; refunds are handled separately.
+            </div>
+            {actionFeedback && (
+              <div role="status" className="border border-green-800/40 bg-green-950/20 px-3 py-2 text-xs font-bold text-green-400 mono">
+                {actionFeedback}
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {managedSubscription.status === "Paused"
+                ? <button onClick={() => updateManagedStatus("Active")} className="bg-green-900 px-3 py-2 text-xs font-bold text-green-100 mono">Resume Subscription</button>
+                : <button onClick={() => updateManagedStatus("Paused")} className="border border-yellow-800 px-3 py-2 text-xs text-yellow-400 mono">Pause Subscription</button>}
+              <button onClick={() => setManagedSubscription(null)} className="ml-auto border border-[var(--pm-border)] px-3 py-2 text-xs text-[var(--pm-text-muted)] mono">Close</button>
+            </div>
+            <div className="space-y-2 border border-red-900/40 bg-red-950/10 p-3">
+              <div className="text-xs font-bold text-red-300">Request cancellation</div>
+              <div className="text-xs text-[var(--pm-text-muted)]">Renewal continues until an administrator approves the request. Refunds are handled separately.</div>
+              <textarea
+                rows={2}
+                value={cancellationReason}
+                onChange={event => {
+                  setCancellationReason(event.target.value);
+                  setCancellationError("");
+                }}
+                placeholder="Required — enter the customer's reason"
+                className={`w-full resize-none border bg-[var(--pm-bg)] px-3 py-2 text-xs text-[var(--pm-text-secondary)] ${cancellationError ? "border-red-600" : "border-[var(--pm-border)]"}`}
+              />
+              {cancellationError && <div role="alert" className="text-xs font-bold text-red-400 mono">{cancellationError}</div>}
+              <button
+                onClick={requestCancellation}
+                disabled={cancellationRequests.some(request => request.subscriptionId === managedSubscription.id && request.status === "Pending")}
+                className="border border-red-800 px-3 py-2 text-xs font-bold text-red-400 disabled:cursor-not-allowed disabled:opacity-40 mono"
+              >
+                {cancellationRequests.some(request => request.subscriptionId === managedSubscription.id && request.status === "Pending")
+                  ? "Cancellation Pending Approval"
+                  : "Submit Cancellation Request"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

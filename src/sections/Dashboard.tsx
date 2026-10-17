@@ -264,8 +264,8 @@ function ReadySeriesDashboard({ swapAlert, theme }: { swapAlert: boolean; theme:
   const rtgOrders = rsOrders.filter(o => o.planType === "Ready Series A-la-carte");
 
   const termBreakdown = [
-    { term: "3 Months", count: subscriptions.filter(s => s.planType !== "Meal Plan" && s.term === "3 months" && s.status === "Active").length },
-    { term: "6 Months", count: subscriptions.filter(s => s.planType !== "Meal Plan" && s.term === "6 months" && s.status === "Active").length },
+    { term: "3 Deliveries", count: subscriptions.filter(s => s.planType !== "Meal Plan" && s.term === "3 deliveries" && s.status === "Active").length },
+    { term: "6 Deliveries", count: subscriptions.filter(s => s.planType !== "Meal Plan" && s.term === "6 deliveries" && s.status === "Active").length },
   ];
 
   return (

@@ -5,7 +5,7 @@ import Delivery from "./sections/Delivery";
 import PrintSlips from "./sections/PrintSlips";
 import Customers from "./sections/Customers";
 import Subscriptions from "./sections/Subscriptions";
-import MenuReview from "./sections/MenuReview";
+import MenuReview from "./sections/MenuReviewWorkspace";
 import Kitchen from "./sections/Kitchen";
 import Inventory from "./sections/Inventory";
 import Dispatch from "./sections/Dispatch";
@@ -38,8 +38,9 @@ import FailedDeliveries from "./sections/FailedDeliveries";
 import Fulfillment from "./sections/Fulfillment";
 import PauseManagement from "./sections/PauseManagement";
 import BillingCycles from "./sections/BillingCycles";
-import SubscriberProfile from "./sections/SubscriberProfile";
+import CustomerProfile from "./sections/CustomerProfile";
 import Settings from "./sections/Settings";
+import CatalogCenter from "./sections/CatalogCenter";
 import LoginPage from "./components/LoginPage";
 import { initialUsers, type UserAccount } from "./accessControl";
 
@@ -141,6 +142,7 @@ type Section =
   | "operations-center" | "production-forecast" | "production-board" | "export-center"
   | "failed-deliveries" | "fulfillment" | "pause-management" | "billing-cycles"
   | "subscriber-profile"
+  | "catalog"
   | "settings";
 
 interface NavItem {
@@ -180,11 +182,17 @@ const navGroups: { group: string; items: NavItem[] }[] = [
     items: [
       { id: "customers",          label: "Customers",          icon: "◎" },
       { id: "subscriptions",      label: "Subscriptions",      icon: "↻" },
-      { id: "subscriber-profile", label: "Subscriber Profile", icon: "◎", streamOnly: "meal-plans" },
+      { id: "subscriber-profile", label: "Customer Profile", icon: "◎" },
       { id: "menu-review",        label: "Menu Review",        icon: "☰", streamOnly: "meal-plans" },
       { id: "pause-management",   label: "Pause Management",   icon: "⊟", streamOnly: "meal-plans" },
       { id: "billing-cycles",     label: "Billing Cycles",     icon: "↻", streamOnly: "meal-plans" },
       { id: "fulfillment",        label: "Fulfillment",        icon: "◆", streamOnly: "meal-plans" },
+    ],
+  },
+  {
+    group: "Catalog",
+    items: [
+      { id: "catalog", label: "Catalog", icon: "▣" },
     ],
   },
   {
@@ -273,7 +281,8 @@ const sectionTitles: Record<Section, string> = {
   "fulfillment": "Subscription Fulfillment Engine",
   "pause-management": "Pause Management Center",
   "billing-cycles": "Billing Cycle Center",
-  "subscriber-profile": "Subscriber Profile",
+  "subscriber-profile": "Customer Profile",
+  catalog: "Catalog",
   settings: "Settings",
 };
 
@@ -286,11 +295,13 @@ const sharedSections: Section[] = [
   "wallet", "refunds",
   "operations-center", "executive", "business-intel",
   "acl", "audit-logs", "business-rules", "whatsapp",
-  "settings",
+  "settings", "catalog", "subscriber-profile",
 ];
 
 const otherSalesSections = new Set<Section>([
   "dashboard",
+  "customers",
+  "subscriber-profile",
   "wallet",
   "finance",
   "refunds",
@@ -305,9 +316,9 @@ const otherSalesSections = new Set<Section>([
 function checkNearCutoff(): boolean {
   const d = new Date();
   const isThursday = d.getDay() === 4;
-  const h = d.getHours();
-  const m = d.getMinutes();
-  return isThursday && ((h === 11 && m >= 0) || (h === 12 && m < 60));
+  const minutes = d.getHours() * 60 + d.getMinutes();
+  const cutoffMinutes = 13 * 60 + 59;
+  return isThursday && minutes >= cutoffMinutes - 120 && minutes < cutoffMinutes;
 }
 
 export default function App() {
@@ -324,10 +335,11 @@ export default function App() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [stream, setStream] = useState<BusinessStream>("meal-plans");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
-    new Set(navGroups.map(g => g.group))
+    new Set(["Admin", "Communication"])
   );
   const [streamDropdownOpen, setStreamDropdownOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [profileCustomerId, setProfileCustomerId] = useState<string | undefined>(undefined);
   const isNearCutoff = checkNearCutoff();
 
   const selectTheme = (nextTheme: Theme) => {
@@ -530,7 +542,7 @@ export default function App() {
             const visibleItems = g.items.filter(item => {
               if (isOtherSales && !otherSalesSections.has(item.id)) return false;
               if (item.streamOnly && item.streamOnly !== stream) return false;
-              return grantedSections.has(item.id);
+              return currentUser.role === "Super Admin" || grantedSections.has(item.id);
             });
             if (visibleItems.length === 0) return null;
             const isGCollapsed = collapsedGroups.has(g.group);
@@ -721,6 +733,14 @@ export default function App() {
 
           {/* Right: signed-in identity, theme, and business stream */}
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            {!isOtherSales && (
+              <button
+                onClick={() => setSection("catalog")}
+                className="hidden border border-[#F5B300]/50 bg-[#F5B300]/10 px-3 py-2 text-xs font-bold text-[var(--pm-accent-text)] transition-colors hover:bg-[#F5B300]/20 lg:block"
+              >
+                {isMealPlans ? "+ Create Meal Plan" : "+ Create Ready Series Item"}
+              </button>
+            )}
             <div
               className="flex max-w-44 items-center gap-2 rounded-lg border px-2 py-1.5"
               style={{ background: "var(--pm-surface-subtle)", borderColor: "var(--pm-border)" }}
@@ -815,7 +835,7 @@ export default function App() {
         </header>
 
         {/* Shopify system-of-record banner for commerce-adjacent sections */}
-        {["orders", "refunds", "wallet", "finance", "customers"].includes(section) && (
+        {["orders", "refunds", "wallet", "finance", "customers", "catalog"].includes(section) && (
           <div className="flex-shrink-0 px-5 py-1.5 flex items-center gap-2" style={{ background: theme === "dark" ? "#0A0A0A" : "#F6FEF9", borderBottom: "1px solid var(--pm-surface-muted)" }}>
             <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 8.5, color: theme === "dark" ? "#66A566" : "#3A6B3A", letterSpacing: "0.06em" }}>◈ SHOPIFY</span>
             <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: "var(--pm-text-muted)" }}>
@@ -840,7 +860,10 @@ export default function App() {
           {section === "orders" && <Orders stream={stream} />}
           {section === "delivery" && <Delivery stream={stream} />}
           {section === "print-slips" && <PrintSlips stream={stream} />}
-          {section === "customers" && <Customers stream={stream} />}
+          {section === "customers" && <Customers stream={stream} onOpenProfile={customerId => {
+            setProfileCustomerId(customerId);
+            setSection("subscriber-profile");
+          }} />}
           {section === "subscriptions" && <Subscriptions stream={stream} swapAlert={isNearCutoff} />}
           {section === "menu-review" && <MenuReview />}
           {section === "menu-planning" && <MenuPlanning />}
@@ -883,7 +906,8 @@ export default function App() {
           {section === "fulfillment" && <Fulfillment />}
           {section === "pause-management" && <PauseManagement />}
           {section === "billing-cycles" && <BillingCycles />}
-          {section === "subscriber-profile" && <SubscriberProfile />}
+          {section === "subscriber-profile" && <CustomerProfile initialCustomerId={profileCustomerId} />}
+          {section === "catalog" && <CatalogCenter stream={stream} />}
           {section === "settings" && <Settings initialTab={settingsTab} user={currentUser} />}
         </main>
       </div>

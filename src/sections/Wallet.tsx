@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import StatusBadge from "../components/StatusBadge";
 import { customers } from "../data";
 import { giftCardRules, walletRules } from "../catalog";
@@ -11,9 +11,9 @@ const tiers = walletRules.redemptionTiers.map((tier, index) => ({
 }));
 
 const earnRates = [
-  { type: "Meal Plan", rate: "1.5× points", note: "automatic plan multiplier" },
-  { type: "Ready Series", rate: "Tier rate", note: "1× / 1.5× / 2× per $ spent" },
-  { type: "Referral", rate: `${walletRules.referralPoints} pts`, note: "after the first completed order" },
+  { type: "Meal Plan", rate: "1 point / $1", note: "eligible delivered orders" },
+  { type: "Ready Series", rate: "1 point / $1", note: "individual meals and bundles" },
+  { type: "Gift Cards", rate: "No points", note: "purchase and gift-funded spend excluded" },
   { type: "Points validity", rate: "90 days", note: "place an order to remain active" },
 ];
 
@@ -54,7 +54,11 @@ export default function Wallet() {
   const [creditAmount, setCreditAmount] = useState("");
   const [creditType, setCreditType] = useState<"credit" | "points">("credit");
   const [creditNote, setCreditNote] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const noteRef = useRef<HTMLInputElement>(null);
+  const [transactions, setTransactions] = useState(txData);
+  const [balanceAdjustments, setBalanceAdjustments] = useState<Record<string, { credit: number; points: number }>>({});
   const [editingTx, setEditingTx] = useState<string | null>(null);
   const [editDesc, setEditDesc] = useState("");
   const [descHistory, setDescHistory] = useState<DescEdit[]>([]);
@@ -62,13 +66,44 @@ export default function Wallet() {
     Object.fromEntries(txData.map(t => [t.id, t.description]))
   );
 
-  const topBalances = customers.filter(c => c.walletBalance > 0 || c.points > 0)
+  const topBalances = customers.map(customer => ({
+    ...customer,
+    walletBalance: customer.walletBalance + (balanceAdjustments[customer.id]?.credit ?? 0),
+    points: customer.points + (balanceAdjustments[customer.id]?.points ?? 0),
+  })).filter(c => c.walletBalance > 0 || c.points > 0)
     .sort((a, b) => b.points - a.points);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
+    if (!creditNote.trim()) {
+      setSubmitted("");
+      setSubmitError("Support note required before credits can be added.");
+      noteRef.current?.focus();
+      return;
+    }
+    const customer = customers.find(item => item.id === creditCustomer);
+    const amount = Number(creditAmount);
+    if (!customer || !Number.isFinite(amount) || amount <= 0) return;
+    setSubmitError("");
+    setBalanceAdjustments(current => ({
+      ...current,
+      [customer.id]: {
+        credit: (current[customer.id]?.credit ?? 0) + (creditType === "credit" ? amount : 0),
+        points: (current[customer.id]?.points ?? 0) + (creditType === "points" ? amount : 0),
+      },
+    }));
+    const transactionId = `ADJ-${String(transactions.length + 1).padStart(4, "0")}`;
+    const description = `Manual admin ${creditType} — ${customer.name} — ${creditNote.trim()}`;
+    setTransactions(current => [{
+      id: transactionId,
+      amount: creditType === "credit" ? amount : 0,
+      description,
+      status: "Credit Applied",
+      date: "Just now",
+    }, ...current]);
+    setTxDescriptions(current => ({ ...current, [transactionId]: description }));
+    setSubmitted(`${creditType === "credit" ? `$${amount.toFixed(2)} credit` : `${amount.toLocaleString()} points`} added to ${customer.name}. Balance and transaction history updated.`);
+    setTimeout(() => setSubmitted(""), 4000);
     setCreditCustomer(""); setCreditAmount(""); setCreditNote("");
   };
 
@@ -95,7 +130,7 @@ export default function Wallet() {
             Values: {giftCardRules.denominations.map(amount => `$${amount}`).join(" · ")}
           </div>
           <div className="mt-1 text-xs text-[var(--pm-text-muted)] mono">
-            Never expires · All purchases · Physical card +${giftCardRules.physicalCardFee} · Non-refundable
+            Expires after 1 year · Converts to Wallet on redemption · Physical card +${giftCardRules.physicalCardFee} · Non-refundable
           </div>
         </div>
       </div>
@@ -242,14 +277,23 @@ export default function Wallet() {
             <div>
               <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Reason <span className="text-red-400">*</span></label>
               <input
+                ref={noteRef}
                 type="text"
                 value={creditNote}
-                onChange={e => setCreditNote(e.target.value)}
+                onChange={e => {
+                  setCreditNote(e.target.value);
+                  setSubmitError("");
+                }}
                 placeholder="Required — state reason for this manual adjustment…"
-                className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]"
-                required
+                aria-invalid={Boolean(submitError)}
+                className={`w-full bg-[var(--pm-bg)] border text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none placeholder:text-[var(--pm-text-muted)] ${submitError ? "border-red-600 focus:border-red-500" : "border-[var(--pm-border)] focus:border-[#F5B300]"}`}
               />
             </div>
+            {submitError && (
+              <div role="alert" className="border border-red-700 bg-red-950/30 px-3 py-2 text-xs font-bold text-red-300 mono">
+                {submitError}
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mono">
               <div>
                 <div className="text-[var(--pm-text-muted)] mb-0.5">Admin Identity</div>
@@ -269,7 +313,7 @@ export default function Wallet() {
               Apply Adjustment
             </button>
             {submitted && (
-              <div className="text-xs text-green-400 mono text-center">Adjustment applied successfully</div>
+              <div role="status" className="border border-green-800/40 bg-green-950/20 px-3 py-2 text-xs font-bold text-green-400 mono">{submitted}</div>
             )}
           </form>
         </div>
@@ -324,7 +368,7 @@ export default function Wallet() {
                 </tr>
               </thead>
               <tbody>
-                {txData.map((tx, i) => (
+                {transactions.map((tx, i) => (
                   <tr key={tx.id} className={`border-b border-[var(--pm-border)] ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
                     <td className="px-3 py-2.5 mono text-xs text-[var(--pm-accent-text)]">{tx.id}</td>
                     <td className={`px-3 py-2.5 mono text-xs font-bold ${tx.amount < 0 ? "text-red-400" : "text-[var(--pm-text-secondary)]"}`}>

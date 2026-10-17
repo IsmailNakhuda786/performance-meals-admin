@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { goalLabel, type GoalType } from "../data";
 
 type WorkflowStage = "create" | "approve" | "publish" | "review" | "export";
 type MealStatus = "draft" | "approved" | "published" | "locked";
@@ -16,7 +17,7 @@ interface Meal {
   status: MealStatus;
 }
 
-const weekMeals: Meal[] = [
+const initialWeekMeals: Meal[] = [
   { id: "M-01", name: "Teriyaki Chicken with Jasmine Rice", goal: "BUILD", calories: 620, protein: 48, carbs: 62, fat: 14, allergens: "Soy, Gluten", prep: "30 min", status: "approved" },
   { id: "M-02", name: "Lemon Herb Salmon with Broccoli", goal: "CUT", calories: 420, protein: 38, carbs: 18, fat: 22, allergens: "Fish", prep: "25 min", status: "approved" },
   { id: "M-03", name: "Beef Bulgogi Bowl", goal: "MAINTAIN", calories: 540, protein: 42, carbs: 48, fat: 16, allergens: "Soy, Gluten", prep: "35 min", status: "draft" },
@@ -28,7 +29,7 @@ const stages: { id: WorkflowStage; label: string; role: string; desc: string }[]
   { id: "create", label: "Create Menu", role: "Kitchen Manager", desc: "Draft weekly meals with macros, allergens, prep time" },
   { id: "approve", label: "Approve Menu", role: "Operations + Nutrition", desc: "Review nutritional accuracy, flag issues, approve or reject" },
   { id: "publish", label: "Publish Menu", role: "Operations", desc: "Push approved menu live to customer-facing Shopify portal" },
-  { id: "review", label: "Customer Review", role: "Subscribers", desc: "Customers select or swap meals. Window closes Thursday 12pm" },
+  { id: "review", label: "Customer Review", role: "Subscribers", desc: "Customers select or swap meals. Window closes Thursday 1:59pm SGT" },
   { id: "export", label: "Kitchen Export", role: "Kitchen Manager", desc: "Export finalised production list grouped by goal and meal" },
 ];
 
@@ -44,12 +45,57 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
   const [activeStage, setActiveStage] = useState<WorkflowStage>("create");
   const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
   const [showAddMeal, setShowAddMeal] = useState(demoMode ?? false);
+  const [meals, setMeals] = useState(initialWeekMeals);
+  const [editingMealId, setEditingMealId] = useState<string | null>(null);
+  const [mealForm, setMealForm] = useState({ name: "", goal: "CUT" as GoalType, calories: "", protein: "", carbs: "", fat: "", allergens: "", prep: "" });
+  const [formError, setFormError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const approvedCount = weekMeals.filter(m => m.status === "approved").length;
-  const draftCount = weekMeals.filter(m => m.status === "draft").length;
+  const approvedCount = meals.filter(m => m.status === "approved").length;
+  const draftCount = meals.filter(m => m.status === "draft").length;
   const canAdvance = draftCount === 0;
 
   const stageIndex = stages.findIndex(s => s.id === activeStage);
+
+  const openMealEditor = (meal?: Meal) => {
+    setEditingMealId(meal?.id ?? null);
+    setMealForm(meal ? {
+      name: meal.name,
+      goal: meal.goal,
+      calories: String(meal.calories),
+      protein: String(meal.protein),
+      carbs: String(meal.carbs),
+      fat: String(meal.fat),
+      allergens: meal.allergens,
+      prep: meal.prep,
+    } : { name: "", goal: "CUT", calories: "", protein: "", carbs: "", fat: "", allergens: "", prep: "" });
+    setFormError("");
+    setShowAddMeal(true);
+  };
+
+  const saveMeal = () => {
+    if (!mealForm.name.trim() || !mealForm.calories || !mealForm.protein || !mealForm.carbs) {
+      setFormError("Meal name, calories, protein, and carbohydrates are required.");
+      return;
+    }
+    const meal: Meal = {
+      id: editingMealId ?? `M-${String(meals.length + 1).padStart(2, "0")}`,
+      name: mealForm.name.trim(),
+      goal: mealForm.goal,
+      calories: Number(mealForm.calories),
+      protein: Number(mealForm.protein),
+      carbs: Number(mealForm.carbs),
+      fat: Number(mealForm.fat || 0),
+      allergens: mealForm.allergens.trim() || "None recorded",
+      prep: mealForm.prep.trim() || "Not set",
+      status: "draft",
+    };
+    setMeals(current => editingMealId ? current.map(item => item.id === editingMealId ? meal : item) : [...current, meal]);
+    setSelectedMeal(meal);
+    setShowAddMeal(false);
+    setSuccess(`${meal.name} saved as a draft.`);
+    setTimeout(() => setSuccess(""), 4000);
+  };
 
   return (
     <div className="p-6 space-y-5">
@@ -63,6 +109,8 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
           <button className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-4 py-2 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors">Export Kitchen List</button>
         </div>
       </div>
+
+      {success && <div role="status" className="border border-green-800/40 bg-green-950/20 px-4 py-3 text-xs font-bold text-green-400 mono">{success}</div>}
 
       {/* Workflow stages */}
       <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4">
@@ -101,7 +149,7 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Meals This Week", value: weekMeals.length, color: "var(--pm-text-secondary)" },
+          { label: "Meals This Week", value: meals.length, color: "var(--pm-text-secondary)" },
           { label: "Approved", value: approvedCount, color: "#22C55E" },
           { label: "Drafts Remaining", value: draftCount, color: draftCount > 0 ? "#F5B300" : "#22C55E" },
           { label: "Status", value: canAdvance ? "Ready" : "Pending", color: canAdvance ? "#22C55E" : "#F5B300" },
@@ -118,9 +166,9 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="col-span-3 border border-[var(--pm-border)] bg-[var(--pm-surface)]">
             <div className="px-4 py-3 border-b border-[var(--pm-border)] flex items-center justify-between">
-              <span className="text-sm font-semibold">Week Menu — {weekMeals.length} meals</span>
+              <span className="text-sm font-semibold">Week Menu — {meals.length} meals</span>
               {activeStage === "create" && (
-                <button onClick={() => setShowAddMeal(true)} className="text-xs border border-[#F5B300]/40 text-[var(--pm-accent-text)] px-3 py-1 mono hover:bg-[#F5B300]/10 transition-colors">+ Add Meal</button>
+                <button onClick={() => openMealEditor()} className="text-xs border border-[#F5B300]/40 text-[var(--pm-accent-text)] px-3 py-1 mono hover:bg-[#F5B300]/10 transition-colors">+ Add Meal</button>
               )}
             </div>
             <table className="w-full text-sm">
@@ -132,12 +180,12 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
                 </tr>
               </thead>
               <tbody>
-                {weekMeals.map((m, i) => (
+                {meals.map((m, i) => (
                   <tr key={m.id} onClick={() => setSelectedMeal(m)}
                     className={`border-b border-[var(--pm-border)] cursor-pointer transition-colors ${selectedMeal?.id === m.id ? "bg-[var(--pm-surface-subtle)]" : i % 2 === 0 ? "hover:bg-[var(--pm-surface-muted)]" : "bg-[var(--pm-surface-subtle)] hover:bg-[var(--pm-surface-muted)]"}`}>
                     <td className="px-3 py-2.5 font-medium text-xs">{m.name}</td>
                     <td className="px-3 py-2.5">
-                      <span className="text-xs mono font-bold" style={{ color: goalColor[m.goal] }}>{m.goal}</span>
+                      <span className="text-xs font-bold" style={{ color: goalColor[m.goal] }}>{goalLabel(m.goal)}</span>
                     </td>
                     <td className="px-3 py-2.5 mono text-xs">{m.calories}</td>
                     <td className="px-3 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{m.protein}g</td>
@@ -148,7 +196,11 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
                     </td>
                     <td className="px-3 py-2.5">
                       {activeStage === "approve" && m.status === "draft" && (
-                        <button className="text-xs border border-green-800/40 px-2 py-0.5 text-green-400 hover:bg-green-950 mono transition-colors">Approve</button>
+                        <button onClick={event => {
+                          event.stopPropagation();
+                          setMeals(current => current.map(item => item.id === m.id ? { ...item, status: "approved" } : item));
+                          setSelectedMeal(current => current?.id === m.id ? { ...current, status: "approved" } : current);
+                        }} className="text-xs border border-green-800/40 px-2 py-0.5 text-green-400 hover:bg-green-950 mono transition-colors">Approve</button>
                       )}
                     </td>
                   </tr>
@@ -165,7 +217,7 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="font-semibold text-sm">{selectedMeal.name}</div>
-                    <div className="text-xs mono mt-0.5" style={{ color: goalColor[selectedMeal.goal] }}>{selectedMeal.goal} Plan</div>
+                    <div className="text-xs mt-0.5" style={{ color: goalColor[selectedMeal.goal] }}>{goalLabel(selectedMeal.goal)} goal</div>
                   </div>
                   <span className={`text-xs mono px-2 py-0.5 font-bold ${statusStyle[selectedMeal.status]}`}>{selectedMeal.status}</span>
                 </div>
@@ -186,13 +238,20 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
                 </div>
                 {activeStage === "create" && (
                   <div className="flex gap-2">
-                    <button className="flex-1 border border-[var(--pm-border)] text-[var(--pm-text-muted)] text-xs py-2 mono hover:text-[var(--pm-text-secondary)] transition-colors">Edit</button>
-                    <button className="flex-1 border border-red-800/40 text-red-400 text-xs py-2 mono hover:bg-red-950 transition-colors">Remove</button>
+                    <button onClick={() => openMealEditor(selectedMeal)} className="flex-1 border border-[var(--pm-border)] text-[var(--pm-text-muted)] text-xs py-2 mono hover:text-[var(--pm-text-secondary)] transition-colors">Edit</button>
+                    <button onClick={() => {
+                      if (!window.confirm(`Remove ${selectedMeal.name} from this week's menu?`)) return;
+                      setMeals(current => current.filter(item => item.id !== selectedMeal.id));
+                      setSelectedMeal(null);
+                    }} className="flex-1 border border-red-800/40 text-red-400 text-xs py-2 mono hover:bg-red-950 transition-colors">Remove</button>
                   </div>
                 )}
                 {activeStage === "approve" && selectedMeal.status === "draft" && (
                   <div className="flex gap-2">
-                    <button className="flex-1 bg-green-800 text-white text-xs font-bold py-2 mono hover:bg-green-700 transition-colors">Approve</button>
+                    <button onClick={() => {
+                      setMeals(current => current.map(item => item.id === selectedMeal.id ? { ...item, status: "approved" } : item));
+                      setSelectedMeal({ ...selectedMeal, status: "approved" });
+                    }} className="flex-1 bg-green-800 text-white text-xs font-bold py-2 mono hover:bg-green-700 transition-colors">Approve</button>
                     <button className="flex-1 border border-red-800/40 text-red-400 text-xs py-2 mono hover:bg-red-950 transition-colors">Reject</button>
                   </div>
                 )}
@@ -212,15 +271,15 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
             </div>
           ) : (
             <div className="border border-green-800/30 bg-green-950/10 px-4 py-3 text-xs text-green-300 mono">
-              ✓ All {weekMeals.length} meals approved. Ready to publish to subscriber portal.
+              All {meals.length} meals approved. Ready to publish to subscriber portal.
             </div>
           )}
           <div className="space-y-2 text-sm">
-            {weekMeals.map(m => (
+            {meals.map(m => (
               <div key={m.id} className="flex items-center gap-3">
                 <div className="w-2 h-2" style={{ background: goalColor[m.goal] }} />
                 <span className="flex-1">{m.name}</span>
-                <span className="text-xs mono" style={{ color: goalColor[m.goal] }}>{m.goal}</span>
+                <span className="text-xs" style={{ color: goalColor[m.goal] }}>{goalLabel(m.goal)}</span>
                 <span className={`text-xs mono ${statusStyle[m.status]} px-1.5 py-0.5`}>{m.status}</span>
               </div>
             ))}
@@ -260,7 +319,7 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
                   <tr key={r.name} className={`border-b border-[var(--pm-border)] ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
                     <td className="px-4 py-2.5 font-medium">{r.name}</td>
                     <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{r.plan}</td>
-                    <td className="px-4 py-2.5"><span className="text-xs mono font-bold" style={{ color: goalColor[r.goal] }}>{r.goal}</span></td>
+                    <td className="px-4 py-2.5"><span className="text-xs font-bold" style={{ color: goalColor[r.goal] }}>{goalLabel(r.goal as GoalType)}</span></td>
                     <td className="px-4 py-2.5 mono text-xs">{r.meals} / 5</td>
                     <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{r.swaps}</td>
                     <td className="px-4 py-2.5">
@@ -283,12 +342,12 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
             ✓ Menu locked. Export production list to kitchen for current week.
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {["CUT", "BUILD", "MAINTAIN"].map(goal => {
-              const goalMeals = weekMeals.filter(m => m.goal === goal);
+            {(["CUT", "BUILD", "MAINTAIN"] as GoalType[]).map(goal => {
+              const goalMeals = meals.filter(m => m.goal === goal);
               return (
                 <div key={goal} className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">
                   <div className="px-4 py-3 border-b border-[var(--pm-border)] flex items-center justify-between">
-                    <span className="text-sm font-bold mono" style={{ color: goalColor[goal] }}>{goal}</span>
+                    <span className="text-sm font-bold" style={{ color: goalColor[goal] }}>{goalLabel(goal)}</span>
                     <span className="text-xs text-[var(--pm-text-muted)] mono">{goalMeals.length} meals</span>
                   </div>
                   <div className="divide-y divide-[var(--pm-border-soft)]">
@@ -316,39 +375,48 @@ export default function MenuPlanning({ demoMode }: { demoMode?: boolean } = {}) 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
           <div className="bg-[var(--pm-surface)] border border-[var(--pm-border)] w-full max-w-[480px]">
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--pm-border)]">
-              <span className="font-bold text-[var(--pm-accent-text)] mono">Add Meal</span>
+              <span className="font-bold text-[var(--pm-accent-text)] mono">{editingMealId ? "Edit Meal" : "Add Meal"}</span>
               <button onClick={() => setShowAddMeal(false)} className="text-[var(--pm-text-muted)] hover:text-[var(--pm-text-secondary)] text-xl">×</button>
             </div>
             <div className="p-4 space-y-3">
               <div>
                 <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Meal Name</label>
-                <input type="text" placeholder="e.g. Grilled Chicken with Quinoa" className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]" />
+                <input type="text" value={mealForm.name} onChange={event => setMealForm(current => ({ ...current, name: event.target.value }))} placeholder="e.g. Grilled Chicken with Quinoa" className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Goal</label>
-                  <select className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300]">
-                    <option>CUT</option><option>BUILD</option><option>MAINTAIN</option>
+                  <select value={mealForm.goal} onChange={event => setMealForm(current => ({ ...current, goal: event.target.value as GoalType }))} className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300]">
+                    {(["CUT", "BUILD", "MAINTAIN"] as GoalType[]).map(goal => <option key={goal} value={goal}>{goalLabel(goal)}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Calories</label>
-                  <input type="number" placeholder="500" className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]" />
+                  <input type="number" value={mealForm.calories} onChange={event => setMealForm(current => ({ ...current, calories: event.target.value }))} placeholder="500" className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]" />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Protein (g)</label>
-                  <input type="number" placeholder="40" className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]" />
+                  <input type="number" value={mealForm.protein} onChange={event => setMealForm(current => ({ ...current, protein: event.target.value }))} placeholder="40" className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]" />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Carbs (g)</label>
-                  <input type="number" placeholder="45" className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]" />
+                  <input type="number" value={mealForm.carbs} onChange={event => setMealForm(current => ({ ...current, carbs: event.target.value }))} placeholder="45" className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Fat (g)</label>
+                  <input type="number" value={mealForm.fat} onChange={event => setMealForm(current => ({ ...current, fat: event.target.value }))} placeholder="15" className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300]" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Prep time</label>
+                  <input value={mealForm.prep} onChange={event => setMealForm(current => ({ ...current, prep: event.target.value }))} placeholder="30 min" className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300]" />
                 </div>
               </div>
               <div>
                 <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider block mb-1">Allergens</label>
-                <input type="text" placeholder="e.g. Gluten, Soy" className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]" />
+                <input type="text" value={mealForm.allergens} onChange={event => setMealForm(current => ({ ...current, allergens: event.target.value }))} placeholder="e.g. Gluten, Soy" className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 focus:outline-none focus:border-[#F5B300] placeholder:text-[var(--pm-text-muted)]" />
               </div>
-              <button onClick={() => setShowAddMeal(false)} className="w-full bg-[#F5B300] text-black py-2 text-sm font-bold mono hover:bg-[#C99200] transition-colors">
+              {formError && <div role="alert" className="border border-red-700 bg-red-950/30 px-3 py-2 text-xs font-bold text-red-300 mono">{formError}</div>}
+              <button onClick={saveMeal} className="w-full bg-[#F5B300] text-black py-2 text-sm font-bold mono hover:bg-[#C99200] transition-colors">
                 Save as Draft
               </button>
             </div>
