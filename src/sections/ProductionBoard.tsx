@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import PendingWorkBanner from "../components/PendingWorkBanner";
 import { downloadExcel, printHtml, nowStr, nowTime } from "../utils/flowUtils";
+import { readLocalState, writeLocalState } from "../utils/localState";
 
 type ProdStatus = "pending" | "in-production" | "produced" | "packed";
 
@@ -40,8 +42,8 @@ const priorityStyle: Record<string, string> = {
   low: "text-[var(--pm-text-muted)] bg-[var(--pm-surface-subtle)] border border-[var(--pm-border-soft)]",
 };
 
-export default function ProductionBoard() {
-  const [items, setItems] = useState(initialItems);
+export default function ProductionBoard({ onPendingCountChange }: { onPendingCountChange?: (count: number) => void } = {}) {
+  const [items, setItems] = useState(() => readLocalState("pm-production-board-workflow", initialItems));
   const [statusFilter, setStatusFilter] = useState<ProdStatus | "all">("all");
   const [streamFilter, setStreamFilter] = useState<"RS" | "MP" | "all">("all");
 
@@ -67,6 +69,14 @@ export default function ProductionBoard() {
     produced: items.filter(i => i.status === "produced").length,
     packed: items.filter(i => i.status === "packed").length,
   };
+
+  useEffect(() => {
+    onPendingCountChange?.(counts.pending);
+  }, [counts.pending, onPendingCountChange]);
+
+  useEffect(() => {
+    writeLocalState("pm-production-board-workflow", items);
+  }, [items]);
 
   return (
     <div className="p-6 space-y-5">
@@ -102,6 +112,15 @@ export default function ProductionBoard() {
           </button>
         </div>
       </div>
+
+      <PendingWorkBanner
+        count={counts.pending}
+        itemLabel="pending production item"
+        detail={`${items.filter(item => item.status === "pending").map(item => item.id).join(", ")} must be started before production can progress.`}
+        reviewing={statusFilter === "pending"}
+        onReview={() => setStatusFilter("pending")}
+        onShowAll={() => setStatusFilter("all")}
+      />
 
       {/* Status pipeline */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[var(--pm-surface-muted)]">

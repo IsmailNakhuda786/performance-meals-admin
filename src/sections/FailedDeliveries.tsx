@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { downloadCSV, nowStr } from "../utils/flowUtils";
+import PendingWorkBanner from "../components/PendingWorkBanner";
+import { readLocalState, writeLocalState } from "../utils/localState";
 
 type FailureReason = "unavailable" | "wrong-address" | "rejected" | "other";
 type FailStatus = "open" | "reattempt-scheduled" | "refund-requested" | "resolved" | "escalated";
@@ -42,10 +44,10 @@ const statusStyle: Record<FailStatus, { label: string; color: string; bg: string
   resolved: { label: "Resolved", color: "#22C55E", bg: "bg-green-950/30 border border-green-800/30" },
 };
 
-export default function FailedDeliveries({ demoMode }: { demoMode?: boolean } = {}) {
+export default function FailedDeliveries({ demoMode, onPendingCountChange }: { demoMode?: boolean; onPendingCountChange?: (count: number) => void } = {}) {
   const [statusFilter, setStatusFilter] = useState<FailStatus | "all">("all");
   const [selected, setSelected] = useState<FailedDelivery | null>(demoMode ? failures[0] : null);
-  const [items, setItems] = useState(failures);
+  const [items, setItems] = useState(() => readLocalState("pm-failed-deliveries-workflow", failures));
 
   const filtered = items.filter(f =>
     statusFilter === "all" ? true : f.status === statusFilter
@@ -63,6 +65,14 @@ export default function FailedDeliveries({ demoMode }: { demoMode?: boolean } = 
     resolved: items.filter(f => f.status === "resolved").length,
   };
 
+  useEffect(() => {
+    onPendingCountChange?.(counts.open);
+  }, [counts.open, onPendingCountChange]);
+
+  useEffect(() => {
+    writeLocalState("pm-failed-deliveries-workflow", items);
+  }, [items]);
+
   return (
     <div className="p-6 space-y-5">
       <div className="flex items-center justify-between">
@@ -76,6 +86,19 @@ export default function FailedDeliveries({ demoMode }: { demoMode?: boolean } = 
           Export ↓
         </button>
       </div>
+
+      <PendingWorkBanner
+        count={counts.open}
+        itemLabel="open failed delivery"
+        detail={items.filter(item => item.status === "open").map(item => `${item.id} · ${item.customer}`).join(", ") + " needs a recovery decision."}
+        reviewing={statusFilter === "open"}
+        onReview={() => {
+          setStatusFilter("open");
+          const firstOpen = items.find(item => item.status === "open");
+          if (firstOpen) setSelected(firstOpen);
+        }}
+        onShowAll={() => setStatusFilter("all")}
+      />
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

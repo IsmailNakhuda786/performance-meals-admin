@@ -1,21 +1,8 @@
-import { useState, Fragment } from "react";
+import { useEffect, useState, Fragment } from "react";
 import PillToggle from "../components/PillToggle";
+import type { NotificationChannel as Channel, NotificationType as AlertType, OperationalNotification } from "../data";
 
-type Channel = "Email" | "WhatsApp" | "Admin";
-type AlertType = "failed-payment" | "inventory" | "delivery-failure" | "menu-reminder" | "new-subscriber" | "refund-request" | "system";
-
-interface Notification {
-  id: string;
-  type: AlertType;
-  message: string;
-  customer?: string;
-  channel: Channel;
-  ts: string;
-  read: boolean;
-  severity: "critical" | "warning" | "info";
-}
-
-const notifications: Notification[] = [
+const initialNotifications: OperationalNotification[] = [
   { id: "N-041", type: "failed-payment", message: "Payment failed for Aisha Rahman — $420.00 overdue 3 days", customer: "Aisha Rahman", channel: "Email", ts: "14 Sep 11:30", read: false, severity: "critical" },
   { id: "N-040", type: "inventory", message: "Jasmine Rice stock at 2.1kg — below 5kg threshold", channel: "Admin", ts: "14 Sep 10:22", read: false, severity: "critical" },
   { id: "N-039", type: "delivery-failure", message: "ORD-2403 delivery failed — no one home. Reattempt scheduled.", customer: "Wei Jie Lim", channel: "WhatsApp", ts: "14 Sep 09:45", read: false, severity: "warning" },
@@ -44,6 +31,8 @@ const typeLabels: Record<AlertType, string> = {
   "menu-reminder": "Menu Reminder",
   "new-subscriber": "New Subscriber",
   "refund-request": "Refund Request",
+  "escalation-outcome": "Escalation Outcome",
+  "access-request": "Access Request",
   "system": "System",
 };
 
@@ -53,13 +42,29 @@ const channelIcon: Record<Channel, string> = {
   Admin: "⚙",
 };
 
-const typeFilters: (AlertType | "all")[] = ["all", "failed-payment", "refund-request", "new-subscriber", "inventory", "delivery-failure", "menu-reminder", "system"];
+const typeFilters: (AlertType | "all")[] = ["all", "access-request", "escalation-outcome", "failed-payment", "refund-request", "new-subscriber", "inventory", "delivery-failure", "menu-reminder", "system"];
 
-export default function Notifications() {
+export default function Notifications({
+  externalNotifications = [],
+  onUnreadCountChange,
+  onOpenAccessRequest,
+}: {
+  externalNotifications?: OperationalNotification[];
+  onUnreadCountChange?: (count: number) => void;
+  onOpenAccessRequest?: (requestId: string) => void;
+}) {
   const [typeFilter, setTypeFilter] = useState<AlertType | "all">("all");
   const [channelFilter, setChannelFilter] = useState<Channel | "all">("all");
   const [unreadOnly, setUnreadOnly] = useState(false);
-  const [items, setItems] = useState(notifications);
+  const [items, setItems] = useState(initialNotifications);
+
+  useEffect(() => {
+    setItems(current => {
+      const currentIds = new Set(current.map(item => item.id));
+      const additions = externalNotifications.filter(item => !currentIds.has(item.id));
+      return additions.length ? [...additions, ...current] : current;
+    });
+  }, [externalNotifications]);
 
   const filtered = items.filter(n => {
     if (typeFilter !== "all" && n.type !== typeFilter) return false;
@@ -69,6 +74,10 @@ export default function Notifications() {
   });
 
   const unreadCount = items.filter(n => !n.read).length;
+
+  useEffect(() => {
+    onUnreadCountChange?.(unreadCount);
+  }, [onUnreadCountChange, unreadCount]);
 
   const markAllRead = () => setItems(prev => prev.map(n => ({ ...n, read: true })));
   const dismiss = (id: string) => setItems(prev => prev.filter(n => n.id !== id));
@@ -141,7 +150,19 @@ export default function Notifications() {
           <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-8 text-center text-[var(--pm-text-muted)] text-sm">No notifications match your filters.</div>
         )}
         {filtered.map(n => (
-          <div key={n.id} className={`border px-4 py-3 flex items-start gap-4 transition-all ${n.read ? "opacity-60" : ""} ${severityStyle[n.severity]}`}>
+          <div
+            key={n.id}
+            role={n.accessRequestId ? "button" : undefined}
+            tabIndex={n.accessRequestId ? 0 : undefined}
+            onClick={() => n.accessRequestId && onOpenAccessRequest?.(n.accessRequestId)}
+            onKeyDown={event => {
+              if (n.accessRequestId && (event.key === "Enter" || event.key === " ")) {
+                event.preventDefault();
+                onOpenAccessRequest?.(n.accessRequestId);
+              }
+            }}
+            className={`border px-4 py-3 flex items-start gap-4 transition-all ${n.read ? "opacity-60" : ""} ${n.accessRequestId ? "cursor-pointer hover:border-[#F5B300] focus:outline-none focus:ring-1 focus:ring-[#F5B300]" : ""} ${severityStyle[n.severity]}`}
+          >
             {!n.read && <div className="w-2 h-2 bg-red-500 mt-1 flex-shrink-0" />}
             {n.read && <div className="w-2 h-2 mt-1 flex-shrink-0" />}
             <div className="flex-1 min-w-0">
@@ -149,13 +170,14 @@ export default function Notifications() {
                 <span className="text-xs font-bold mono uppercase">{typeLabels[n.type]}</span>
                 <span className="text-xs text-[var(--pm-text-muted)] mono">{n.id}</span>
                 {n.customer && <span className="text-xs text-[var(--pm-text-muted)]">— {n.customer}</span>}
+                {n.department && <span className="border border-[var(--pm-border)] px-1.5 py-0.5 text-[9px] text-[var(--pm-text-muted)]">{n.department}</span>}
               </div>
               <div className="text-sm">{n.message}</div>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0 text-xs mono text-[var(--pm-text-muted)]">
               <span>{channelIcon[n.channel]} {n.channel}</span>
               <span>{n.ts}</span>
-              <button onClick={() => dismiss(n.id)} className="text-[var(--pm-text-muted)] hover:text-red-400 transition-colors">×</button>
+              <button onClick={event => { event.stopPropagation(); dismiss(n.id); }} className="text-[var(--pm-text-muted)] hover:text-red-400 transition-colors">×</button>
             </div>
           </div>
         ))}

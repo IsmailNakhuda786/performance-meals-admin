@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { printHtml, nowStr, nowTime } from "../utils/flowUtils";
+import PendingWorkBanner from "../components/PendingWorkBanner";
+import { readLocalState, writeLocalState } from "../utils/localState";
 
 const riders = [
   { id: "R01", name: "Ahmad Zaki", phone: "+65 9111 0001", vehicle: "Motorcycle", zone: "East", status: "On Route" },
@@ -52,15 +54,26 @@ const riderStatusColor: Record<string, string> = {
   Completed: "text-[var(--pm-text-muted)]",
 };
 
-export default function Dispatch({ demoMode }: { demoMode?: boolean } = {}) {
+export default function Dispatch({ demoMode, onPendingCountChange }: { demoMode?: boolean; onPendingCountChange?: (count: number) => void } = {}) {
   const [assignModal, setAssignModal] = useState<string | null>(demoMode ? allOrders.find(o => o.status === "pending")?.id ?? null : null);
-  const [orders, setOrders] = useState(allOrders);
+  const [orders, setOrders] = useState(() => readLocalState("pm-dispatch-workflow", allOrders));
   const [selectedRider, setSelectedRider] = useState("");
   const [queueStream, setQueueStream] = useState<"RS" | "MP">("RS");
+  const [pendingOnly, setPendingOnly] = useState(false);
 
   const rsOrders = orders.filter(o => o.stream === "RS");
   const mpOrders = orders.filter(o => o.stream === "MP");
-  const queueOrders = queueStream === "RS" ? rsOrders : mpOrders;
+  const streamQueueOrders = queueStream === "RS" ? rsOrders : mpOrders;
+  const queueOrders = pendingOnly ? streamQueueOrders.filter(order => order.status === "pending") : streamQueueOrders;
+  const pendingOrders = orders.filter(order => order.status === "pending");
+
+  useEffect(() => {
+    onPendingCountChange?.(pendingOrders.length);
+  }, [onPendingCountChange, pendingOrders.length]);
+
+  useEffect(() => {
+    writeLocalState("pm-dispatch-workflow", orders);
+  }, [orders]);
 
   const assignRider = (orderId: string, riderName: string) => {
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, rider: riderName, status: "assigned" } : o));
@@ -150,6 +163,18 @@ export default function Dispatch({ demoMode }: { demoMode?: boolean } = {}) {
           </button>
         </div>
       </div>
+
+      <PendingWorkBanner
+        count={pendingOrders.length}
+        itemLabel="unassigned dispatch order"
+        detail={`${pendingOrders.map(order => order.id).join(", ")} need riders before dispatch can continue.`}
+        reviewing={pendingOnly}
+        onReview={() => {
+          setPendingOnly(true);
+          if (pendingOrders[0]) setQueueStream(pendingOrders[0].stream);
+        }}
+        onShowAll={() => setPendingOnly(false)}
+      />
 
       {/* CRITICAL: Two-stream KPI blocks — never merged */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -10,6 +10,64 @@ export const goalLabel = (goal?: GoalType) => goal ? goalLabels[goal] : "—";
 export type CustomerStatus = "Active" | "Paused" | "Renewal Due" | "Cancelled";
 export type OtherSaleType = "Wallet Top-Up" | "Gift Card";
 export type SaleStatus = "Paid" | "Pending" | "Refunded";
+export type WalletRefundType = "Full order" | "Partial items" | "Custom amount" | "Full plan";
+export type WalletRefundStatus = "Pending" | "Approved" | "Rejected";
+
+export interface WalletRefund {
+  id: string;
+  customerId: string;
+  customerName: string;
+  sourceId: string;
+  type: WalletRefundType;
+  purchaseAmount: number;
+  deliveryFee: number;
+  bonusCreditsUsed: number;
+  rewardsUsed: number;
+  refundAmount: number;
+  pointsReversed: number;
+  reason: string;
+  status: WalletRefundStatus;
+  createdAt: string;
+}
+
+export type EscalationStatus = "Open" | "In Progress" | "Approved" | "Rejected";
+
+export interface RefundEscalation {
+  id: string;
+  refundId: string;
+  customerId?: string;
+  customerName: string;
+  sourceId: string;
+  amount: number;
+  reason: string;
+  raisedBy: string;
+  assignedTo: string;
+  status: EscalationStatus;
+  createdAt: string;
+  decidedBy?: string;
+  decidedAt?: string;
+  outcomeSummary?: string;
+  notifiedDepartments?: string[];
+  customerEmailSent?: boolean;
+}
+
+export type NotificationChannel = "Email" | "WhatsApp" | "Admin";
+export type NotificationSeverity = "critical" | "warning" | "info";
+export type NotificationType = "failed-payment" | "inventory" | "delivery-failure" | "menu-reminder" | "new-subscriber" | "refund-request" | "escalation-outcome" | "access-request" | "system";
+
+export interface OperationalNotification {
+  id: string;
+  type: NotificationType;
+  message: string;
+  customer?: string;
+  department?: string;
+  channel: NotificationChannel;
+  ts: string;
+  read: boolean;
+  severity: NotificationSeverity;
+  recipientId?: string;
+  accessRequestId?: string;
+}
 
 export interface Order {
   id: string;

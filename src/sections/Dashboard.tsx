@@ -1,6 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import StatusBadge from "../components/StatusBadge";
-import { orders, weeklyRevenue, stockAlerts, subscriptions, otherSales } from "../data";
+import { customers, orders, weeklyRevenue, stockAlerts, subscriptions, otherSales } from "../data";
 import type { BusinessStream, Theme } from "../App";
 
 const mpOrders = orders.filter(o => o.planType === "Meal Plan");
@@ -47,9 +47,24 @@ interface Props {
   stream: BusinessStream;
   swapAlert: boolean;
   theme: Theme;
+  onOpenProfile: (customerId: string) => void;
 }
 
-function MealPlansDashboard({ swapAlert, theme }: { swapAlert: boolean; theme: Theme }) {
+function CustomerLink({ name, onOpenProfile }: { name: string; onOpenProfile: (customerId: string) => void }) {
+  const customer = customers.find(item => item.name === name);
+  if (!customer) return <span className="font-medium">{name}</span>;
+  return (
+    <button
+      onClick={() => onOpenProfile(customer.id)}
+      className="font-semibold text-[var(--pm-text)] underline decoration-[var(--pm-border-strong)] underline-offset-2 transition-colors hover:text-[var(--pm-accent-text)] hover:decoration-[#F5B300]"
+      title={`Open ${name}'s customer profile`}
+    >
+      {name}
+    </button>
+  );
+}
+
+function MealPlansDashboard({ swapAlert, theme, onOpenProfile }: { swapAlert: boolean; theme: Theme; onOpenProfile: (customerId: string) => void }) {
   const activeMpSubs = subscriptions.filter(s => s.status === "Active" && s.planType === "Meal Plan");
 
   return (
@@ -111,7 +126,7 @@ function MealPlansDashboard({ swapAlert, theme }: { swapAlert: boolean; theme: T
               {renewalDueMp.map(s => (
                 <div key={s.id} className="flex items-center justify-between border border-[var(--pm-secondary-text)]/20 px-3 py-2">
                   <div>
-                    <div className="text-sm font-semibold">{s.customerName}</div>
+                    <div className="text-sm"><CustomerLink name={s.customerName} onOpenProfile={onOpenProfile} /></div>
                     <div className="text-xs text-[var(--pm-text-muted)] mono">{s.mealPlanType ?? s.planType}</div>
                   </div>
                   <div className="text-right">
@@ -129,7 +144,7 @@ function MealPlansDashboard({ swapAlert, theme }: { swapAlert: boolean; theme: T
           <div className="space-y-2">
             {activeMpSubs.map(s => (
               <div key={s.id} className="flex items-center justify-between text-xs">
-                <span className="text-[var(--pm-text-secondary)]">{s.customerName}</span>
+                <CustomerLink name={s.customerName} onOpenProfile={onOpenProfile} />
                 <span className={`mono px-2 py-0.5 font-bold ${
                   s.menuConfirmed
                     ? theme === "dark" ? "bg-green-950 text-green-400" : "bg-green-50 text-green-700"
@@ -162,7 +177,7 @@ function MealPlansDashboard({ swapAlert, theme }: { swapAlert: boolean; theme: T
               {mpOrders.map((o, i) => (
                 <tr key={o.id} className={`border-b border-[var(--pm-border-soft)] hover:bg-[var(--pm-bg)] transition-colors ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
                   <td className="px-4 py-2.5 mono text-[var(--pm-accent-text)] text-xs">{o.id}</td>
-                  <td className="px-4 py-2.5 font-medium">{o.customer}</td>
+                  <td className="px-4 py-2.5"><CustomerLink name={o.customer} onOpenProfile={onOpenProfile} /></td>
                   <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{o.planType}</td>
                   <td className="px-4 py-2.5 mono text-center">{o.meals}</td>
                   <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{o.planWeek ?? "–"}</td>
@@ -209,7 +224,7 @@ function MealPlansDashboard({ swapAlert, theme }: { swapAlert: boolean; theme: T
               {pausedMpSubs.map(s => (
                 <div key={s.id} className="border border-[var(--pm-border-soft)] px-3 py-2.5 flex items-center justify-between">
                   <div>
-                    <div className="text-base font-semibold">{s.customerName}</div>
+                    <div className="text-base"><CustomerLink name={s.customerName} onOpenProfile={onOpenProfile} /></div>
                     <div className="text-sm font-medium text-[var(--pm-text-muted)] mono">{s.planType} · {s.mealsPerWeek} meals/wk</div>
                   </div>
                   <div className="text-right">
@@ -258,7 +273,7 @@ function MealPlansDashboard({ swapAlert, theme }: { swapAlert: boolean; theme: T
   );
 }
 
-function ReadySeriesDashboard({ swapAlert, theme }: { swapAlert: boolean; theme: Theme }) {
+function ReadySeriesDashboard({ swapAlert, theme, onOpenProfile }: { swapAlert: boolean; theme: Theme; onOpenProfile: (customerId: string) => void }) {
   const activeRsSubs = subscriptions.filter(s => s.status === "Active" && s.planType === "Ready Series Subscription");
   const subOrders = rsOrders.filter(o => o.planType === "Ready Series Subscription");
   const rtgOrders = rsOrders.filter(o => o.planType === "Ready Series A-la-carte");
@@ -326,7 +341,7 @@ function ReadySeriesDashboard({ swapAlert, theme }: { swapAlert: boolean; theme:
               {pausedRsSubs.map(s => (
                 <div key={s.id} className="border border-[var(--pm-border-soft)] px-3 py-2.5 flex items-center justify-between">
                   <div>
-                    <div className="text-base font-semibold">{s.customerName}</div>
+                    <div className="text-base"><CustomerLink name={s.customerName} onOpenProfile={onOpenProfile} /></div>
                     <div className="text-sm font-medium text-[var(--pm-text-muted)] mono">{s.sku ?? "RS Subscription"}</div>
                   </div>
                   <div className="text-right">
@@ -395,7 +410,7 @@ function ReadySeriesDashboard({ swapAlert, theme }: { swapAlert: boolean; theme:
               {rsOrders.map((o, i) => (
                 <tr key={o.id} className={`border-b border-[var(--pm-border-soft)] hover:bg-[var(--pm-bg)] transition-colors ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
                   <td className="px-4 py-2.5 mono text-[var(--pm-secondary-text)] text-xs">{o.id}</td>
-                  <td className="px-4 py-2.5 font-medium">{o.customer}</td>
+                  <td className="px-4 py-2.5"><CustomerLink name={o.customer} onOpenProfile={onOpenProfile} /></td>
                   <td className="px-4 py-2.5">
                     <span className={`text-xs mono font-bold ${o.planType === "Ready Series Subscription" ? "text-[var(--pm-secondary-text)]" : "text-[var(--pm-text-muted)]"}`}>
                       {o.productName ?? o.planType}
@@ -459,7 +474,7 @@ function ReadySeriesDashboard({ swapAlert, theme }: { swapAlert: boolean; theme:
   );
 }
 
-function OtherSalesDashboard({ theme }: { theme: Theme }) {
+function OtherSalesDashboard({ theme, onOpenProfile }: { theme: Theme; onOpenProfile: (customerId: string) => void }) {
   const paidSales = otherSales.filter(sale => sale.status === "Paid");
   const walletSales = paidSales.filter(sale => sale.type === "Wallet Top-Up");
   const giftCardSales = paidSales.filter(sale => sale.type === "Gift Card");
@@ -514,7 +529,7 @@ function OtherSalesDashboard({ theme }: { theme: Theme }) {
                   <tr key={sale.id} className={`border-b border-[var(--pm-border-soft)] ${index % 2 ? "bg-[var(--pm-surface-subtle)]" : ""}`}>
                     <td className="px-4 py-2.5 text-xs text-[var(--pm-text-secondary)] mono">{sale.id}</td>
                     <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)] mono">{sale.date}</td>
-                    <td className="px-4 py-2.5 font-medium">{sale.customer}</td>
+                    <td className="px-4 py-2.5"><CustomerLink name={sale.customer} onOpenProfile={onOpenProfile} /></td>
                     <td className="px-4 py-2.5 text-xs text-[var(--pm-text-secondary)]">{sale.type}</td>
                     <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)] mono">{sale.reference}</td>
                     <td className="px-4 py-2.5 font-bold mono">{sale.amount < 0 ? `-$${Math.abs(sale.amount).toFixed(2)}` : `$${sale.amount.toFixed(2)}`}</td>
@@ -557,12 +572,12 @@ function OtherSalesDashboard({ theme }: { theme: Theme }) {
   );
 }
 
-export default function Dashboard({ stream, swapAlert, theme }: Props) {
+export default function Dashboard({ stream, swapAlert, theme, onOpenProfile }: Props) {
   if (stream === "meal-plans") {
-    return <MealPlansDashboard swapAlert={swapAlert} theme={theme} />;
+    return <MealPlansDashboard swapAlert={swapAlert} theme={theme} onOpenProfile={onOpenProfile} />;
   }
   if (stream === "ready-series") {
-    return <ReadySeriesDashboard swapAlert={swapAlert} theme={theme} />;
+    return <ReadySeriesDashboard swapAlert={swapAlert} theme={theme} onOpenProfile={onOpenProfile} />;
   }
-  return <OtherSalesDashboard theme={theme} />;
+  return <OtherSalesDashboard theme={theme} onOpenProfile={onOpenProfile} />;
 }

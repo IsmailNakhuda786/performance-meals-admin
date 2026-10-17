@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import StatusBadge from "../components/StatusBadge";
 import { customers } from "../data";
+import type { WalletRefund } from "../data";
 import { giftCardRules, walletRules } from "../catalog";
 
 const tiers = walletRules.redemptionTiers.map((tier, index) => ({
@@ -49,7 +50,7 @@ const statusColor: Record<string, string> = {
   "Credit Not Applied": "text-[var(--pm-text-muted)]",
 };
 
-export default function Wallet() {
+export default function Wallet({ walletRefunds = [] }: { walletRefunds?: WalletRefund[] }) {
   const [creditCustomer, setCreditCustomer] = useState("");
   const [creditAmount, setCreditAmount] = useState("");
   const [creditType, setCreditType] = useState<"credit" | "points">("credit");
@@ -66,10 +67,21 @@ export default function Wallet() {
     Object.fromEntries(txData.map(t => [t.id, t.description]))
   );
 
+  const approvedRefunds = walletRefunds.filter(refund => refund.status === "Approved");
+  const displayTransactions: TxRecord[] = [
+    ...approvedRefunds.map(refund => ({
+      id: refund.id,
+      amount: refund.refundAmount,
+      description: `Wallet refund — ${refund.customerName} — ${refund.sourceId}`,
+      status: "Credit Applied",
+      date: refund.createdAt,
+    })),
+    ...transactions,
+  ];
   const topBalances = customers.map(customer => ({
     ...customer,
-    walletBalance: customer.walletBalance + (balanceAdjustments[customer.id]?.credit ?? 0),
-    points: customer.points + (balanceAdjustments[customer.id]?.points ?? 0),
+    walletBalance: customer.walletBalance + (balanceAdjustments[customer.id]?.credit ?? 0) + approvedRefunds.filter(refund => refund.customerId === customer.id).reduce((sum, refund) => sum + refund.refundAmount, 0),
+    points: Math.max(0, customer.points + (balanceAdjustments[customer.id]?.points ?? 0) - approvedRefunds.filter(refund => refund.customerId === customer.id).reduce((sum, refund) => sum + refund.pointsReversed, 0)),
   })).filter(c => c.walletBalance > 0 || c.points > 0)
     .sort((a, b) => b.points - a.points);
 
@@ -368,7 +380,7 @@ export default function Wallet() {
                 </tr>
               </thead>
               <tbody>
-                {transactions.map((tx, i) => (
+                {displayTransactions.map((tx, i) => (
                   <tr key={tx.id} className={`border-b border-[var(--pm-border)] ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
                     <td className="px-3 py-2.5 mono text-xs text-[var(--pm-accent-text)]">{tx.id}</td>
                     <td className={`px-3 py-2.5 mono text-xs font-bold ${tx.amount < 0 ? "text-red-400" : "text-[var(--pm-text-secondary)]"}`}>
@@ -377,7 +389,7 @@ export default function Wallet() {
                     <td className="px-3 py-2.5 text-xs text-[var(--pm-text-secondary)] max-w-[200px]">
                       {editingTx === tx.id ? (
                         <div className="space-y-2">
-                          <div className="text-xs text-[var(--pm-text-muted)] mono">Previous: {txDescriptions[tx.id]}</div>
+                            <div className="text-xs text-[var(--pm-text-muted)] mono">Previous: {txDescriptions[tx.id] ?? tx.description}</div>
                           <textarea
                             rows={2}
                             value={editDesc}
@@ -390,7 +402,7 @@ export default function Wallet() {
                               onClick={() => {
                                 if (!editDesc.trim()) return;
                                 const now = new Date().toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-                                setDescHistory(prev => [{ txId: tx.id, previousDesc: txDescriptions[tx.id], newDesc: editDesc.trim(), changedBy: "Jerome Lim", timestamp: now }, ...prev]);
+                                setDescHistory(prev => [{ txId: tx.id, previousDesc: txDescriptions[tx.id] ?? tx.description, newDesc: editDesc.trim(), changedBy: "Jerome Lim", timestamp: now }, ...prev]);
                                 setTxDescriptions(prev => ({ ...prev, [tx.id]: editDesc.trim() }));
                                 setEditingTx(null);
                                 setEditDesc("");
@@ -408,7 +420,7 @@ export default function Wallet() {
                           </div>
                         </div>
                       ) : (
-                        txDescriptions[tx.id]
+                        txDescriptions[tx.id] ?? tx.description
                       )}
                     </td>
                     <td className={`px-3 py-2.5 text-xs mono font-semibold ${statusColor[tx.status] ?? "text-[var(--pm-text-muted)]"}`}>{tx.status}</td>
@@ -416,7 +428,7 @@ export default function Wallet() {
                     <td className="px-3 py-2.5">
                       {editingTx !== tx.id && (
                         <button
-                          onClick={() => { setEditingTx(tx.id); setEditDesc(txDescriptions[tx.id]); }}
+                          onClick={() => { setEditingTx(tx.id); setEditDesc(txDescriptions[tx.id] ?? tx.description); }}
                           className="border border-[var(--pm-border-strong)] text-[var(--pm-text-secondary)] text-xs px-3 py-1.5 mono hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors whitespace-nowrap"
                         >
                           Edit Description

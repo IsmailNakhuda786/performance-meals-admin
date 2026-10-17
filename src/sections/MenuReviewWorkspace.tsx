@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import PendingWorkBanner from "../components/PendingWorkBanner";
 import { goalLabel, type GoalType } from "../data";
+import { readLocalState, writeLocalState } from "../utils/localState";
 
 type ReviewStatus = "Pending" | "Confirmed" | "Locked";
 
@@ -47,17 +49,30 @@ const statusClass: Record<ReviewStatus, string> = {
   Locked: "text-[var(--pm-text-muted)] bg-[var(--pm-surface-muted)]",
 };
 
-export default function MenuReviewWorkspace() {
-  const [reviews, setReviews] = useState(initialReviews);
+export default function MenuReviewWorkspace({ onPendingCountChange }: { onPendingCountChange?: (count: number) => void } = {}) {
+  const [reviews, setReviews] = useState(() => readLocalState("pm-menu-review-workflow", initialReviews));
   const [selectedId, setSelectedId] = useState(initialReviews[0].id);
   const [search, setSearch] = useState("");
   const [reviewing, setReviewing] = useState(false);
   const [success, setSuccess] = useState("");
+  const [pendingOnly, setPendingOnly] = useState(false);
 
   const selected = reviews.find(review => review.id === selectedId) ?? reviews[0];
-  const filtered = reviews.filter(review => `${review.customer} ${review.plan}`.toLowerCase().includes(search.toLowerCase()));
+  const pendingReviews = reviews.filter(review => review.status === "Pending");
+  const filtered = reviews.filter(review =>
+    (!pendingOnly || review.status === "Pending") &&
+    `${review.customer} ${review.plan}`.toLowerCase().includes(search.toLowerCase())
+  );
   const canEdit = selected.status !== "Locked";
   const complete = selected.slots.length === selected.requiredSlots;
+
+  useEffect(() => {
+    onPendingCountChange?.(pendingReviews.length);
+  }, [onPendingCountChange, pendingReviews.length]);
+
+  useEffect(() => {
+    writeLocalState("pm-menu-review-workflow", reviews);
+  }, [reviews]);
 
   const totals = useMemo(() => selected.slots.reduce((sum, mealName) => {
     const meal = mealOptions.find(option => option.name === mealName);
@@ -100,6 +115,21 @@ export default function MenuReviewWorkspace() {
           {success}
         </div>
       )}
+
+      <PendingWorkBanner
+        count={pendingReviews.length}
+        itemLabel="pending menu review"
+        detail={pendingReviews.length === 1
+          ? `${pendingReviews[0].id} · ${pendingReviews[0].customer} still needs a confirmed meal selection.`
+          : `${pendingReviews.map(review => review.customer).join(", ")} still need confirmed meal selections.`}
+        reviewing={pendingOnly}
+        onReview={() => {
+          setPendingOnly(true);
+          setSearch("");
+          if (pendingReviews[0]) setSelectedId(pendingReviews[0].id);
+        }}
+        onShowAll={() => setPendingOnly(false)}
+      />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="border border-[var(--pm-border)] bg-[var(--pm-surface)]">

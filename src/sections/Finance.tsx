@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { BusinessStream } from "../App";
 import { otherSales } from "../data";
 import { downloadCSV, downloadExcel, printHtml, nowStr, nowTime } from "../utils/flowUtils";
+import PendingWorkBanner from "../components/PendingWorkBanner";
+import { readLocalState, writeLocalState } from "../utils/localState";
 
 const mpTransactions = [
   { id: "TXN-3201", date: "14 Sep 2024", customer: "Marcus Tan", type: "Subscription Billing", amount: 168.00, method: "Card (via Shopify)", status: "Paid" },
@@ -45,10 +47,13 @@ interface ShopifyModal {
   confirmed: boolean;
 }
 
-export default function Finance({ stream }: { stream: BusinessStream }) {
+export default function Finance({ stream, onPendingCountChange }: { stream: BusinessStream; onPendingCountChange?: (count: number) => void }) {
   const [tab, setTab] = useState<"transactions" | "failed" | "refunds">("transactions");
   const [retryModal, setRetryModal] = useState<ShopifyModal | null>(null);
   const [refundModal, setRefundModal] = useState<ShopifyModal | null>(null);
+  const [retriedTransactionIds, setRetriedTransactionIds] = useState<Set<string>>(
+    () => new Set(readLocalState<string[]>("pm-finance-retried-payments", [])),
+  );
 
   const isMp = stream === "meal-plans";
   const isRs = stream === "ready-series";
@@ -58,8 +63,17 @@ export default function Finance({ stream }: { stream: BusinessStream }) {
 
   const totalRevenue = txns.filter(t => t.status === "Paid").reduce((a, t) => a + t.amount, 0);
   const totalPending = txns.filter(t => t.status === "Pending").reduce((a, t) => a + t.amount, 0);
-  const totalFailed = txns.filter(t => t.status === "Failed").length;
+  const failedTransactions = txns.filter(t => t.status === "Failed" && !retriedTransactionIds.has(t.id));
+  const totalFailed = failedTransactions.length;
   const totalRefunded = txns.filter(t => t.status === "Refunded").reduce((a, t) => a + Math.abs(t.amount), 0);
+
+  useEffect(() => {
+    onPendingCountChange?.(totalFailed);
+  }, [onPendingCountChange, totalFailed]);
+
+  useEffect(() => {
+    writeLocalState("pm-finance-retried-payments", [...retriedTransactionIds]);
+  }, [retriedTransactionIds]);
 
   const exportRows = txns.map(t => ({
     id: t.id,
@@ -115,6 +129,17 @@ export default function Finance({ stream }: { stream: BusinessStream }) {
         <span>ℹ</span>
         <span>Transaction records are synced from Shopify (read-only). To process refunds or modify payment methods, use <strong>Shopify Admin → Orders</strong>. This portal records the decision; Shopify executes it.</span>
       </div>
+
+      <PendingWorkBanner
+        count={totalFailed}
+        itemLabel="failed payment"
+        detail={totalFailed === 1
+          ? `${failedTransactions[0].id} · ${failedTransactions[0].customer} needs payment follow-up in Shopify.`
+          : `${failedTransactions.map(transaction => transaction.id).join(", ")} need payment follow-up in Shopify.`}
+        reviewing={tab === "failed"}
+        onReview={() => setTab("failed")}
+        onShowAll={() => setTab("transactions")}
+      />
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -213,7 +238,7 @@ export default function Finance({ stream }: { stream: BusinessStream }) {
           <tbody>
             {txns
               .filter(t => {
-                if (tab === "failed") return t.status === "Failed";
+                if (tab === "failed") return t.status === "Failed" && !retriedTransactionIds.has(t.id);
                 if (tab === "refunds") return t.status === "Refunded";
                 return true;
               })
@@ -291,6 +316,7 @@ export default function Finance({ stream }: { stream: BusinessStream }) {
                   <button
                     onClick={() => {
                       window.open("https://admin.shopify.com", "_blank");
+                      setRetriedTransactionIds(current => new Set(current).add(retryModal.txn.id));
                       setRetryModal(prev => prev ? { ...prev, confirmed: true } : null);
                     }}
                     className="flex-1 bg-[#E85D04] text-black text-xs font-bold py-2.5 mono hover:bg-orange-500 transition-colors">

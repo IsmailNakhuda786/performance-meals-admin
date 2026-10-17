@@ -1,9 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import AccessRequestsPanel from "../components/AccessRequestsPanel";
 import {
   moduleOptions,
   rolePermissions,
   rolesByDepartment,
   type Department,
+  type DepartmentAssignment,
+  type AccessRequest,
   type UserAccount,
 } from "../accessControl";
 
@@ -13,6 +16,10 @@ interface Props {
   onCreate?: (user: UserAccount) => void;
   onUpdate?: (user: UserAccount) => void;
   onDelete?: (userId: string) => void;
+  accessRequests?: AccessRequest[];
+  initialRequestId?: string | null;
+  onSelectRequest?: (requestId: string | null) => void;
+  onDecideAccessRequest?: (requestId: string, status: "Approved" | "Rejected") => void;
 }
 
 const departments = Object.keys(rolesByDepartment) as Department[];
@@ -24,30 +31,53 @@ const emptyUser = (): UserAccount => ({
   password: "Welcome123!",
   department: "Operations",
   role: "Operations Manager",
+  departmentAssignments: [{ department: "Operations", role: "Operations Manager" }],
   status: "Active",
   permissions: [...rolePermissions["Operations Manager"]],
 });
 
 const normalizeUser = (user: UserAccount): UserAccount => ({
   ...user,
+  departmentAssignments: user.departmentAssignments?.length
+    ? user.departmentAssignments
+    : [{ department: user.department, role: user.role }],
   permissions: Array.isArray(user.permissions)
     ? user.permissions
     : [...(rolePermissions[user.role] ?? rolePermissions["Team Member"])],
 });
 
-export default function ACL({ users = [], currentUserId, onCreate, onUpdate, onDelete }: Props) {
+export default function ACL({ users = [], currentUserId, onCreate, onUpdate, onDelete, accessRequests = [], initialRequestId, onSelectRequest, onDecideAccessRequest }: Props) {
+  const [activeTab, setActiveTab] = useState<"users" | "requests">(initialRequestId ? "requests" : "users");
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<UserAccount | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [notice, setNotice] = useState("");
   const safeUsers = useMemo(() => users.map(normalizeUser), [users]);
   const editingPermissions = editing?.permissions ?? [];
+  const pendingRequests = useMemo(
+    () => accessRequests.filter(request => request.status === "Pending"),
+    [accessRequests],
+  );
+  const pendingRequestsByUser = useMemo(() => {
+    const requestsByUser = new Map<string, AccessRequest[]>();
+    pendingRequests.forEach(request => {
+      requestsByUser.set(request.requestedById, [
+        ...(requestsByUser.get(request.requestedById) ?? []),
+        request,
+      ]);
+    });
+    return requestsByUser;
+  }, [pendingRequests]);
+
+  useEffect(() => {
+    if (initialRequestId) setActiveTab("requests");
+  }, [initialRequestId]);
 
   const filteredUsers = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return safeUsers;
     return safeUsers.filter(user =>
-      [user.name, user.email, user.department, user.role].some(value => value.toLowerCase().includes(needle))
+      [user.name, user.email, ...user.departmentAssignments.flatMap(item => [item.department, item.role])].some(value => value.toLowerCase().includes(needle))
     );
   }, [query, safeUsers]);
 
@@ -55,17 +85,42 @@ export default function ACL({ users = [], currentUserId, onCreate, onUpdate, onD
     setEditing(current => current ? { ...current, ...patch } : current);
   };
 
-  const changeDepartment = (department: Department) => {
-    const role = rolesByDepartment[department][0];
-    updateDraft({ department, role, permissions: [...(rolePermissions[role] ?? [])] });
+  const applyAssignments = (assignments: DepartmentAssignment[]) => {
+    if (!assignments.length) return;
+    const permissions = [...new Set(assignments.flatMap(item => rolePermissions[item.role] ?? []))];
+    updateDraft({
+      departmentAssignments: assignments,
+      department: assignments[0].department,
+      role: assignments[0].role,
+      permissions,
+    });
   };
 
-  const changeRole = (role: string) => {
-    updateDraft({ role, permissions: [...(rolePermissions[role] ?? [])] });
+  const changeAssignment = (index: number, patch: Partial<DepartmentAssignment>) => {
+    if (!editing) return;
+    const assignments = editing.departmentAssignments.map((assignment, assignmentIndex) => {
+      if (assignmentIndex !== index) return assignment;
+      const department = patch.department ?? assignment.department;
+      const role = patch.department ? rolesByDepartment[department][0] : patch.role ?? assignment.role;
+      return { department, role };
+    });
+    applyAssignments(assignments);
+  };
+
+  const addAssignment = () => {
+    if (!editing) return;
+    const available = departments.find(department => !editing.departmentAssignments.some(item => item.department === department));
+    if (!available) return;
+    applyAssignments([...editing.departmentAssignments, { department: available, role: rolesByDepartment[available][0] }]);
+  };
+
+  const removeAssignment = (index: number) => {
+    if (!editing || editing.departmentAssignments.length === 1) return;
+    applyAssignments(editing.departmentAssignments.filter((_, assignmentIndex) => assignmentIndex !== index));
   };
 
   const togglePermission = (permission: string) => {
-    if (!editing || editing.role === "Super Admin") return;
+    if (!editing || editing.departmentAssignments.some(item => item.role === "Super Admin")) return;
     const permissions = editingPermissions.includes(permission)
       ? editingPermissions.filter(item => item !== permission)
       : [...editingPermissions, permission];
@@ -97,11 +152,19 @@ export default function ACL({ users = [], currentUserId, onCreate, onUpdate, onD
               Assign departments and roles, then tailor module access for each user.
             </p>
           </div>
-          <button
+          {activeTab === "users" && <button
             onClick={() => { setEditing(emptyUser()); setIsNew(true); }}
             className="rounded-lg bg-[#F5B300] px-4 py-2.5 text-sm font-extrabold text-[#111827]"
           >
             Add user
+          </button>}
+        </div>
+
+        <div className="flex gap-1 border-b" style={{ borderColor: "var(--pm-border)" }}>
+          <button onClick={() => setActiveTab("users")} className={`border-b-2 px-4 py-2.5 text-sm font-bold ${activeTab === "users" ? "border-[#F5B300] text-[var(--pm-text)]" : "border-transparent text-[var(--pm-text-muted)]"}`}>Users &amp; roles</button>
+          <button onClick={() => setActiveTab("requests")} className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-bold ${activeTab === "requests" ? "border-[#F5B300] text-[var(--pm-text)]" : "border-transparent text-[var(--pm-text-muted)]"}`}>
+            Access requests
+            {pendingRequests.length > 0 && <span className="rounded bg-[#F5B300] px-1.5 py-0.5 text-[10px] font-extrabold text-[#111827]">{pendingRequests.length}</span>}
           </button>
         </div>
 
@@ -112,11 +175,12 @@ export default function ACL({ users = [], currentUserId, onCreate, onUpdate, onD
           </div>
         )}
 
+        {activeTab === "users" ? <>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             ["Total users", safeUsers.length],
             ["Active", safeUsers.filter(user => user.status === "Active").length],
-            ["Departments", new Set(safeUsers.map(user => user.department)).size],
+            ["Departments", new Set(safeUsers.flatMap(user => user.departmentAssignments.map(item => item.department))).size],
             ["Super Admins", safeUsers.filter(user => user.role === "Super Admin").length],
           ].map(([label, value]) => (
             <div key={label} className="rounded-xl border p-4" style={{ background: "var(--pm-surface)", borderColor: "var(--pm-border)" }}>
@@ -153,11 +217,29 @@ export default function ACL({ users = [], currentUserId, onCreate, onUpdate, onD
                 {filteredUsers.map(user => (
                   <tr key={user.id} className="border-t" style={{ borderColor: "var(--pm-border-soft)" }}>
                     <td className="px-4 py-3">
-                      <div className="font-semibold">{user.name}</div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="font-semibold">{user.name}</div>
+                        {pendingRequestsByUser.has(user.id) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const request = pendingRequestsByUser.get(user.id)?.[0];
+                              setActiveTab("requests");
+                              onSelectRequest?.(request?.id ?? null);
+                            }}
+                            className="inline-flex items-center rounded-full border border-yellow-300 bg-yellow-50 px-2 py-0.5 text-[10px] font-bold text-yellow-800 transition-colors hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-[#F5B300]/40"
+                            aria-label={`Review ${pendingRequestsByUser.get(user.id)?.length ?? 0} pending access ${(pendingRequestsByUser.get(user.id)?.length ?? 0) === 1 ? "request" : "requests"} for ${user.name}`}
+                          >
+                            {(pendingRequestsByUser.get(user.id)?.length ?? 0) === 1
+                              ? "Pending request"
+                              : `${pendingRequestsByUser.get(user.id)?.length} pending`}
+                          </button>
+                        )}
+                      </div>
                       <div className="text-xs" style={{ color: "var(--pm-text-muted)" }}>{user.email}</div>
                     </td>
-                    <td className="px-4 py-3">{user.department}</td>
-                    <td className="px-4 py-3 font-semibold">{user.role}</td>
+                    <td className="px-4 py-3"><div className="flex flex-wrap gap-1">{user.departmentAssignments.map((item, index) => <span key={item.department} className="rounded border px-2 py-1 text-xs" style={{ borderColor: "var(--pm-border)" }}>{item.department}{index === 0 ? " · Primary" : ""}</span>)}</div></td>
+                    <td className="px-4 py-3 font-semibold"><div className="space-y-1">{user.departmentAssignments.map(item => <div key={`${item.department}-${item.role}`} className="text-xs">{item.role}</div>)}</div></td>
                     <td className="px-4 py-3">{user.permissions?.length ?? 0} modules</td>
                     <td className="px-4 py-3">
                       <span className={`rounded-full px-2 py-1 text-xs font-bold ${user.status === "Active" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
@@ -191,6 +273,14 @@ export default function ACL({ users = [], currentUserId, onCreate, onUpdate, onD
             </table>
           </div>
         </div>
+        </> : (
+          <AccessRequestsPanel
+            requests={accessRequests}
+            selectedRequestId={initialRequestId}
+            onSelectRequest={onSelectRequest}
+            onDecide={onDecideAccessRequest ?? (() => undefined)}
+          />
+        )}
       </div>
 
       {editing && (
@@ -221,18 +311,35 @@ export default function ACL({ users = [], currentUserId, onCreate, onUpdate, onD
                   />
                 </label>
               ))}
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-bold">Department</span>
-                <select value={editing.department} onChange={event => changeDepartment(event.target.value as Department)} className="w-full rounded-lg border px-3 py-2.5 text-sm" style={{ background: "var(--pm-bg)", borderColor: "var(--pm-border)", color: "var(--pm-text)" }}>
-                  {departments.map(department => <option key={department}>{department}</option>)}
-                </select>
-              </label>
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-bold">Role</span>
-                <select value={editing.role} onChange={event => changeRole(event.target.value)} className="w-full rounded-lg border px-3 py-2.5 text-sm" style={{ background: "var(--pm-bg)", borderColor: "var(--pm-border)", color: "var(--pm-text)" }}>
-                  {rolesByDepartment[editing.department].map(role => <option key={role}>{role}</option>)}
-                </select>
-              </label>
+            </div>
+
+            <div className="mt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-bold">Department and role assignments</div>
+                  <div className="text-xs" style={{ color: "var(--pm-text-muted)" }}>The first assignment is primary. Permissions are combined across every assigned role.</div>
+                </div>
+                <button onClick={addAssignment} disabled={editing.departmentAssignments.length === departments.length} className="rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-40" style={{ borderColor: "var(--pm-border)" }}>Add department</button>
+              </div>
+              <div className="mt-3 space-y-2">
+                {editing.departmentAssignments.map((assignment, index) => (
+                  <div key={`${assignment.department}-${index}`} className="grid grid-cols-1 gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_1fr_auto]" style={{ borderColor: index === 0 ? "#F5B300" : "var(--pm-border)", background: "var(--pm-surface-subtle)" }}>
+                    <label className="text-xs font-bold">Department
+                      <select value={assignment.department} onChange={event => changeAssignment(index, { department: event.target.value as Department })} className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm" style={{ background: "var(--pm-bg)", borderColor: "var(--pm-border)", color: "var(--pm-text)" }}>
+                        {departments.map(department => <option key={department} disabled={editing.departmentAssignments.some((item, itemIndex) => item.department === department && itemIndex !== index)}>{department}</option>)}
+                      </select>
+                    </label>
+                    <label className="text-xs font-bold">Role
+                      <select value={assignment.role} onChange={event => changeAssignment(index, { role: event.target.value })} className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm" style={{ background: "var(--pm-bg)", borderColor: "var(--pm-border)", color: "var(--pm-text)" }}>
+                        {rolesByDepartment[assignment.department].map(role => <option key={role}>{role}</option>)}
+                      </select>
+                    </label>
+                    <div className="flex items-end">
+                      {index === 0 ? <span className="rounded bg-[#F5B300]/10 px-3 py-2 text-xs font-bold text-[var(--pm-accent-text)]">Primary</span> : <button onClick={() => removeAssignment(index)} className="rounded border border-red-900/40 px-3 py-2 text-xs font-bold text-red-500">Remove</button>}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="mt-6">
@@ -248,7 +355,7 @@ export default function ACL({ users = [], currentUserId, onCreate, onUpdate, onD
                   const checked = editingPermissions.includes(module.id);
                   return (
                     <label key={module.id} className="flex cursor-pointer items-center gap-2 rounded-lg border p-2.5 text-xs" style={{ borderColor: checked ? "#F5B300" : "var(--pm-border)", background: checked ? "var(--pm-active)" : "var(--pm-surface-subtle)" }}>
-                      <input type="checkbox" checked={checked} disabled={editing.role === "Super Admin"} onChange={() => togglePermission(module.id)} />
+                      <input type="checkbox" checked={checked} disabled={editing.departmentAssignments.some(item => item.role === "Super Admin")} onChange={() => togglePermission(module.id)} />
                       <span className="font-semibold">{module.label}</span>
                     </label>
                   );

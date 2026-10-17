@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
 import type { BusinessStream } from "../App";
+import PendingWorkBanner from "../components/PendingWorkBanner";
+import { readLocalState, writeLocalState } from "../utils/localState";
 
 const mpQueue = [
   { meal: "Herb Grilled Chicken & Brown Rice", goal: "CUT", qty: 24, completed: 18, packaging: "500ml tray", status: "In Progress" },
@@ -23,9 +26,10 @@ const statusColor: Record<string, string> = {
   Queued: "text-[var(--pm-text-muted)] bg-[var(--pm-surface-subtle)]",
 };
 
-function QueueTable({ rows, stream }: {
+function QueueTable({ rows, stream, onAdvance }: {
   rows: { meal: string; qty: number; completed: number; packaging: string; status: string; goal?: string; size?: string }[];
   stream: BusinessStream;
+  onAdvance?: (meal: string) => void;
 }) {
   const accent = stream === "meal-plans" ? "#F5B300" : "#E85D04";
   return (
@@ -63,8 +67,8 @@ function QueueTable({ rows, stream }: {
                   <span className={`text-xs mono px-2 py-0.5 font-bold ${statusColor[r.status]}`}>{r.status}</span>
                 </td>
                 <td className="px-4 py-2.5">
-                  <button className="text-xs border border-[var(--pm-border)] px-2 py-1 text-[var(--pm-text-muted)] hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors mono">
-                    Update
+                  <button onClick={() => onAdvance?.(r.meal)} disabled={r.status === "Done"} className="text-xs border border-[var(--pm-border)] px-2 py-1 text-[var(--pm-text-muted)] hover:border-[#F5B300] hover:text-[var(--pm-accent-text)] transition-colors mono disabled:cursor-not-allowed disabled:opacity-40">
+                    {r.status === "Queued" ? "Start" : r.status === "In Progress" ? "Mark done" : "Complete"}
                   </button>
                 </td>
               </tr>
@@ -76,15 +80,39 @@ function QueueTable({ rows, stream }: {
   );
 }
 
-export default function Kitchen({ stream }: { stream: BusinessStream }) {
+export default function Kitchen({ stream, onPendingCountChange }: { stream: BusinessStream; onPendingCountChange?: (count: number) => void }) {
   const isMp = stream === "meal-plans";
   const accent = isMp ? "#F5B300" : "#E85D04";
-  const queue = isMp ? mpQueue : rsQueue;
+  const [mpItems, setMpItems] = useState(() => readLocalState("pm-kitchen-meal-plan-workflow", mpQueue));
+  const [rsItems, setRsItems] = useState(() => readLocalState("pm-kitchen-ready-series-workflow", rsQueue));
+  const queue = isMp ? mpItems : rsItems;
+  const queuedItems = queue.filter(item => item.status === "Queued");
 
   const totalRequired = queue.reduce((a, r) => a + r.qty, 0);
   const totalCompleted = queue.reduce((a, r) => a + r.completed, 0);
   const inProgress = queue.filter(r => r.status === "In Progress").length;
   const done = queue.filter(r => r.status === "Done").length;
+
+  useEffect(() => {
+    onPendingCountChange?.(queuedItems.length);
+  }, [onPendingCountChange, queuedItems.length]);
+
+  useEffect(() => {
+    writeLocalState("pm-kitchen-meal-plan-workflow", mpItems);
+    writeLocalState("pm-kitchen-ready-series-workflow", rsItems);
+  }, [mpItems, rsItems]);
+
+  const advance = (meal: string) => {
+    const update = <T extends { meal: string; status: string; completed: number; qty: number }>(items: T[]): T[] => items.map(item => item.meal === meal
+      ? {
+          ...item,
+          status: item.status === "Queued" ? "In Progress" : item.status === "In Progress" ? "Done" : item.status,
+          completed: item.status === "In Progress" ? item.qty : item.completed,
+        }
+      : item);
+    if (isMp) setMpItems(update);
+    else setRsItems(update);
+  };
 
   return (
     <div className="p-6 space-y-5">
@@ -101,6 +129,12 @@ export default function Kitchen({ stream }: { stream: BusinessStream }) {
           </button>
         </div>
       </div>
+
+      <PendingWorkBanner
+        count={queuedItems.length}
+        itemLabel="queued kitchen item"
+        detail={`${queuedItems.map(item => item.meal).join(", ")} must be started.`}
+      />
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -137,7 +171,7 @@ export default function Kitchen({ stream }: { stream: BusinessStream }) {
             </span>
           </div>
         </div>
-        <QueueTable rows={queue} stream={stream} />
+      <QueueTable rows={queue} stream={stream} onAdvance={advance} />
       </div>
 
       {/* Inventory alerts */}

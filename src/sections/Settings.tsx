@@ -1,5 +1,14 @@
 import { useState } from "react";
-import type { UserAccount } from "../accessControl";
+import {
+  moduleOptions,
+  modulePermissionOptions,
+  rolesByDepartment,
+  type AccessRequest,
+  type AccessRequestType,
+  type Department,
+  type ModulePermission,
+  type UserAccount,
+} from "../accessControl";
 
 type SettingsTab = "profile" | "security" | "notifications" | "my-access" | "permission-requests" | "escalation-requests" | "team" | "system";
 
@@ -15,9 +24,11 @@ const settingsTabs: { id: SettingsTab; label: string; icon: string; adminOnly?: 
 ];
 
 const defaultUser = {
+  id: "U-001",
   name: "Jerome Lim",
   title: "Operations Director",
   department: "Operations",
+  departments: ["Operations"],
   role: "Super Admin",
   email: "jerome@performancemeals.sg",
   phone: "+65 9111 2233",
@@ -27,6 +38,7 @@ const defaultUser = {
   accessGrantedBy: "System",
   lastPermissionChange: "03 Jul 2024",
   permittedModules: ["All Modules"],
+  modulePermissions: { "All Modules": [...modulePermissionOptions] },
 };
 
 const permissionRequests = [
@@ -93,11 +105,27 @@ const priorityStyle: Record<string, string> = {
   low: "text-[var(--pm-text-muted)] bg-[var(--pm-surface-muted)] border border-[var(--pm-border)]",
 };
 
-export default function Settings({ demoMode, initialTab, user }: { demoMode?: boolean; initialTab?: string; user?: UserAccount } = {}) {
+export default function Settings({
+  demoMode,
+  initialTab,
+  user,
+  accessRequests = [],
+  onCreateAccessRequest,
+  onDecideAccessRequest,
+}: {
+  demoMode?: boolean;
+  initialTab?: string;
+  user?: UserAccount;
+  accessRequests?: AccessRequest[];
+  onCreateAccessRequest?: (request: Omit<AccessRequest, "id" | "status" | "requestedAt">) => void;
+  onDecideAccessRequest?: (requestId: string, status: "Approved" | "Rejected") => void;
+} = {}) {
   const currentUser = user ? {
+    id: user.id,
     name: user.name,
     title: user.role,
     department: user.department,
+    departments: user.departmentAssignments.map(item => `${item.department} — ${item.role}`),
     role: user.role,
     email: user.email,
     phone: "Not provided",
@@ -107,6 +135,7 @@ export default function Settings({ demoMode, initialTab, user }: { demoMode?: bo
     accessGrantedBy: "Super Admin",
     lastPermissionChange: "Current session",
     permittedModules: user.permissions,
+    modulePermissions: user.modulePermissions ?? Object.fromEntries(user.permissions.map(module => [module, ["View"]])),
   } : defaultUser;
   const isSuperAdmin = currentUser.role === "Super Admin";
   const [activeTab, setActiveTab] = useState<SettingsTab>((initialTab as SettingsTab) ?? "profile");
@@ -136,6 +165,50 @@ export default function Settings({ demoMode, initialTab, user }: { demoMode?: bo
   const [commerceSettings, setCommerceSettings] = useState(initialCommerceSettings);
   const [editingSetting, setEditingSetting] = useState<{ id: string; label: string; value: string } | null>(null);
   const [settingSaved, setSettingSaved] = useState("");
+  const [requestType, setRequestType] = useState<AccessRequestType>("Module Permission");
+  const [requestModule, setRequestModule] = useState(moduleOptions[0].id);
+  const [requestPermissions, setRequestPermissions] = useState<ModulePermission[]>(["View"]);
+  const [requestDepartment, setRequestDepartment] = useState<Department>("Sales");
+  const [requestRole, setRequestRole] = useState(rolesByDepartment.Sales[0]);
+  const [requestDuration, setRequestDuration] = useState<AccessRequest["duration"]>("Until cancelled");
+  const [requestReason, setRequestReason] = useState("");
+  const [requestError, setRequestError] = useState("");
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+
+  const visibleAccessRequests = isSuperAdmin
+    ? accessRequests
+    : accessRequests.filter(request => request.requestedById === currentUser.id);
+  const selectedRequest = selectedRequestId
+    ? accessRequests.find(request => request.id === selectedRequestId) ?? null
+    : null;
+
+  const submitAccessRequest = () => {
+    if (requestReason.trim().length < 10) {
+      setRequestError("Provide a business reason of at least 10 characters.");
+      return;
+    }
+    const module = moduleOptions.find(item => item.id === requestModule);
+    onCreateAccessRequest?.({
+      requestedById: currentUser.id,
+      requestedBy: currentUser.name,
+      requestType,
+      ...(requestType === "Module Permission" ? {
+        moduleId: requestModule,
+        moduleLabel: module?.label ?? requestModule,
+        permissions: requestPermissions.includes("View") ? requestPermissions : ["View", ...requestPermissions],
+      } : {
+        targetDepartment: requestDepartment,
+        targetRole: requestRole,
+      }),
+      duration: requestDuration,
+      reason: requestReason.trim(),
+    });
+    setNewRequestModal(false);
+    setReqSuccess(true);
+    setRequestReason("");
+    setRequestError("");
+    setTimeout(() => setReqSuccess(false), 4000);
+  };
 
   const handleSave = () => {
     setSaved(true);
@@ -220,7 +293,7 @@ export default function Settings({ demoMode, initialTab, user }: { demoMode?: bo
             <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-4 space-y-3">
               <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">Account Details</div>
               {[
-                { label: "Department", value: currentUser.department },
+                { label: "Department Access", value: currentUser.departments.join(" · ") },
                 { label: "Role", value: currentUser.role, highlight: true },
                 { label: "Employee ID", value: currentUser.employeeId },
                 { label: "Access Granted By", value: currentUser.accessGrantedBy },
@@ -418,7 +491,7 @@ export default function Settings({ demoMode, initialTab, user }: { demoMode?: bo
               { label: "Low Stock Warning", owner: "Kitchen / Procurement" },
               { label: "Failed Delivery", owner: "Delivery / Support" },
               { label: "Refund Requests", owner: "Finance" },
-              { label: "Permission Requests", owner: "Dept Head / Super Admin" },
+              { label: "Permission Requests", owner: "Super Admin" },
               { label: "Critical Escalations", owner: "Operations" },
             ].map(a => (
               <div key={a.label} className="flex items-center justify-between py-1.5 border-b border-[var(--pm-border)] last:border-0">
@@ -441,8 +514,8 @@ export default function Settings({ demoMode, initialTab, user }: { demoMode?: bo
           <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-5 space-y-4">
             <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider border-b border-[var(--pm-border)] pb-2">Current Access</div>
             {[
-              { label: "Department", value: currentUser.department },
-              { label: "Role", value: currentUser.role, accent: true },
+              { label: "Primary Department", value: currentUser.department },
+              { label: "Active Role", value: currentUser.role, accent: true },
               { label: "Access Granted By", value: currentUser.accessGrantedBy },
               { label: "Last Permission Change", value: currentUser.lastPermissionChange },
             ].map(f => (
@@ -454,16 +527,31 @@ export default function Settings({ demoMode, initialTab, user }: { demoMode?: bo
           </div>
 
           <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] p-5">
-            <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider border-b border-[var(--pm-border)] pb-2 mb-3">Modules I Can Access</div>
-            <div className="bg-green-950/10 border border-green-800/30 px-3 py-2 mb-3">
-              <div className="text-xs font-bold text-green-400 mono">Super Admin · Full Access</div>
-              <div className="text-xs text-[var(--pm-text-muted)] mt-1">All modules, all permissions, all departments</div>
+            <div className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider border-b border-[var(--pm-border)] pb-2 mb-3">Screen Permissions</div>
+            <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+              {currentUser.permittedModules.map(moduleId => {
+                const module = moduleOptions.find(item => item.id === moduleId);
+                const permissions = currentUser.modulePermissions[moduleId] ?? ["View"];
+                return (
+                  <div key={moduleId} className="border border-[var(--pm-border)] bg-[var(--pm-bg)] px-3 py-2">
+                    <div className="text-xs font-bold text-[var(--pm-text-secondary)]">{module?.label ?? moduleId}</div>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {permissions.map(permission => <span key={permission} className="border border-[#F5B300]/30 bg-[#F5B300]/10 px-1.5 py-0.5 text-[10px] font-bold text-[var(--pm-accent-text)]">{permission}</span>)}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {["Operations", "Ready Series", "Meal Plans", "Subscribers", "Kitchen", "Inventory", "Procurement", "Dispatch", "Support", "Finance", "Marketing", "Reports", "ACL", "Audit Logs", "Settings", "Business Rules"].map(m => (
-                <span key={m} className="text-xs mono px-2 py-0.5 border border-[var(--pm-border)] text-[var(--pm-text-muted)]">{m}</span>
-              ))}
+          </div>
+          <div className="sm:col-span-2 flex items-center justify-between border border-[#F5B300]/40 bg-[#F5B300]/10 p-4">
+            <div>
+              <div className="text-sm font-bold text-[var(--pm-text)]">Need access to another feature or department?</div>
+              <div className="mt-1 text-xs text-[var(--pm-text-muted)]">Submit a request for Super Admin approval. Your current access remains unchanged while it is pending.</div>
             </div>
+            <button onClick={() => {
+              setActiveTab("permission-requests");
+              setNewRequestModal(true);
+            }} className="bg-[#F5B300] px-4 py-2 text-xs font-bold text-black mono">Request Additional Access</button>
           </div>
         </div>
       )}
@@ -477,41 +565,139 @@ export default function Settings({ demoMode, initialTab, user }: { demoMode?: bo
             </div>
           )}
           <div className="flex items-center justify-between">
-            <div className="text-xs text-[var(--pm-text-muted)]">Manage and review module access requests</div>
+            <div className="text-xs text-[var(--pm-text-muted)]">{isSuperAdmin ? "Review and decide access requests from internal users" : "Request and track your additional access"}</div>
             <button onClick={() => setNewRequestModal(true)}
               className="bg-[#F5B300] text-black text-xs font-bold px-4 py-2 mono hover:bg-yellow-400 transition-colors">
               + New Request
             </button>
           </div>
 
-          <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="w-full overflow-x-auto border border-[var(--pm-border)] bg-[var(--pm-surface)]">
+            <table className="w-full min-w-[1180px] table-fixed text-sm">
+              <colgroup>
+                <col className="w-[96px]" />
+                <col className="w-[155px]" />
+                <col className="w-[135px]" />
+                <col className="w-[360px]" />
+                <col className="w-[112px]" />
+                <col className="w-[260px]" />
+                <col className="w-[210px]" />
+                <col className="w-[130px]" />
+                <col className="w-[100px]" />
+              </colgroup>
               <thead>
                 <tr className="border-b border-[var(--pm-border)]">
-                  {["ID", "Requested By", "Dept", "Module", "Permission", "Reason", "Status", "Approved By", "Date"].map(h => (
+                  {["ID", "Requested By", "Request", "Access", "Duration", "Reason", "Status", "Decided By", "Date"].map(h => (
                     <th key={h} className="px-4 py-2.5 text-left text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {permissionRequests.map((r, i) => (
-                  <tr key={r.id} className={`border-b border-[var(--pm-border)] hover:bg-[var(--pm-surface-subtle)] transition-colors ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}>
+                {visibleAccessRequests.map((r, i) => (
+                  <tr
+                    key={r.id}
+                    tabIndex={0}
+                    onClick={() => setSelectedRequestId(r.id)}
+                    onKeyDown={event => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setSelectedRequestId(r.id);
+                      }
+                    }}
+                    className={`cursor-pointer border-b border-[var(--pm-border)] transition-colors hover:bg-[#F5B300]/5 focus:bg-[#F5B300]/5 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#F5B300] ${i % 2 === 0 ? "" : "bg-[var(--pm-surface-subtle)]"}`}
+                  >
                     <td className="px-4 py-2.5 mono text-xs text-[var(--pm-accent-text)]">{r.id}</td>
                     <td className="px-4 py-2.5 font-medium">{r.requestedBy}</td>
-                    <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{r.dept}</td>
-                    <td className="px-4 py-2.5 text-xs mono text-[var(--pm-text-muted)]">{r.module}</td>
-                    <td className="px-4 py-2.5 text-xs mono">{r.permission}</td>
+                    <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{r.requestType}</td>
+                    <td className="px-4 py-2.5 text-xs mono text-[var(--pm-text-muted)]"><div className="line-clamp-2">{r.requestType === "Module Permission" ? `${r.moduleLabel} · ${(r.permissions ?? ["View"]).join(", ")}` : `${r.targetDepartment} · ${r.targetRole}`}</div></td>
+                    <td className="px-4 py-2.5 text-xs mono">{r.duration}</td>
                     <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)] max-w-xs truncate">{r.reason}</td>
                     <td className="px-4 py-2.5">
-                      <span className="text-xs mono font-bold capitalize px-2 py-0.5" style={{ color: statusColor[r.status] }}>{r.status}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs mono font-bold capitalize px-2 py-0.5" style={{ color: statusColor[r.status.toLowerCase()] }}>{r.status}</span>
+                        {isSuperAdmin && r.status === "Pending" && <><button onClick={event => { event.stopPropagation(); onDecideAccessRequest?.(r.id, "Rejected"); }} className="border border-red-900/50 px-2 py-1 text-[10px] font-bold text-red-400">Reject</button><button onClick={event => { event.stopPropagation(); onDecideAccessRequest?.(r.id, "Approved"); }} className="bg-green-800 px-2 py-1 text-[10px] font-bold text-white">Approve</button></>}
+                      </div>
                     </td>
-                    <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{r.approvedBy ?? "—"}</td>
-                    <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{r.date}</td>
+                    <td className="px-4 py-2.5 text-xs text-[var(--pm-text-muted)]">{r.decidedBy ?? "—"}</td>
+                    <td className="px-4 py-2.5 mono text-xs text-[var(--pm-text-muted)]">{r.requestedAt}</td>
                   </tr>
                 ))}
+                {!visibleAccessRequests.length && <tr><td colSpan={9} className="px-4 py-10 text-center text-sm text-[var(--pm-text-muted)]">{isSuperAdmin ? "No access requests have been submitted." : "You have not submitted any access requests."}</td></tr>}
               </tbody>
             </table>
           </div>
+
+          {selectedRequest && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onMouseDown={event => {
+              if (event.currentTarget === event.target) setSelectedRequestId(null);
+            }}>
+              <div role="dialog" aria-modal="true" aria-labelledby="request-detail-title" className="w-full max-w-2xl border border-[var(--pm-border)] bg-[var(--pm-surface)] shadow-2xl">
+                <div className="flex items-start justify-between border-b border-[var(--pm-border)] px-6 py-4">
+                  <div>
+                    <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--pm-text-muted)]">Permission request</div>
+                    <h3 id="request-detail-title" className="text-lg font-extrabold text-[var(--pm-text)]">{selectedRequest.id}</h3>
+                  </div>
+                  <button onClick={() => setSelectedRequestId(null)} aria-label="Close request details" className="px-2 text-2xl leading-none text-[var(--pm-text-muted)] hover:text-[var(--pm-text)]">×</button>
+                </div>
+
+                <div className="space-y-5 p-6">
+                  <div className="grid grid-cols-2 gap-px border border-[var(--pm-border)] bg-[var(--pm-border)] sm:grid-cols-4">
+                    {[
+                      { label: "Requested by", value: selectedRequest.requestedBy },
+                      { label: "Request type", value: selectedRequest.requestType },
+                      { label: "Duration", value: selectedRequest.duration },
+                      { label: "Status", value: selectedRequest.status },
+                    ].map(item => (
+                      <div key={item.label} className="bg-[var(--pm-surface)] p-3">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--pm-text-muted)]">{item.label}</div>
+                        <div className="mt-1 text-sm font-semibold text-[var(--pm-text-secondary)]">{item.value}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div>
+                    <div className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--pm-text)]">Requested access</div>
+                    <div className="border border-[var(--pm-border)] bg-[var(--pm-bg)] p-4">
+                      <div className="font-bold text-[var(--pm-text-secondary)]">
+                        {selectedRequest.requestType === "Module Permission"
+                          ? selectedRequest.moduleLabel
+                          : `${selectedRequest.targetDepartment} — ${selectedRequest.targetRole}`}
+                      </div>
+                      {selectedRequest.requestType === "Module Permission" && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {(selectedRequest.permissions ?? ["View"]).map(permission => (
+                            <span key={permission} className="border border-[#F5B300]/40 bg-[#F5B300]/10 px-2 py-1 text-xs font-bold text-[var(--pm-accent-text)]">{permission}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--pm-text)]">Business reason</div>
+                    <div className="whitespace-pre-wrap border border-[var(--pm-border)] bg-[var(--pm-bg)] p-4 text-sm leading-6 text-[var(--pm-text-secondary)]">{selectedRequest.reason}</div>
+                  </div>
+
+                  <div className="grid gap-3 text-xs text-[var(--pm-text-muted)] sm:grid-cols-2">
+                    <div><span className="font-bold text-[var(--pm-text-secondary)]">Submitted:</span> {selectedRequest.requestedAt}</div>
+                    <div><span className="font-bold text-[var(--pm-text-secondary)]">Decided by:</span> {selectedRequest.decidedBy ?? "Pending decision"}</div>
+                    {selectedRequest.decidedAt && <div><span className="font-bold text-[var(--pm-text-secondary)]">Decision time:</span> {selectedRequest.decidedAt}</div>}
+                    {selectedRequest.expiresAt && <div><span className="font-bold text-[var(--pm-text-secondary)]">Expires:</span> {new Date(selectedRequest.expiresAt).toLocaleString("en-SG")}</div>}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 border-t border-[var(--pm-border)] px-6 py-4">
+                  <button onClick={() => setSelectedRequestId(null)} className="border border-[var(--pm-border)] px-4 py-2 text-xs font-bold text-[var(--pm-text-secondary)]">Close</button>
+                  {isSuperAdmin && selectedRequest.status === "Pending" && (
+                    <>
+                      <button onClick={() => onDecideAccessRequest?.(selectedRequest.id, "Rejected")} className="border border-red-800 px-4 py-2 text-xs font-bold text-red-400">Reject</button>
+                      <button onClick={() => onDecideAccessRequest?.(selectedRequest.id, "Approved")} className="bg-green-700 px-4 py-2 text-xs font-bold text-white">Approve request</button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* New request modal */}
           {newRequestModal && (
@@ -521,29 +707,90 @@ export default function Settings({ demoMode, initialTab, user }: { demoMode?: bo
                   <span className="font-bold text-[var(--pm-text-secondary)]">New Permission Request</span>
                   <button onClick={() => setNewRequestModal(false)} className="text-[var(--pm-text-muted)] hover:text-[var(--pm-text-muted)] text-xl leading-none">×</button>
                 </div>
-                {[
-                  { label: "Module", type: "select", options: ["Operations", "Ready Series Orders", "Meal Plans", "Kitchen", "Inventory", "Finance", "Reports", "Dispatch", "Support", "Marketing"] },
-                  { label: "Permission Required", type: "select", options: ["View", "Create", "Edit", "Delete", "Approve", "Export", "Assign", "Execute"] },
-                  { label: "Request Type", type: "select", options: ["New Module Access", "Additional Permission", "Temporary Access", "Access to Another Workflow"] },
-                ].map(f => (
-                  <div key={f.label} className="space-y-1">
-                    <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">{f.label}</label>
-                    <select className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 mono outline-none">
-                      {f.options.map(o => <option key={o}>{o}</option>)}
-                    </select>
+                <label className="block space-y-1 text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">Request type
+                  <select value={requestType} onChange={event => setRequestType(event.target.value as AccessRequestType)} className="block w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 normal-case">
+                    <option>Module Permission</option><option>Department Role</option>
+                  </select>
+                </label>
+                {requestType === "Module Permission" ? (
+                  <div className="space-y-3">
+                    <label className="space-y-1 text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">Screen
+                      <select value={requestModule} onChange={event => setRequestModule(event.target.value)} className="block w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 normal-case">{moduleOptions.map(module => <option key={module.id} value={module.id}>{module.label}</option>)}</select>
+                    </label>
+                    <fieldset>
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">Permissions</span>
+                        <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-[var(--pm-accent-text)]">
+                          <input
+                            type="checkbox"
+                            checked={modulePermissionOptions.every(permission => requestPermissions.includes(permission))}
+                            onChange={event => setRequestPermissions(event.target.checked ? [...modulePermissionOptions] : ["View"])}
+                            className="accent-[#F5B300]"
+                          />
+                          Select all
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {modulePermissionOptions.map(permission => {
+                          const checked = requestPermissions.includes(permission);
+                          const viewRequired = permission === "View" && requestPermissions.some(item => item !== "View");
+                          return (
+                            <label key={permission} className="flex items-center gap-2 border border-[var(--pm-border)] bg-[var(--pm-bg)] px-3 py-2 text-xs text-[var(--pm-text-secondary)]">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                disabled={viewRequired}
+                                onChange={() => setRequestPermissions(current => {
+                                  if (current.includes(permission)) {
+                                    const next = current.filter(item => item !== permission);
+                                    return next.length ? next : ["View"];
+                                  }
+                                  return permission === "View"
+                                    ? [...current, permission]
+                                    : [...new Set(["View" as ModulePermission, ...current, permission])];
+                                })}
+                                className="accent-[#F5B300]"
+                              />
+                              {permission}
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <p className="mt-2 text-[11px] text-[var(--pm-text-muted)]">View is included automatically when another permission is selected.</p>
+                    </fieldset>
                   </div>
-                ))}
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="space-y-1 text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">Department
+                      <select value={requestDepartment} onChange={event => {
+                        const department = event.target.value as Department;
+                        setRequestDepartment(department);
+                        setRequestRole(rolesByDepartment[department][0]);
+                      }} className="block w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 normal-case">{(Object.keys(rolesByDepartment) as Department[]).map(department => <option key={department}>{department}</option>)}</select>
+                    </label>
+                    <label className="space-y-1 text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">Role
+                      <select value={requestRole} onChange={event => setRequestRole(event.target.value)} className="block w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 normal-case">{rolesByDepartment[requestDepartment].map(role => <option key={role}>{role}</option>)}</select>
+                    </label>
+                  </div>
+                )}
+                <label className="block space-y-1 text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">Duration
+                  <select value={requestDuration} onChange={event => setRequestDuration(event.target.value as AccessRequest["duration"])} className="block w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 normal-case"><option>24 hours</option><option>1 week</option><option>1 month</option><option>Until cancelled</option></select>
+                </label>
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-[var(--pm-text)] uppercase tracking-wider">Reason</label>
-                  <textarea rows={3} placeholder="Describe why this access is needed..."
+                  <textarea rows={3} value={requestReason} onChange={event => {
+                    setRequestReason(event.target.value);
+                    setRequestError("");
+                  }} placeholder="Describe why this access is needed..."
                     className="w-full bg-[var(--pm-bg)] border border-[var(--pm-border)] text-[var(--pm-text-secondary)] text-sm px-3 py-2 outline-none focus:border-[var(--pm-border-strong)] resize-none placeholder:text-[var(--pm-text-muted)]" />
                 </div>
+                {requestError && <div role="alert" className="border border-red-700 bg-red-950/30 px-3 py-2 text-xs font-bold text-red-300">{requestError}</div>}
                 <div className="border border-[var(--pm-border)] bg-[var(--pm-bg)] px-3 py-2 text-xs text-[var(--pm-text-muted)]">
-                  Request will be sent to your Department Head and Super Admin for approval.
+                  Request will be sent to a Super Admin. Department managers cannot approve or assign access.
                 </div>
                 <div className="flex gap-2 pt-2">
                   <button onClick={() => setNewRequestModal(false)} className="flex-1 py-2 border border-[var(--pm-border)] text-[var(--pm-text-muted)] text-xs mono hover:border-[var(--pm-border-strong)] transition-colors">Cancel</button>
-                  <button onClick={() => { setNewRequestModal(false); setReqSuccess(true); setTimeout(() => setReqSuccess(false), 4000); }}
+                  <button onClick={submitAccessRequest}
                     className="flex-1 py-2 bg-[#F5B300] text-black text-xs font-bold mono hover:bg-yellow-400 transition-colors">Submit Request</button>
                 </div>
               </div>

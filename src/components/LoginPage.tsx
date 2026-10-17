@@ -8,6 +8,9 @@ const departments: Department[] = [
   "Kitchen",
   "Dispatch",
   "Finance",
+  "Marketing",
+  "Sales",
+  "Subscription Operations",
   "Customer Support",
 ];
 
@@ -31,8 +34,9 @@ export default function LoginPage({ users, theme, onThemeChange, onLogin }: Prop
       setError("The email or password is incorrect.");
       return;
     }
-    if (user.department !== department) {
-      setError(`This account belongs to the ${user.department} department.`);
+    const assignment = user.departmentAssignments.find(item => item.department === department);
+    if (!assignment) {
+      setError(`This account is assigned to ${user.departmentAssignments.map(item => item.department).join(" and ")}.`);
       return;
     }
     if (user.status !== "Active") {
@@ -40,7 +44,7 @@ export default function LoginPage({ users, theme, onThemeChange, onLogin }: Prop
       return;
     }
     setError("");
-    onLogin(user);
+    onLogin({ ...user, department, role: assignment.role });
   };
 
   const fillDemo = (user: UserAccount) => {
@@ -154,15 +158,15 @@ export default function LoginPage({ users, theme, onThemeChange, onLogin }: Prop
             <div className="mt-8 border-t pt-5" style={{ borderColor: "var(--pm-border)" }}>
               <div className="mb-3 text-xs font-bold uppercase tracking-[0.12em]" style={{ color: "var(--pm-text-muted)" }}>Demo accounts</div>
               <div className="grid gap-2 sm:grid-cols-2">
-                {users.slice(0, 6).map(user => (
+                {users.slice(0, 8).map(user => (
                   <button
                     key={user.id}
                     onClick={() => fillDemo(user)}
                     className="rounded-lg border p-2.5 text-left transition-colors"
                     style={{ borderColor: "var(--pm-border)", background: "var(--pm-surface-subtle)" }}
                   >
-                    <div className="text-xs font-bold">{user.role}</div>
-                    <div className="mt-0.5 truncate text-[11px]" style={{ color: "var(--pm-text-muted)" }}>{user.department}</div>
+                    <div className="text-xs font-bold">{user.departmentAssignments.map(item => item.role).join(" + ")}</div>
+                    <div className="mt-0.5 truncate text-[11px]" style={{ color: "var(--pm-text-muted)" }}>{user.departmentAssignments.map(item => item.department).join(" · ")}</div>
                   </button>
                 ))}
               </div>

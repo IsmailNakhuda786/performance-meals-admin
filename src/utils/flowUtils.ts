@@ -26,7 +26,7 @@ export function downloadExcel(filename: string, rows: Record<string, string | nu
   URL.revokeObjectURL(url);
 }
 
-export function printHtml(title: string, bodyHtml: string) {
+export function printHtml(title: string, bodyHtml: string, autoPrint = false) {
   const w = window.open("", "_blank", "width=960,height=700");
   if (!w) return;
   w.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
@@ -58,6 +58,9 @@ export function printHtml(title: string, bodyHtml: string) {
 </div>
 ${bodyHtml}</body></html>`);
   w.document.close();
+  if (autoPrint) {
+    window.setTimeout(() => w.print(), 250);
+  }
 }
 
 export function nowStr() {

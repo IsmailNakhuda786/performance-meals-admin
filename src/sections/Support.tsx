@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import StatusBadge from "../components/StatusBadge";
+import PendingWorkBanner from "../components/PendingWorkBanner";
 import { customers, orders, subscriptions } from "../data";
+import { readLocalState, writeLocalState } from "../utils/localState";
 
-const tickets = [
+const initialTickets = [
   { id: "TKT-001", customer: "Aisha Rahman", issue: "Wrong meal delivered (Dinner slot)", priority: "High", status: "Open", created: "14 Sep 10:24", assigned: "Sarah" },
   { id: "TKT-002", customer: "Wei Jie Lim", issue: "Request to extend pause by 2 more weeks", priority: "Medium", status: "In Progress", created: "14 Sep 09:11", assigned: "Jerome" },
   { id: "TKT-003", customer: "Jason Yeo", issue: "Billing charge after pause — needs refund", priority: "High", status: "Open", created: "14 Sep 08:55", assigned: "Unassigned" },
@@ -66,12 +68,14 @@ const systemColors: Record<string, string> = {
   Dispatch: "#8B5CF6", Logistics: "#06B6D4", Audit: "#22C55E",
 };
 
-export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
+export default function Support({ demoMode, onPendingCountChange }: { demoMode?: boolean; onPendingCountChange?: (count: number) => void } = {}) {
   const [search, setSearch] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<typeof customers[0] | null>(demoMode ? customers[0] : null);
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [propagating, setPropagating] = useState(false);
   const [propagationDone, setPropagationDone] = useState(false);
+  const [tickets, setTickets] = useState(() => readLocalState("pm-support-workflow", initialTickets));
+  const [openOnly, setOpenOnly] = useState(false);
 
   const searchResult = search.length > 1
     ? customers.filter(c =>
@@ -84,10 +88,28 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
 
   const openTickets = tickets.filter(t => t.status === "Open").length;
   const inProgress = tickets.filter(t => t.status === "In Progress").length;
+  const visibleTickets = openOnly ? tickets.filter(ticket => ticket.status === "Open") : tickets;
+
+  useEffect(() => {
+    onPendingCountChange?.(openTickets);
+  }, [onPendingCountChange, openTickets]);
+
+  useEffect(() => {
+    writeLocalState("pm-support-workflow", tickets);
+  }, [tickets]);
 
   return (
     <div className="p-6 space-y-5">
       <h2 className="text-xl font-extrabold">Customer Support</h2>
+
+      <PendingWorkBanner
+        count={openTickets}
+        itemLabel="open support ticket"
+        detail={`${tickets.filter(ticket => ticket.status === "Open").map(ticket => `${ticket.id} · ${ticket.customer}`).join(", ")} need a response.`}
+        reviewing={openOnly}
+        onReview={() => setOpenOnly(true)}
+        onShowAll={() => setOpenOnly(false)}
+      />
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -372,7 +394,7 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
             </button>
           </div>
           <div className="border border-[var(--pm-border)] bg-[var(--pm-surface)] divide-y divide-[#1F1F1F]">
-            {tickets.map(t => (
+            {visibleTickets.map(t => (
               <div key={t.id} className="px-4 py-3 hover:bg-[var(--pm-surface-subtle)] transition-colors cursor-pointer">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
@@ -384,6 +406,14 @@ export default function Support({ demoMode }: { demoMode?: boolean } = {}) {
                     <div className="font-medium text-sm">{t.customer}</div>
                     <div className="text-xs text-[var(--pm-text-muted)] mt-0.5">{t.issue}</div>
                     <div className="text-xs text-[var(--pm-text-muted)] mono mt-1">{t.created} · {t.assigned}</div>
+                    {t.status === "Open" && (
+                      <button
+                        onClick={() => setTickets(current => current.map(ticket => ticket.id === t.id ? { ...ticket, status: "Resolved" } : ticket))}
+                        className="mt-2 border border-green-700 bg-green-50 px-2 py-1 text-[10px] font-bold text-green-800"
+                      >
+                        Mark resolved
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

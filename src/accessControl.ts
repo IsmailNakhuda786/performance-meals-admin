@@ -4,9 +4,45 @@ export type Department =
   | "Kitchen"
   | "Dispatch"
   | "Finance"
+  | "Marketing"
+  | "Sales"
+  | "Subscription Operations"
   | "Customer Support";
 
 export type UserStatus = "Active" | "Suspended";
+
+export interface DepartmentAssignment {
+  department: Department;
+  role: string;
+}
+
+export type AccessRequestStatus = "Pending" | "Approved" | "Rejected" | "Expired";
+export type AccessRequestType = "Module Permission" | "Department Role";
+export type AccessDuration = "24 hours" | "1 week" | "1 month" | "Until cancelled";
+export const modulePermissionOptions = ["View", "Create", "Edit", "Delete", "Approve", "Export", "Assign", "Execute"] as const;
+export type ModulePermission = typeof modulePermissionOptions[number];
+
+export interface AccessRequest {
+  id: string;
+  requestedById: string;
+  requestedBy: string;
+  requestType: AccessRequestType;
+  moduleId?: string;
+  moduleLabel?: string;
+  permissions?: ModulePermission[];
+  targetDepartment?: Department;
+  targetRole?: string;
+  duration: AccessDuration;
+  reason: string;
+  status: AccessRequestStatus;
+  requestedAt: string;
+  decidedBy?: string;
+  decidedAt?: string;
+  expiresAt?: string;
+  originalPermissions?: string[];
+  originalModulePermissions?: Record<string, ModulePermission[]>;
+  originalDepartmentAssignments?: DepartmentAssignment[];
+}
 
 export interface UserAccount {
   id: string;
@@ -15,8 +51,10 @@ export interface UserAccount {
   password: string;
   department: Department;
   role: string;
+  departmentAssignments: DepartmentAssignment[];
   status: UserStatus;
   permissions: string[];
+  modulePermissions?: Record<string, ModulePermission[]>;
 }
 
 export interface ModuleOption {
@@ -57,12 +95,16 @@ export const moduleOptions: ModuleOption[] = [
   { id: "acl", label: "Users & Roles", group: "Admin" },
   { id: "audit-logs", label: "Audit Logs", group: "Admin" },
   { id: "notifications", label: "Notifications", group: "Admin" },
+  { id: "escalations", label: "Escalations", group: "Admin" },
   { id: "settings", label: "Settings", group: "Admin" },
   { id: "whatsapp", label: "WhatsApp", group: "Communication" },
   { id: "support", label: "Customer Support", group: "Communication" },
 ];
 
 const allModules = moduleOptions.map(module => module.id);
+const fullModulePermissions = (modules: string[]) => Object.fromEntries(
+  modules.map(module => [module, [...modulePermissionOptions]])
+);
 
 export const rolePermissions: Record<string, string[]> = {
   "Super Admin": allModules,
@@ -80,8 +122,20 @@ export const rolePermissions: Record<string, string[]> = {
     "riders", "delivery-hub", "customers", "notifications", "reports", "settings",
   ],
   "Finance Manager": [
-    "dashboard", "reports", "customers", "billing-cycles", "wallet", "refunds",
+    "dashboard", "reports", "customers", "billing-cycles", "wallet",
     "finance", "audit-logs", "notifications", "settings",
+  ],
+  "Marketing Manager": [
+    "dashboard", "reports", "customers", "subscriber-profile", "refunds",
+    "notifications", "whatsapp", "support", "settings",
+  ],
+  "Sales Manager": [
+    "dashboard", "orders", "customers", "subscriber-profile", "subscriptions",
+    "refunds", "wallet", "notifications", "support", "settings",
+  ],
+  "Subscription Manager": [
+    "dashboard", "orders", "customers", "subscriber-profile", "subscriptions",
+    "menu-review", "pause-management", "billing-cycles", "fulfillment", "notifications", "support", "settings",
   ],
   "Support Manager": [
     "dashboard", "customers", "subscriber-profile", "subscriptions", "pause-management",
@@ -96,6 +150,9 @@ export const rolesByDepartment: Record<Department, string[]> = {
   Kitchen: ["Kitchen Manager", "Team Member"],
   Dispatch: ["Dispatch Manager", "Team Member"],
   Finance: ["Finance Manager", "Team Member"],
+  Marketing: ["Marketing Manager", "Team Member"],
+  Sales: ["Sales Manager", "Team Member"],
+  "Subscription Operations": ["Subscription Manager", "Team Member"],
   "Customer Support": ["Support Manager", "Team Member"],
 };
 
@@ -107,8 +164,10 @@ export const initialUsers: UserAccount[] = [
     password: "Admin123!",
     department: "Admin",
     role: "Super Admin",
+    departmentAssignments: [{ department: "Admin", role: "Super Admin" }],
     status: "Active",
     permissions: rolePermissions["Super Admin"],
+    modulePermissions: fullModulePermissions(rolePermissions["Super Admin"]),
   },
   {
     id: "U-002",
@@ -117,8 +176,10 @@ export const initialUsers: UserAccount[] = [
     password: "Demo123!",
     department: "Operations",
     role: "Operations Manager",
+    departmentAssignments: [{ department: "Operations", role: "Operations Manager" }],
     status: "Active",
     permissions: rolePermissions["Operations Manager"],
+    modulePermissions: fullModulePermissions(rolePermissions["Operations Manager"]),
   },
   {
     id: "U-003",
@@ -127,8 +188,10 @@ export const initialUsers: UserAccount[] = [
     password: "Demo123!",
     department: "Kitchen",
     role: "Kitchen Manager",
+    departmentAssignments: [{ department: "Kitchen", role: "Kitchen Manager" }],
     status: "Active",
     permissions: rolePermissions["Kitchen Manager"],
+    modulePermissions: fullModulePermissions(rolePermissions["Kitchen Manager"]),
   },
   {
     id: "U-004",
@@ -137,8 +200,10 @@ export const initialUsers: UserAccount[] = [
     password: "Demo123!",
     department: "Dispatch",
     role: "Dispatch Manager",
+    departmentAssignments: [{ department: "Dispatch", role: "Dispatch Manager" }],
     status: "Active",
     permissions: rolePermissions["Dispatch Manager"],
+    modulePermissions: fullModulePermissions(rolePermissions["Dispatch Manager"]),
   },
   {
     id: "U-005",
@@ -147,8 +212,13 @@ export const initialUsers: UserAccount[] = [
     password: "Demo123!",
     department: "Finance",
     role: "Finance Manager",
+    departmentAssignments: [
+      { department: "Finance", role: "Finance Manager" },
+      { department: "Subscription Operations", role: "Subscription Manager" },
+    ],
     status: "Active",
-    permissions: rolePermissions["Finance Manager"],
+    permissions: [...new Set([...rolePermissions["Finance Manager"], ...rolePermissions["Subscription Manager"]])],
+    modulePermissions: fullModulePermissions([...new Set([...rolePermissions["Finance Manager"], ...rolePermissions["Subscription Manager"]])]),
   },
   {
     id: "U-006",
@@ -157,7 +227,21 @@ export const initialUsers: UserAccount[] = [
     password: "Demo123!",
     department: "Customer Support",
     role: "Support Manager",
+    departmentAssignments: [{ department: "Customer Support", role: "Support Manager" }],
     status: "Active",
     permissions: rolePermissions["Support Manager"],
+    modulePermissions: fullModulePermissions(rolePermissions["Support Manager"]),
+  },
+  {
+    id: "U-007",
+    name: "Alex Goh",
+    email: "alex@performancemeals.sg",
+    password: "Demo123!",
+    department: "Operations",
+    role: "Team Member",
+    departmentAssignments: [{ department: "Operations", role: "Team Member" }],
+    status: "Active",
+    permissions: rolePermissions["Team Member"],
+    modulePermissions: fullModulePermissions(rolePermissions["Team Member"]),
   },
 ];

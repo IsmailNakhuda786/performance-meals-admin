@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { readySeriesProducts } from "../catalog";
 import { downloadCSV } from "../utils/flowUtils";
+import PendingWorkBanner from "../components/PendingWorkBanner";
+import { readLocalState, writeLocalState } from "../utils/localState";
 
 const initialIngredients = [
   { id: "I01", name: "Chicken Breast (1kg)", category: "Protein", unit: "packs", stock: 8, minimum: 20, weeklyUsage: 45, supplier: "SG Fresh Meats", cost: 12.50 },
@@ -35,12 +37,12 @@ const initialFrozenProducts = readySeriesProducts.map((product, index) => {
   };
 });
 
-export default function Inventory() {
+export default function Inventory({ onPendingCountChange }: { onPendingCountChange?: (count: number) => void } = {}) {
   const [tab, setTab] = useState<"ingredients" | "ready-series">("ingredients");
   const [catFilter, setCatFilter] = useState("All");
   const [search, setSearch] = useState("");
-  const [ingredients, setIngredients] = useState(initialIngredients);
-  const [frozenProducts, setFrozenProducts] = useState(initialFrozenProducts);
+  const [ingredients, setIngredients] = useState(() => readLocalState("pm-inventory-ingredients", initialIngredients));
+  const [frozenProducts, setFrozenProducts] = useState(() => readLocalState("pm-inventory-frozen", initialFrozenProducts));
   const [stockModal, setStockModal] = useState<{
     kind: "ingredient" | "ready-series";
     id: string;
@@ -50,14 +52,25 @@ export default function Inventory() {
   const [quantity, setQuantity] = useState("");
   const [reference, setReference] = useState("");
   const [stockSuccess, setStockSuccess] = useState("");
+  const [lowStockOnly, setLowStockOnly] = useState(false);
 
   const filteredIng = ingredients.filter(i => {
+    if (lowStockOnly && i.stock >= i.minimum) return false;
     if (catFilter !== "All" && i.category !== catFilter) return false;
     if (search && !i.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
   const lowStockIng = ingredients.filter(i => i.stock < i.minimum).length;
+
+  useEffect(() => {
+    onPendingCountChange?.(lowStockIng);
+  }, [lowStockIng, onPendingCountChange]);
+
+  useEffect(() => {
+    writeLocalState("pm-inventory-ingredients", ingredients);
+    writeLocalState("pm-inventory-frozen", frozenProducts);
+  }, [frozenProducts, ingredients]);
 
   const openAddStock = () => {
     const item = tab === "ingredients" ? filteredIng[0] : frozenProducts[0];
@@ -134,6 +147,20 @@ export default function Inventory() {
           Stock updated · {stockSuccess}
         </div>
       )}
+
+      <PendingWorkBanner
+        count={lowStockIng}
+        itemLabel="low-stock ingredient"
+        detail={`${ingredients.filter(item => item.stock < item.minimum).map(item => item.name).join(", ")} need replenishment.`}
+        reviewing={tab === "ingredients" && lowStockOnly}
+        onReview={() => {
+          setTab("ingredients");
+          setLowStockOnly(true);
+          setCatFilter("All");
+          setSearch("");
+        }}
+        onShowAll={() => setLowStockOnly(false)}
+      />
 
       {/* Summary KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

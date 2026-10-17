@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import PendingWorkBanner from "../components/PendingWorkBanner";
 import { downloadCSV } from "../utils/flowUtils";
+import { readLocalState, writeLocalState } from "../utils/localState";
 
 type FulfillStatus = "active" | "paused" | "cancelled" | "pending-review";
 
@@ -36,15 +38,24 @@ const statusStyle: Record<FulfillStatus, { label: string; color: string }> = {
   "pending-review": { label: "Pending Review", color: "#E85D04" },
 };
 
-export default function Fulfillment({ demoMode }: { demoMode?: boolean } = {}) {
+export default function Fulfillment({ demoMode, onPendingCountChange }: { demoMode?: boolean; onPendingCountChange?: (count: number) => void } = {}) {
   const [statusFilter, setStatusFilter] = useState<FulfillStatus | "all">("all");
   const [selected, setSelected] = useState<Subscriber | null>(demoMode ? subscribers[0] : null);
-  const [items, setItems] = useState(subscribers);
+  const [items, setItems] = useState(() => readLocalState("pm-fulfillment-workflow", subscribers));
   const [showAction, setShowAction] = useState<"pause" | "cancel" | null>(demoMode ? "pause" : null);
 
   const filtered = items.filter(s =>
     statusFilter === "all" ? true : s.status === statusFilter
   );
+  const pendingItems = items.filter(item => item.status === "pending-review");
+
+  useEffect(() => {
+    onPendingCountChange?.(pendingItems.length);
+  }, [onPendingCountChange, pendingItems.length]);
+
+  useEffect(() => {
+    writeLocalState("pm-fulfillment-workflow", items);
+  }, [items]);
 
   const updateStatus = (id: string, status: FulfillStatus) => {
     setItems(prev => prev.map(s => s.id === id ? { ...s, status } : s));
@@ -71,6 +82,20 @@ export default function Fulfillment({ demoMode }: { demoMode?: boolean } = {}) {
           Export ↓
         </button>
       </div>
+
+      <PendingWorkBanner
+        count={pendingItems.length}
+        itemLabel="fulfilment review"
+        detail={pendingItems.length === 1
+          ? `${pendingItems[0].id} · ${pendingItems[0].name} requires a fulfilment decision.`
+          : `${pendingItems.map(item => item.id).join(", ")} require fulfilment decisions.`}
+        reviewing={statusFilter === "pending-review"}
+        onReview={() => {
+          setStatusFilter("pending-review");
+          if (pendingItems[0]) setSelected(pendingItems[0]);
+        }}
+        onShowAll={() => setStatusFilter("all")}
+      />
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

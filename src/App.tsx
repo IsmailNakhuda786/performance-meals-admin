@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Dashboard from "./sections/Dashboard";
 import Orders from "./sections/Orders";
 import Delivery from "./sections/Delivery";
@@ -38,11 +38,14 @@ import FailedDeliveries from "./sections/FailedDeliveries";
 import Fulfillment from "./sections/Fulfillment";
 import PauseManagement from "./sections/PauseManagement";
 import BillingCycles from "./sections/BillingCycles";
-import CustomerProfile from "./sections/CustomerProfile";
+import CustomerProfile, { type ProfileTab } from "./sections/CustomerProfile";
 import Settings from "./sections/Settings";
 import CatalogCenter from "./sections/CatalogCenter";
+import Escalations from "./sections/Escalations";
 import LoginPage from "./components/LoginPage";
-import { initialUsers, type UserAccount } from "./accessControl";
+import { initialUsers, modulePermissionOptions, rolePermissions, type AccessRequest, type UserAccount } from "./accessControl";
+import { orders, subscriptions, type EscalationStatus, type OperationalNotification, type RefundEscalation, type WalletRefund, type WalletRefundStatus } from "./data";
+import { refundHistory } from "./refundHistory";
 
 export type BusinessStream = "meal-plans" | "ready-series" | "other-sales";
 export type Theme = "light" | "dark";
@@ -143,6 +146,7 @@ type Section =
   | "failed-deliveries" | "fulfillment" | "pause-management" | "billing-cycles"
   | "subscriber-profile"
   | "catalog"
+  | "escalations"
   | "settings";
 
 interface NavItem {
@@ -229,6 +233,7 @@ const navGroups: { group: string; items: NavItem[] }[] = [
       { id: "acl",           label: "Users & Roles", icon: "⊛" },
       { id: "audit-logs",    label: "Audit Logs",    icon: "⊟" },
       { id: "notifications", label: "Notifications", icon: "◇" },
+      { id: "escalations",   label: "Escalations",  icon: "⇧" },
       { id: "settings",      label: "Settings",      icon: "⚙" },
     ],
   },
@@ -283,6 +288,7 @@ const sectionTitles: Record<Section, string> = {
   "billing-cycles": "Billing Cycle Center",
   "subscriber-profile": "Customer Profile",
   catalog: "Catalog",
+  escalations: "Escalations",
   settings: "Settings",
 };
 
@@ -295,7 +301,7 @@ const sharedSections: Section[] = [
   "wallet", "refunds",
   "operations-center", "executive", "business-intel",
   "acl", "audit-logs", "business-rules", "whatsapp",
-  "settings", "catalog", "subscriber-profile",
+  "settings", "catalog", "subscriber-profile", "escalations",
 ];
 
 const otherSalesSections = new Set<Section>([
@@ -308,6 +314,7 @@ const otherSalesSections = new Set<Section>([
   "acl",
   "audit-logs",
   "notifications",
+  "escalations",
   "settings",
   "whatsapp",
   "support",
@@ -321,12 +328,79 @@ function checkNearCutoff(): boolean {
   return isThursday && minutes >= cutoffMinutes - 120 && minutes < cutoffMinutes;
 }
 
+function baselineAttentionCount(sectionId: Section, stream: BusinessStream): number {
+  if (sectionId === "orders") {
+    return readStoredState("pm-orders-workflow", orders).filter(order =>
+      order.status === "Pending" &&
+      (stream === "meal-plans"
+        ? order.planType === "Meal Plan"
+        : stream === "ready-series" && order.planType !== "Meal Plan")
+    ).length;
+  }
+  if (sectionId === "menu-review" && stream === "meal-plans") {
+    const storedReviews = readStoredState<Array<{ status: string }> | null>("pm-menu-review-workflow", null);
+    if (storedReviews) return storedReviews.filter(review => review.status === "Pending").length;
+    return subscriptions.filter(subscription =>
+      subscription.planType === "Meal Plan" &&
+      subscription.status !== "Cancelled" &&
+      !subscription.menuConfirmed
+    ).length;
+  }
+  if (sectionId === "kitchen" && stream !== "other-sales") {
+    const key = stream === "meal-plans" ? "pm-kitchen-meal-plan-workflow" : "pm-kitchen-ready-series-workflow";
+    const storedQueue = readStoredState<Array<{ status: string }> | null>(key, null);
+    return storedQueue ? storedQueue.filter(item => item.status === "Queued").length : 1;
+  }
+  if (sectionId === "fulfillment" && stream === "meal-plans") {
+    const storedItems = readStoredState<Array<{ status: string }> | null>("pm-fulfillment-workflow", null);
+    return storedItems ? storedItems.filter(item => item.status === "pending-review").length : 1;
+  }
+  if (sectionId === "finance") {
+    if (stream === "meal-plans") {
+      const retriedIds = readStoredState<string[]>("pm-finance-retried-payments", []);
+      return retriedIds.includes("TXN-3205") ? 0 : 1;
+    }
+    return 0;
+  }
+  if (sectionId === "dispatch") {
+    const storedItems = readStoredState<Array<{ status: string }> | null>("pm-dispatch-workflow", null);
+    return storedItems ? storedItems.filter(item => item.status === "pending").length : 4;
+  }
+  if (sectionId === "failed-deliveries") {
+    const storedItems = readStoredState<Array<{ status: string }> | null>("pm-failed-deliveries-workflow", null);
+    return storedItems ? storedItems.filter(item => item.status === "open").length : 1;
+  }
+  if (sectionId === "inventory") {
+    const storedItems = readStoredState<Array<{ stock: number; minimum: number }> | null>("pm-inventory-ingredients", null);
+    return storedItems ? storedItems.filter(item => item.stock < item.minimum).length : 5;
+  }
+  if (sectionId === "production-board") {
+    const storedItems = readStoredState<Array<{ status: string }> | null>("pm-production-board-workflow", null);
+    return storedItems ? storedItems.filter(item => item.status === "pending").length : 4;
+  }
+  if (sectionId === "support") {
+    const storedItems = readStoredState<Array<{ status: string }> | null>("pm-support-workflow", null);
+    return storedItems ? storedItems.filter(item => item.status === "Open").length : 2;
+  }
+  return 0;
+}
+
+function readStoredState<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const stored = window.localStorage.getItem(key);
+    return stored ? JSON.parse(stored) as T : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export default function App() {
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window === "undefined") return "light";
     return window.localStorage.getItem("pm-admin-theme") === "dark" ? "dark" : "light";
   });
-  const [users, setUsers] = useState<UserAccount[]>(initialUsers);
+  const [users, setUsers] = useState<UserAccount[]>(() => readStoredState("pm-access-users", initialUsers));
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
 
   const [section, setSection] = useState<Section>("dashboard");
@@ -335,12 +409,99 @@ export default function App() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [stream, setStream] = useState<BusinessStream>("meal-plans");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
-    new Set(["Admin", "Communication"])
+    new Set(["Communication"])
   );
   const [streamDropdownOpen, setStreamDropdownOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [profileCustomerId, setProfileCustomerId] = useState<string | undefined>(undefined);
+  const [aclRequestId, setAclRequestId] = useState<string | null>(null);
+  const [profileInitialTab, setProfileInitialTab] = useState<ProfileTab>("overview");
+  const [focusedOrder, setFocusedOrder] = useState<{ sourceId: string; customerName: string } | undefined>(undefined);
+  const [walletRefunds, setWalletRefunds] = useState<WalletRefund[]>([]);
+  const [refundEscalations, setRefundEscalations] = useState<RefundEscalation[]>([
+    { id: "ESC-001", refundId: "REF-060", customerId: "C001", customerName: "Marcus Tan", sourceId: "SUB-001", amount: 210, reason: "Partial refund dispute on a mid-week plan cancellation requires Super Admin review.", raisedBy: "Finance Team", assignedTo: "Jerome Lim", status: "Open", createdAt: "13 Sep 2024" },
+  ]);
+  const [outcomeNotifications, setOutcomeNotifications] = useState<OperationalNotification[]>(() => readStoredState("pm-workflow-notifications", []));
+  const [notificationUnreadCount, setNotificationUnreadCount] = useState(5);
+  const [accessRequests, setAccessRequests] = useState<AccessRequest[]>(() => readStoredState("pm-access-requests", []));
+  const [reportedAttentionCounts, setReportedAttentionCounts] = useState<Record<string, number>>({});
   const isNearCutoff = checkNearCutoff();
+
+  const reportAttentionCount = useCallback((sectionId: Section, scope: BusinessStream | "shared", count: number) => {
+    const key = `${scope}:${sectionId}`;
+    setReportedAttentionCounts(current => current[key] === count ? current : { ...current, [key]: count });
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem("pm-access-users", JSON.stringify(users));
+  }, [users]);
+
+  useEffect(() => {
+    window.localStorage.setItem("pm-access-requests", JSON.stringify(accessRequests));
+  }, [accessRequests]);
+
+  useEffect(() => {
+    window.localStorage.setItem("pm-workflow-notifications", JSON.stringify(outcomeNotifications));
+  }, [outcomeNotifications]);
+
+  useEffect(() => {
+    const scheduled = accessRequests
+      .filter(request => request.status === "Approved" && request.expiresAt)
+      .sort((a, b) => new Date(a.expiresAt!).getTime() - new Date(b.expiresAt!).getTime());
+    const nextRequest = scheduled[0];
+    if (!nextRequest) return;
+
+    const expireDueRequests = () => {
+      const now = Date.now();
+      const due = accessRequests.filter(request =>
+        request.status === "Approved" &&
+        request.expiresAt &&
+        new Date(request.expiresAt).getTime() <= now
+      );
+      if (!due.length) return;
+      const restoreUser = (user: UserAccount) => {
+        const latestDueRequest = due.filter(request => request.requestedById === user.id).at(-1);
+        if (!latestDueRequest?.originalPermissions || !latestDueRequest.originalDepartmentAssignments) return user;
+        return {
+          ...user,
+          permissions: latestDueRequest.originalPermissions,
+          modulePermissions: latestDueRequest.originalModulePermissions,
+          departmentAssignments: latestDueRequest.originalDepartmentAssignments,
+        };
+      };
+      setUsers(current => current.map(restoreUser));
+      setCurrentUser(current => current ? restoreUser(current) : null);
+      setAccessRequests(current => current.map(request =>
+        due.some(item => item.id === request.id) ? { ...request, status: "Expired" } : request
+      ));
+      setOutcomeNotifications(current => [
+        ...due.map<OperationalNotification>(request => ({
+          id: `ACCESS-EXPIRED-${request.id}`,
+          type: "access-request",
+          message: `${request.duration} access for ${request.moduleLabel ?? `${request.targetDepartment} — ${request.targetRole}`} has expired. Your original access has been restored.`,
+          department: request.targetDepartment,
+          channel: "Admin",
+          ts: "Just now",
+          read: false,
+          severity: "warning",
+          recipientId: request.requestedById,
+          accessRequestId: request.id,
+        })),
+        ...current,
+      ]);
+    };
+
+    let timer: number;
+    const scheduleExpiryCheck = () => {
+      const remaining = new Date(nextRequest.expiresAt!).getTime() - Date.now();
+      timer = window.setTimeout(() => {
+        if (remaining <= 2_147_000_000) expireDueRequests();
+        else scheduleExpiryCheck();
+      }, Math.max(0, Math.min(remaining, 2_147_000_000)));
+    };
+    scheduleExpiryCheck();
+    return () => window.clearTimeout(timer);
+  }, [accessRequests]);
 
   const selectTheme = (nextTheme: Theme) => {
     setTheme(nextTheme);
@@ -378,12 +539,216 @@ export default function App() {
     if (currentUser.id === user.id) setCurrentUser(user);
   };
   const deleteUser = (userId: string) => setUsers(current => current.filter(user => user.id !== userId));
+  const createWalletRefund = (refund: Omit<WalletRefund, "id" | "status" | "createdAt">) => {
+    setWalletRefunds(current => [{
+      ...refund,
+      id: `WR-${String(current.length + 1).padStart(4, "0")}`,
+      status: "Pending",
+      createdAt: "Just now",
+    }, ...current]);
+  };
+  const decideWalletRefund = (refundId: string, status: Exclude<WalletRefundStatus, "Pending">) => {
+    setWalletRefunds(current => current.map(refund => refund.id === refundId ? { ...refund, status } : refund));
+  };
+  const createRefundEscalation = (matter: Omit<RefundEscalation, "id" | "status" | "createdAt" | "assignedTo">) => {
+    setRefundEscalations(current => {
+      if (current.some(item => item.refundId === matter.refundId && item.status !== "Approved" && item.status !== "Rejected")) return current;
+      return [{
+        ...matter,
+        id: `ESC-${String(current.length + 1).padStart(3, "0")}`,
+        assignedTo: "Jerome Lim",
+        status: "Open",
+        createdAt: "Just now",
+      }, ...current];
+    });
+  };
+  const updateEscalationStatus = (id: string, status: EscalationStatus) => {
+    const escalation = refundEscalations.find(item => item.id === id);
+    setRefundEscalations(current => current.map(item => item.id === id ? {
+      ...item,
+      status,
+      ...(status === "Approved" || status === "Rejected" ? {
+        decidedBy: currentUser.name,
+        decidedAt: "Just now",
+        outcomeSummary: status === "Approved"
+          ? `Refund outcome approved by ${currentUser.name}. Proceed with the approved wallet refund and point reversal.`
+          : `Refund outcome rejected by ${currentUser.name}. No wallet credit should be issued.`,
+        notifiedDepartments: ["Marketing", "Sales", "Customer Support"],
+        customerEmailSent: true,
+      } : {}),
+    } : item));
+    if (!escalation || (status !== "Approved" && status !== "Rejected") || escalation.status === status) return;
+    const outcome = status === "Approved" ? "approved" : "rejected";
+    const baseId = Date.now();
+    setOutcomeNotifications(current => [
+      {
+        id: `OUT-${baseId}-M`,
+        type: "escalation-outcome",
+        message: `${escalation.refundId} ${outcome} by ${currentUser.name}. Coordinate the approved refund outcome and customer-facing resolution.`,
+        customer: escalation.customerName,
+        department: "Marketing",
+        channel: "Admin",
+        ts: "Just now",
+        read: false,
+        severity: status === "Approved" ? "info" : "warning",
+      },
+      {
+        id: `OUT-${baseId}-SA`,
+        type: "escalation-outcome",
+        message: `${escalation.refundId} ${outcome}. Complete the refund workflow and update the sales record.`,
+        customer: escalation.customerName,
+        department: "Sales",
+        channel: "Admin",
+        ts: "Just now",
+        read: false,
+        severity: "info",
+      },
+      {
+        id: `OUT-${baseId}-S`,
+        type: "escalation-outcome",
+        message: `${escalation.refundId} ${outcome}. Contact ${escalation.customerName} and record the support follow-up.`,
+        customer: escalation.customerName,
+        department: "Customer Support",
+        channel: "Admin",
+        ts: "Just now",
+        read: false,
+        severity: "info",
+      },
+      {
+        id: `OUT-${baseId}-C`,
+        type: "escalation-outcome",
+        message: `Outcome email sent to ${escalation.customerName}: refund request ${escalation.refundId} was ${outcome}.`,
+        customer: escalation.customerName,
+        department: "Customer",
+        channel: "Email",
+        ts: "Just now",
+        read: false,
+        severity: "info",
+      },
+      ...current,
+    ]);
+    setNotificationUnreadCount(current => current + 4);
+  };
+  const createAccessRequest = (request: Omit<AccessRequest, "id" | "status" | "requestedAt">) => {
+    const requestId = `PR-${Date.now().toString().slice(-6)}`;
+    setAccessRequests(current => [{
+      ...request,
+      id: requestId,
+      status: "Pending",
+      requestedAt: "Just now",
+    }, ...current]);
+    const requestedAccess = request.moduleLabel
+      ? `${request.moduleLabel} (${(request.permissions ?? ["View"]).join(", ")})`
+      : `${request.targetDepartment} — ${request.targetRole}`;
+    setOutcomeNotifications(current => [
+      ...users.filter(user => user.role === "Super Admin").map<OperationalNotification>(admin => ({
+        id: `ACCESS-SUBMITTED-${requestId}-${admin.id}`,
+        type: "access-request",
+        message: `${request.requestedBy} requested ${requestedAccess} access for ${request.duration}.`,
+        department: request.targetDepartment,
+        channel: "Admin",
+        ts: "Just now",
+        read: false,
+        severity: "info",
+        recipientId: admin.id,
+        accessRequestId: requestId,
+      })),
+      ...current,
+    ]);
+  };
+  const decideAccessRequest = (requestId: string, status: "Approved" | "Rejected") => {
+    if (currentUser.role !== "Super Admin") return;
+    const request = accessRequests.find(item => item.id === requestId);
+    if (!request || request.status !== "Pending") return;
+    const durationMs: Partial<Record<AccessRequest["duration"], number>> = {
+      "24 hours": 24 * 60 * 60 * 1000,
+      "1 week": 7 * 24 * 60 * 60 * 1000,
+      "1 month": 30 * 24 * 60 * 60 * 1000,
+    };
+    const expiresIn = status === "Approved" ? durationMs[request.duration] : undefined;
+    const expiresAt = expiresIn ? new Date(Date.now() + expiresIn) : undefined;
+    const originalUser = users.find(user => user.id === request.requestedById);
+    setAccessRequests(current => current.map(item => item.id === requestId ? {
+      ...item,
+      status,
+      decidedBy: currentUser.name,
+      decidedAt: "Just now",
+      ...(expiresAt ? { expiresAt: expiresAt.toISOString() } : {}),
+      ...(status === "Approved" && originalUser ? {
+        originalPermissions: originalUser.permissions,
+        originalModulePermissions: originalUser.modulePermissions,
+        originalDepartmentAssignments: originalUser.departmentAssignments,
+      } : {}),
+    } : item));
+    const requestedAccess = request.moduleLabel
+      ? `${request.moduleLabel} (${(request.permissions ?? ["View"]).join(", ")})`
+      : `${request.targetDepartment} — ${request.targetRole}`;
+    setOutcomeNotifications(current => [{
+      id: `ACCESS-${status.toUpperCase()}-${requestId}`,
+      type: "access-request",
+      message: status === "Approved"
+        ? `${requestedAccess} access was approved by ${currentUser.name} for ${request.duration}.`
+        : `${requestedAccess} access was rejected by ${currentUser.name}.`,
+      department: request.targetDepartment,
+      channel: "Admin",
+      ts: "Just now",
+      read: false,
+      severity: status === "Approved" ? "info" : "warning",
+      recipientId: request.requestedById,
+      accessRequestId: requestId,
+    }, ...current]);
+    if (status !== "Approved") return;
+    setUsers(current => current.map(user => {
+      if (user.id !== request.requestedById) return user;
+      if (request.requestType === "Module Permission" && request.moduleId) {
+        const approvedPermissions = request.permissions ?? ["View"];
+        return {
+          ...user,
+          permissions: [...new Set([...user.permissions, request.moduleId])],
+          modulePermissions: {
+            ...(user.modulePermissions ?? {}),
+            [request.moduleId]: [...new Set([...(user.modulePermissions?.[request.moduleId] ?? []), ...approvedPermissions])],
+          },
+        };
+      }
+      if (request.requestType === "Department Role" && request.targetDepartment && request.targetRole) {
+        const assignments = user.departmentAssignments.some(item => item.department === request.targetDepartment)
+          ? user.departmentAssignments.map(item => item.department === request.targetDepartment ? { department: request.targetDepartment!, role: request.targetRole! } : item)
+          : [...user.departmentAssignments, { department: request.targetDepartment, role: request.targetRole }];
+        const permissions = [...new Set(assignments.flatMap(item => rolePermissions[item.role] ?? []))];
+        return {
+          ...user,
+          departmentAssignments: assignments,
+          permissions,
+          modulePermissions: {
+            ...(user.modulePermissions ?? {}),
+            ...Object.fromEntries(permissions.map(module => [module, [...modulePermissionOptions]])),
+          },
+        };
+      }
+      return user;
+    }));
+  };
 
   const isMealPlans = stream === "meal-plans";
   const isReadySeries = stream === "ready-series";
   const isOtherSales = stream === "other-sales";
   const streamAccent = isMealPlans ? "#E85D04" : isReadySeries ? "#F5B300" : "var(--pm-text-secondary)";
   const isShared = sharedSections.includes(section);
+  const pendingCountForSection = (sectionId: Section) => {
+    if (sectionId === "escalations") return refundEscalations.filter(item => item.status === "Open" || item.status === "In Progress").length;
+    if (sectionId === "notifications") return notificationUnreadCount;
+    if (sectionId === "acl" && currentUser.role === "Super Admin") return accessRequests.filter(item => item.status === "Pending").length;
+    if (sectionId === "settings" && currentUser.role !== "Super Admin") return accessRequests.filter(item => item.status === "Pending" && item.requestedById === currentUser.id).length;
+    const scope = ["orders", "kitchen", "finance"].includes(sectionId) ? stream : "shared";
+    const reportedCount = reportedAttentionCounts[`${scope}:${sectionId}`];
+    if (reportedCount !== undefined) return reportedCount;
+    if (sectionId === "refunds") {
+      const storedRefunds = readStoredState("pm-refunds-workflow", refundHistory);
+      return walletRefunds.filter(item => item.status === "Pending").length + storedRefunds.filter(item => item.status === "pending").length;
+    }
+    return baselineAttentionCount(sectionId, stream);
+  };
 
   const handleStreamSwitch = (newStream: BusinessStream) => {
     setStream(newStream);
@@ -546,6 +911,7 @@ export default function App() {
             });
             if (visibleItems.length === 0) return null;
             const isGCollapsed = collapsedGroups.has(g.group);
+            const groupPendingCount = visibleItems.reduce((sum, item) => sum + pendingCountForSection(item.id), 0);
             return (
               <div key={g.group} className="mb-1">
                 {!collapsed && (
@@ -556,20 +922,26 @@ export default function App() {
                     <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 9, letterSpacing: "0.18em", color: "var(--pm-text)" }}>
                       {g.group.toUpperCase()}
                     </span>
-                    {/* Prominent chevron badge */}
-                    <span
-                      className="flex items-center justify-center transition-all duration-150"
-                      style={{
-                        width: 16, height: 16,
-                        background: isGCollapsed ? "var(--pm-border)" : "transparent",
-                        border: isGCollapsed ? "1px solid var(--pm-border-strong)" : "1px solid transparent",
-                        color: isGCollapsed ? "var(--pm-text-muted)" : "var(--pm-text-muted)",
-                        transform: isGCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
-                      }}
-                    >
-                      <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                        <path d="M1.5 3l3 3 3-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
+                    <span className="flex items-center gap-1.5">
+                      {groupPendingCount > 0 && (
+                        <span className="min-w-4 bg-[#F5B300] px-1.5 py-0.5 text-center text-[9px] font-extrabold text-[#111827] mono">
+                          {groupPendingCount}
+                        </span>
+                      )}
+                      <span
+                        className="flex items-center justify-center transition-all duration-150"
+                        style={{
+                          width: 16, height: 16,
+                          background: isGCollapsed ? "var(--pm-border)" : "transparent",
+                          border: isGCollapsed ? "1px solid var(--pm-border-strong)" : "1px solid transparent",
+                          color: "var(--pm-text-muted)",
+                          transform: isGCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
+                        }}
+                      >
+                        <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                          <path d="M1.5 3l3 3 3-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </span>
                     </span>
                   </button>
                 )}
@@ -578,21 +950,33 @@ export default function App() {
                   const active = section === item.id;
                   const isItemShared = sharedSections.includes(item.id);
                   const accent = isItemShared ? "var(--pm-text-muted)" : streamAccent;
+                  const pendingCount = pendingCountForSection(item.id);
                   return (
                     <button
                       key={item.id}
                       onClick={() => { setSection(item.id); setMobileNavOpen(false); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 transition-colors border-l-2 group"
+                      className="relative w-full flex items-center gap-2.5 px-3 py-2 transition-colors border-l-2 group"
                       style={active
                         ? { borderLeftColor: item.deferred ? "var(--pm-text-muted)" : accent, background: "var(--pm-active)", color: item.deferred ? "var(--pm-text-muted)" : accent }
                         : { borderLeftColor: "transparent", color: "var(--pm-text-muted)" }
                       }
-                      title={collapsed ? item.label : undefined}
+                      title={collapsed ? `${item.label}${pendingCount > 0 ? ` · ${pendingCount} pending` : ""}` : undefined}
+                      aria-label={`${item.label}${pendingCount > 0 ? `, ${pendingCount} pending tasks` : ""}`}
                     >
                       <span className="mono flex-shrink-0 w-4 text-center text-[13px]" style={{ opacity: active ? 1 : item.deferred ? 0.3 : 0.5 }}>{item.icon}</span>
+                      {collapsed && pendingCount > 0 && (
+                        <span className="absolute right-0.5 top-0.5 min-w-3.5 rounded-full bg-[#F5B300] px-1 py-0.5 text-center text-[8px] font-extrabold leading-none text-[#111827] mono">
+                          {pendingCount}
+                        </span>
+                      )}
                       {!collapsed && (
                         <span className="flex-1 flex items-center gap-1.5" style={{ fontFamily: "'Inter', sans-serif", fontWeight: active ? 600 : 400, fontSize: 12.5, color: active ? (item.deferred ? "var(--pm-text-muted)" : accent) : item.deferred ? "var(--pm-text-muted)" : "var(--pm-text-secondary)" }}>
                           {item.label}
+                          {pendingCount > 0 && (
+                            <span className="ml-auto bg-[#F5B300] px-1.5 py-0.5 text-[9px] font-extrabold text-[#111827] mono">
+                              {pendingCount}
+                            </span>
+                          )}
                           {item.deferred && (
                             <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 7.5, letterSpacing: "0.1em", color: "var(--pm-text-muted)", background: "var(--pm-surface-muted)", border: "1px solid var(--pm-border-strong)", padding: "1px 4px", flexShrink: 0 }}>
                               DEFERRED
@@ -835,7 +1219,7 @@ export default function App() {
         </header>
 
         {/* Shopify system-of-record banner for commerce-adjacent sections */}
-        {["orders", "refunds", "wallet", "finance", "customers", "catalog"].includes(section) && (
+        {["orders", "wallet", "finance", "customers", "catalog"].includes(section) && (
           <div className="flex-shrink-0 px-5 py-1.5 flex items-center gap-2" style={{ background: theme === "dark" ? "#0A0A0A" : "#F6FEF9", borderBottom: "1px solid var(--pm-surface-muted)" }}>
             <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 8.5, color: theme === "dark" ? "#66A566" : "#3A6B3A", letterSpacing: "0.06em" }}>◈ SHOPIFY</span>
             <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: "var(--pm-text-muted)" }}>
@@ -856,33 +1240,73 @@ export default function App() {
 
         {/* Section content */}
         <main className="pm-admin-main flex-1 overflow-y-auto">
-          {section === "dashboard" && <Dashboard stream={stream} swapAlert={isNearCutoff} theme={theme} />}
-          {section === "orders" && <Orders stream={stream} />}
+          {section === "dashboard" && <Dashboard stream={stream} swapAlert={isNearCutoff} theme={theme} onOpenProfile={customerId => {
+            setProfileCustomerId(customerId);
+            setProfileInitialTab("overview");
+            setSection("subscriber-profile");
+          }} />}
+          {section === "orders" && <Orders stream={stream} focusedOrder={focusedOrder} onPendingCountChange={count => reportAttentionCount("orders", stream, count)} onOpenProfile={customerId => {
+            setProfileCustomerId(customerId);
+            setProfileInitialTab("overview");
+            setSection("subscriber-profile");
+          }} onCreateWalletRefund={createWalletRefund} />}
           {section === "delivery" && <Delivery stream={stream} />}
           {section === "print-slips" && <PrintSlips stream={stream} />}
           {section === "customers" && <Customers stream={stream} onOpenProfile={customerId => {
             setProfileCustomerId(customerId);
+            setProfileInitialTab("overview");
             setSection("subscriber-profile");
           }} />}
           {section === "subscriptions" && <Subscriptions stream={stream} swapAlert={isNearCutoff} />}
-          {section === "menu-review" && <MenuReview />}
+          {section === "menu-review" && <MenuReview onPendingCountChange={count => reportAttentionCount("menu-review", "shared", count)} />}
           {section === "menu-planning" && <MenuPlanning />}
-          {section === "kitchen" && <Kitchen stream={stream} />}
+          {section === "kitchen" && <Kitchen stream={stream} onPendingCountChange={count => reportAttentionCount("kitchen", stream, count)} />}
           {section === "kitchen-forecast" && <KitchenForecast />}
-          {section === "inventory" && <Inventory />}
+          {section === "inventory" && <Inventory onPendingCountChange={count => reportAttentionCount("inventory", "shared", count)} />}
           {section === "procurement" && <Procurement />}
           {section === "packaging" && <Packaging />}
-          {section === "dispatch" && <Dispatch />}
+          {section === "dispatch" && <Dispatch onPendingCountChange={count => reportAttentionCount("dispatch", "shared", count)} />}
           {section === "delivery-hub" && <DeliveryHub />}
           {section === "riders" && <Riders />}
           {section === "rider-app" && <RiderApp />}
-          {section === "support" && <Support />}
+          {section === "support" && <Support onPendingCountChange={count => reportAttentionCount("support", "shared", count)} />}
           {section === "customer-success" && <CustomerSuccess />}
-          {section === "notifications" && <Notifications />}
+          {section === "notifications" && <Notifications
+            externalNotifications={outcomeNotifications
+              .filter(notification => !notification.recipientId || notification.recipientId === currentUser.id)
+              .map(notification => notification.type === "access-request" && !notification.accessRequestId
+                ? { ...notification, accessRequestId: notification.id.match(/PR-\d+/)?.[0] }
+                : notification)}
+            onOpenAccessRequest={requestId => {
+              if (currentUser.role === "Super Admin") {
+                setAclRequestId(requestId);
+                setSection("acl");
+              } else {
+                setSettingsTab("permission-requests");
+                setSection("settings");
+              }
+            }}
+            onUnreadCountChange={setNotificationUnreadCount}
+          />}
           {section === "marketing" && <Marketing />}
-          {section === "wallet" && <Wallet />}
-          {section === "finance" && <Finance stream={stream} />}
-          {section === "refunds" && <Refunds />}
+          {section === "wallet" && <Wallet walletRefunds={walletRefunds} />}
+          {section === "finance" && <Finance stream={stream} onPendingCountChange={count => reportAttentionCount("finance", stream, count)} />}
+          {section === "refunds" && <Refunds
+            walletRefunds={walletRefunds}
+            onPendingCountChange={count => reportAttentionCount("refunds", "shared", count)}
+            onDecideWalletRefund={decideWalletRefund}
+            onOpenProfile={customerId => {
+              setProfileCustomerId(customerId);
+              setProfileInitialTab("overview");
+              setSection("subscriber-profile");
+            }}
+            onOpenOrder={(sourceId, customerName, refundStream) => {
+              setStream(refundStream === "Meal Plans" ? "meal-plans" : "ready-series");
+              setFocusedOrder({ sourceId, customerName });
+              setSection("orders");
+            }}
+            onEscalate={createRefundEscalation}
+          />}
           {section === "reports" && <Reports stream={stream} />}
           {section === "business-intel" && <BusinessIntel />}
           {section === "executive" && <Executive />}
@@ -893,6 +1317,10 @@ export default function App() {
               onCreate={createUser}
               onUpdate={updateUser}
               onDelete={deleteUser}
+              accessRequests={accessRequests}
+              initialRequestId={aclRequestId}
+              onSelectRequest={setAclRequestId}
+              onDecideAccessRequest={decideAccessRequest}
             />
           )}
           {section === "audit-logs" && <AuditLogs />}
@@ -900,15 +1328,35 @@ export default function App() {
           {section === "whatsapp" && <WhatsApp />}
           {section === "operations-center" && <OperationsCenter />}
           {section === "production-forecast" && <ProductionForecast />}
-          {section === "production-board" && <ProductionBoard />}
+          {section === "production-board" && <ProductionBoard onPendingCountChange={count => reportAttentionCount("production-board", "shared", count)} />}
           {section === "export-center" && <ExportCenter stream={stream} />}
-          {section === "failed-deliveries" && <FailedDeliveries />}
-          {section === "fulfillment" && <Fulfillment />}
+          {section === "failed-deliveries" && <FailedDeliveries onPendingCountChange={count => reportAttentionCount("failed-deliveries", "shared", count)} />}
+          {section === "fulfillment" && <Fulfillment onPendingCountChange={count => reportAttentionCount("fulfillment", "shared", count)} />}
           {section === "pause-management" && <PauseManagement />}
           {section === "billing-cycles" && <BillingCycles />}
-          {section === "subscriber-profile" && <CustomerProfile initialCustomerId={profileCustomerId} />}
+          {section === "subscriber-profile" && <CustomerProfile initialCustomerId={profileCustomerId} initialTab={profileInitialTab} walletRefunds={walletRefunds} onCreateWalletRefund={createWalletRefund} />}
           {section === "catalog" && <CatalogCenter stream={stream} />}
-          {section === "settings" && <Settings initialTab={settingsTab} user={currentUser} />}
+          {section === "escalations" && <Escalations
+            escalations={refundEscalations}
+            onUpdateStatus={updateEscalationStatus}
+            onOpenProfile={customerId => {
+              setProfileCustomerId(customerId);
+              setProfileInitialTab("activity");
+              setSection("subscriber-profile");
+            }}
+            onOpenOrder={(sourceId, customerName) => {
+              setStream("meal-plans");
+              setFocusedOrder({ sourceId, customerName });
+              setSection("orders");
+            }}
+          />}
+          {section === "settings" && <Settings
+            initialTab={settingsTab}
+            user={currentUser}
+            accessRequests={accessRequests}
+            onCreateAccessRequest={createAccessRequest}
+            onDecideAccessRequest={decideAccessRequest}
+          />}
         </main>
       </div>
     </div>
